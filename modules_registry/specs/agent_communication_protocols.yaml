@@ -1,0 +1,282 @@
+meta:
+  slug: "agent_communication_protocols"
+  name: "Agent Communication Protocols"
+  version: "1.0.0"
+  category: "agent_systems"
+  status: "emerging"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Protocols and patterns for multi-agent communication and tool use"
+  description: |
+    Agent communication protocols define how AI agents discover, interact with, and
+    orchestrate each other and external tools. As AI systems evolve from single-model
+    applications to multi-agent architectures, standardized communication protocols
+    become essential for interoperability.
+
+    The landscape features two major protocol families: Anthropic's Model Context Protocol
+    (MCP) for connecting models to data sources and tools, and Google's Agent-to-Agent (A2A)
+    protocol for direct agent interoperability. These represent different philosophies —
+    MCP focuses on model-tool integration while A2A focuses on agent-agent collaboration.
+
+    Beyond these standards, practical patterns like function calling, tool use, and custom
+    message-passing architectures remain widely used. The choice of protocol depends on
+    whether you're building tool integrations, multi-agent systems, or both.
+  website: "https://modelcontextprotocol.io"
+  documentation: "https://modelcontextprotocol.io/docs"
+  license: "Open Source"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Connecting LLMs to external tools and data"
+    - "Multi-agent orchestration"
+    - "Tool discovery and interoperability"
+    - "Cross-platform agent communication"
+    - "Enterprise workflow automation"
+  supported_operations:
+    - "tool_discovery"
+    - "tool_invocation"
+    - "agent_to_agent_messaging"
+    - "context_sharing"
+    - "task_delegation"
+  integrations:
+    - slug: "claude"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "openai_function_calling"
+      type: "compatible"
+
+technical_specs:
+  protocols:
+    mcp:
+      full_name: "Model Context Protocol"
+      creator: "Anthropic"
+      transport: "JSON-RPC 2.0 over stdio/SSE"
+      capabilities: ["tools", "resources", "prompts", "sampling"]
+      status: "production"
+    a2a:
+      full_name: "Agent-to-Agent Protocol"
+      creator: "Google"
+      transport: "HTTP/JSON"
+      capabilities: ["task_delegation", "agent_discovery", "streaming"]
+      status: "emerging"
+    function_calling:
+      full_name: "LLM Function Calling"
+      creator: "Various (OpenAI, Anthropic, etc.)"
+      transport: "API-specific"
+      capabilities: ["tool_invocation", "structured_output"]
+      status: "production"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Overhead depends on protocol. MCP adds minimal latency. A2A has HTTP overhead per agent hop."
+  scalability:
+    score: 7
+    justification: "MCP scales well for tool integrations. Multi-agent systems face coordination complexity at scale."
+  ease_of_use:
+    score: 6
+    justification: "MCP has good SDKs. A2A is newer with fewer examples. Custom protocols require significant engineering."
+  cost_efficiency:
+    score: 8
+    justification: "Protocols themselves are free. Cost is in the LLM calls each agent makes."
+  community:
+    score: 8
+    justification: "MCP has growing ecosystem (1000+ community servers). A2A is newer. Function calling is universal."
+  maturity:
+    score: 6
+    justification: "Function calling is mature. MCP is production-ready but still evolving. A2A is early stage."
+  flexibility:
+    score: 8
+    justification: "MCP supports tools, resources, and prompts. A2A supports any agent interaction. Highly composable."
+  data_privacy:
+    score: 7
+    justification: "MCP can run locally (stdio transport). A2A involves network calls between agents. Privacy depends on deployment."
+
+knowledge:
+  entries:
+    - topic: "MCP (Model Context Protocol) Overview"
+      content: |
+        The Model Context Protocol (MCP) is an open standard created by Anthropic for connecting
+        AI models to external data sources and tools. It provides a standardized interface for
+        LLMs to discover and use tools, read resources, and interact with external systems.
+
+        MCP uses a client-server architecture. The MCP client runs alongside the LLM (in the
+        host application), and MCP servers expose capabilities (tools, resources, prompts).
+        Communication uses JSON-RPC 2.0 over either stdio (for local servers) or SSE (for
+        remote servers).
+
+        Three core primitives: (1) Tools — functions the model can invoke (e.g., search a
+        database, call an API), (2) Resources — data the model can read (e.g., file contents,
+        database records), (3) Prompts — templated interactions for common workflows.
+
+        The ecosystem has grown rapidly with 1000+ community-built MCP servers for databases,
+        APIs, file systems, and developer tools. Major IDEs (Cursor, VS Code with Copilot,
+        Claude Code) support MCP natively.
+      tags: ["mcp", "protocol", "overview"]
+
+    - topic: "Google A2A Protocol"
+      content: |
+        Google's Agent-to-Agent (A2A) protocol enables AI agents built on different frameworks
+        to communicate and collaborate. While MCP focuses on connecting models to tools, A2A
+        focuses on connecting agents to each other.
+
+        A2A defines: (1) Agent Cards — JSON metadata describing an agent's capabilities,
+        (2) Task objects — units of work that agents exchange, (3) Streaming support for
+        long-running tasks, (4) Push notifications for asynchronous updates.
+
+        A key differentiator is that A2A treats agents as opaque services. An A2A client
+        doesn't need to know the internal architecture of the agent it's talking to — it only
+        needs to know its capabilities (from the Agent Card) and can send tasks accordingly.
+
+        A2A is designed for enterprise scenarios where multiple specialized agents (each
+        potentially built by different teams or vendors) need to collaborate on complex
+        workflows. For example, a customer service system might route between a billing agent,
+        a technical support agent, and a returns agent via A2A.
+      tags: ["a2a", "google", "protocol"]
+
+    - topic: "MCP vs A2A: When to Use Which"
+      content: |
+        MCP and A2A solve different problems and are complementary rather than competing.
+
+        Use MCP when: You need to connect a single LLM to external tools and data sources.
+        Think of MCP as "plugins for AI models." Examples: giving Claude access to your database,
+        connecting GPT-4 to your internal APIs, letting an LLM read and write files.
+
+        Use A2A when: You need multiple AI agents to collaborate on tasks. Think of A2A as
+        "networking for AI agents." Examples: a research agent delegating subtasks to a
+        data-gathering agent, a customer service system routing between specialized agents.
+
+        In practice, many systems use both: individual agents use MCP to connect to their
+        tools, and A2A to communicate with other agents. An agent might use MCP to access
+        a database, process the data, and then send results to another agent via A2A.
+
+        For most developers building their first AI application, MCP is the right starting
+        point. A2A becomes relevant when you have multiple agents that need to work together.
+      tags: ["comparison", "decision", "mcp", "a2a"]
+
+    - topic: "Function Calling and Tool Use Patterns"
+      content: |
+        Function calling (also called tool use) is the most basic form of agent-tool
+        communication. All major LLM providers support it: OpenAI's function calling,
+        Anthropic's tool use, Google's function calling in Gemini.
+
+        The pattern is simple: define functions with names, descriptions, and parameter schemas.
+        Send these definitions with the conversation. The model decides when to call a function
+        and returns structured arguments. Your application executes the function and sends the
+        result back to the model.
+
+        Best practices for function definitions: (1) Write detailed descriptions — the model
+        uses these to decide when to call the function. (2) Keep parameter schemas simple —
+        avoid deeply nested objects. (3) Return structured data — JSON is better than
+        unstructured text. (4) Handle errors gracefully — return error information the model
+        can use to retry or ask for clarification.
+
+        For complex tool use patterns, consider: parallel function calling (multiple tools in
+        one turn), chained function calling (output of one tool feeds into another), and
+        conditional function calling (the model decides between multiple tools based on context).
+      tags: ["function-calling", "tool-use", "patterns"]
+
+    - topic: "Building MCP Servers"
+      content: |
+        Building an MCP server exposes your data or functionality to any MCP-compatible LLM
+        client. The Anthropic MCP SDK provides TypeScript and Python implementations.
+
+        A basic MCP server defines tools using decorators. Each tool has a name, description,
+        and input schema. The server handles JSON-RPC communication automatically.
+
+        For production MCP servers: (1) Use descriptive tool names and detailed descriptions.
+        The model relies on these to decide when to use your tool. (2) Validate inputs
+        carefully — the model may send unexpected parameter combinations. (3) Return
+        structured results with clear success/failure indicators. (4) Implement rate limiting
+        and authentication if the server will be exposed remotely.
+
+        The stdio transport is simplest for local development. For remote deployment, use the
+        SSE transport with proper authentication. Consider running MCP servers in Docker
+        containers for isolation and portability.
+      tags: ["mcp", "development", "building"]
+
+code_examples:
+  - title: "MCP Server (Python)"
+    language: "python"
+    code: |
+      from mcp.server import Server
+      from mcp.types import Tool, TextContent
+
+      server = Server("my-tool-server")
+
+      @server.tool()
+      async def search_database(query: str, limit: int = 5) -> list[TextContent]:
+          """Search the product database for matching items."""
+          results = await db.search(query, limit=limit)
+          return [TextContent(type="text", text=str(r)) for r in results]
+
+      @server.tool()
+      async def get_user_profile(user_id: str) -> TextContent:
+          """Get a user's profile information."""
+          profile = await db.get_user(user_id)
+          return TextContent(type="text", text=json.dumps(profile))
+
+      # Run with: python -m mcp.server.stdio my_server
+
+  - title: "Claude Tool Use (Anthropic API)"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      tools = [{
+          "name": "get_weather",
+          "description": "Get current weather for a location",
+          "input_schema": {
+              "type": "object",
+              "properties": {
+                  "location": {"type": "string", "description": "City name"}
+              },
+              "required": ["location"]
+          }
+      }]
+
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=1024,
+          tools=tools,
+          messages=[{"role": "user", "content": "What's the weather in Tokyo?"}]
+      )
+
+      # Check if model wants to use a tool
+      for block in response.content:
+          if block.type == "tool_use":
+              result = call_weather_api(block.input["location"])
+              # Send result back to Claude...
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "mcp_tool_call_latency"
+      value: 5
+      unit: "ms"
+      context: "stdio transport, simple tool, local execution"
+    - name: "mcp_sse_latency"
+      value: 50
+      unit: "ms"
+      context: "SSE transport, remote server, including network"
+    - name: "function_calling_overhead"
+      value: 200
+      unit: "ms"
+      context: "Additional latency from tool use vs direct generation, Claude Sonnet"
+
+relationships:
+  alternatives: []
+  complements:
+    - slug: "langchain"
+      role: "Framework that integrates with MCP and function calling"
+    - slug: "claude"
+      role: "LLM with native MCP and tool use support"
+  typical_pipeline_position: "orchestration"
+  pipeline_predecessors: ["llm_layer"]
+  pipeline_successors: ["deployment"]

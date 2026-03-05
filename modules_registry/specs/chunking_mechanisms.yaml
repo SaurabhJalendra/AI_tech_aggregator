@@ -1,0 +1,228 @@
+meta:
+  slug: "chunking_mechanisms"
+  name: "Chunking Mechanisms"
+  version: "1.0.0"
+  category: "chunking"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Strategies for splitting documents into optimal retrieval units"
+  description: |
+    Chunking is the process of breaking documents into smaller pieces that can be
+    independently embedded and retrieved. The choice of chunking strategy directly impacts
+    retrieval quality, as it determines what unit of information the system can find and return.
+
+    There is no single best chunking method. The optimal strategy depends on document structure,
+    query patterns, embedding model capabilities, and downstream task requirements. A legal
+    contract needs different chunking than a codebase or a conversation transcript.
+
+    Modern chunking has evolved from simple fixed-size splitting to sophisticated approaches
+    that understand document structure, semantic boundaries, and the relationship between
+    chunks. The trend is toward adaptive chunking that considers both content and retrieval context.
+  website: "https://docs.llamaindex.ai/en/stable/module_guides/loading/node_parsers/"
+  documentation: "https://python.langchain.com/docs/concepts/text_splitters/"
+  license: "N/A"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "RAG pipeline preprocessing"
+    - "Document indexing for search"
+    - "Knowledge base construction"
+    - "Long document analysis"
+    - "Multi-document Q&A systems"
+  supported_operations:
+    - "fixed_size_chunking"
+    - "recursive_character_splitting"
+    - "semantic_chunking"
+    - "document_structure_chunking"
+    - "sentence_window_chunking"
+    - "agentic_chunking"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "unstructured"
+      type: "compatible"
+
+technical_specs:
+  approaches:
+    fixed_size:
+      description: "Split by character/token count with overlap"
+      typical_chunk_size: "256-1024 tokens"
+      overlap: "10-20% of chunk size"
+    recursive_character:
+      description: "Split by hierarchy of separators (paragraphs > sentences > words)"
+      typical_chunk_size: "512-1024 tokens"
+    semantic:
+      description: "Split at semantic boundaries using embedding similarity"
+      requires_embedding_model: true
+    document_structure:
+      description: "Split based on document structure (headings, sections, tables)"
+      best_for: ["PDF", "HTML", "Markdown"]
+    sentence_window:
+      description: "Embed individual sentences but retrieve surrounding context"
+      window_size: "3-5 sentences"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Performance varies by approach. Fixed-size is fastest, semantic and agentic are slower due to model calls."
+  scalability:
+    score: 8
+    justification: "Most approaches scale linearly. Semantic chunking may bottleneck on embedding API throughput."
+  ease_of_use:
+    score: 8
+    justification: "Well-supported in LangChain and LlamaIndex with sensible defaults."
+  cost_efficiency:
+    score: 7
+    justification: "Fixed-size and recursive are free. Semantic requires embedding calls. Agentic requires LLM calls."
+  community:
+    score: 9
+    justification: "Extensively documented with community guides, comparisons, and best practices."
+  maturity:
+    score: 9
+    justification: "Core strategies are well-established. Semantic and agentic approaches are newer but proven."
+  flexibility:
+    score: 9
+    justification: "Wide range from simple to sophisticated. Can be combined and customized extensively."
+  data_privacy:
+    score: 9
+    justification: "Most approaches run locally. Semantic may send data to embedding APIs."
+
+knowledge:
+  entries:
+    - topic: "Choosing the Right Chunking Strategy"
+      content: |
+        The choice depends on four key factors: document type, query complexity, embedding
+        model context window, and retrieval precision requirements.
+
+        For structured documents (legal contracts, research papers, technical docs), use
+        document-structure-based chunking to preserve the author's organizational intent.
+
+        For unstructured text (emails, chat logs, scraped web content), recursive character
+        splitting is a reliable default that tries paragraph boundaries first.
+
+        For high-precision retrieval, semantic chunking with embedding-based boundary detection
+        ensures each chunk is semantically self-contained.
+
+        When in doubt, start with recursive character splitting at 512 tokens with 50-token
+        overlap. This works for 80% of use cases.
+      tags: ["decision", "best-practices"]
+
+    - topic: "Chunk Size Optimization"
+      content: |
+        Chunk size is one of the most impactful hyperparameters in a RAG system. Too small
+        and you lose context; too large and you dilute relevance with noise.
+
+        For OpenAI text-embedding-3-small (1536 dimensions), chunks of 256-512 tokens work
+        well for factual Q&A. For broader topic retrieval, 512-1024 tokens capture more context.
+
+        Test with your actual queries. Create 50-100 representative questions with known
+        answers. Run retrieval at different chunk sizes and measure recall@k.
+
+        Overlap of 10-20% prevents information loss at chunk boundaries. Without overlap,
+        answers spanning two chunks may not be retrieved.
+      tags: ["optimization", "configuration"]
+
+    - topic: "Semantic Chunking Deep Dive"
+      content: |
+        Semantic chunking uses embedding similarity to detect topic boundaries. Instead of
+        splitting at arbitrary positions, it finds natural breaks where content shifts topics.
+
+        Algorithm: (1) split into sentences, (2) compute embeddings per sentence, (3) calculate
+        cosine similarity between consecutive embeddings, (4) place boundaries where similarity
+        drops below threshold.
+
+        Available in LlamaIndex (SemanticSplitterNodeParser) and LangChain (SemanticChunker).
+        Both require an embedding model. The breakpoint threshold can be a percentile or absolute.
+
+        Trade-off: 10-100x more expensive than simple splitting (every sentence needs embedding),
+        but higher retrieval precision for multi-topic documents.
+      tags: ["semantic", "advanced"]
+
+    - topic: "Evaluating Chunking Quality"
+      content: |
+        Measure chunking by its downstream impact on retrieval and generation, not in isolation.
+
+        Key metrics: retrieval recall@k, answer accuracy, chunk coherence (is each chunk
+        self-contained?), and chunk relevance (does each chunk cover one topic?).
+
+        Practical workflow: (1) Create 50-100 test questions with known answers, (2) For each
+        strategy, index documents and run retrieval, (3) Measure recall@5 and recall@10,
+        (4) Feed retrieved chunks to LLM and measure answer quality.
+
+        Tools like RAGAS and DeepEval provide automated evaluation metrics including
+        context precision and context recall.
+      tags: ["evaluation", "metrics"]
+
+    - topic: "Sentence Window and Parent-Child Strategies"
+      content: |
+        The sentence window approach embeds individual sentences but retrieves surrounding
+        context. This gives precise embedding matching with broad context retrieval.
+
+        In LlamaIndex, SentenceWindowNodeParser creates sentence-level nodes but returns a
+        window of surrounding sentences (typically 3-5) during retrieval.
+
+        Parent-child chunking creates large chunks (parents) and small chunks (children).
+        Children are embedded for precise matching, but parent chunks are returned for context.
+        This "small-to-big" retrieval balances precision and context.
+      tags: ["sentence-window", "parent-child", "advanced"]
+
+code_examples:
+  - title: "Recursive Character Splitting (LangChain)"
+    language: "python"
+    code: |
+      from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+      splitter = RecursiveCharacterTextSplitter(
+          chunk_size=512,
+          chunk_overlap=50,
+          separators=["\n\n", "\n", ". ", " "],
+      )
+      chunks = splitter.split_text(document_text)
+
+  - title: "Semantic Chunking (LlamaIndex)"
+    language: "python"
+    code: |
+      from llama_index.core.node_parser import SemanticSplitterNodeParser
+      from llama_index.embeddings.openai import OpenAIEmbedding
+
+      splitter = SemanticSplitterNodeParser(
+          buffer_size=1,
+          breakpoint_percentile_threshold=95,
+          embed_model=OpenAIEmbedding(),
+      )
+      nodes = splitter.get_nodes_from_documents(documents)
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "processing_speed_fixed"
+      value: 50000
+      unit: "tokens/sec"
+      context: "Fixed-size 512-token chunks"
+    - name: "processing_speed_semantic"
+      value: 500
+      unit: "tokens/sec"
+      context: "Semantic chunking with OpenAI embeddings"
+    - name: "retrieval_recall_recursive_at_5"
+      value: 0.78
+      unit: "recall@5"
+      context: "Recursive 512 tokens on legal Q&A dataset"
+    - name: "retrieval_recall_semantic_at_5"
+      value: 0.85
+      unit: "recall@5"
+      context: "Semantic chunking on legal Q&A dataset"
+
+relationships:
+  alternatives: []
+  complements:
+    - slug: "embedding_models"
+      role: "Chunks are embedded by embedding models for vector storage"
+  typical_pipeline_position: "chunking"
+  pipeline_predecessors: ["data_ingestion"]
+  pipeline_successors: ["embeddings"]

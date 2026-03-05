@@ -1,0 +1,234 @@
+# JSON Schema for AI Infrastructure Advisor Module Spec Files
+# Every module YAML spec must validate against this schema.
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "Module Spec"
+description: "Schema for AI Infrastructure Advisor technology module specification files"
+type: object
+required:
+  - meta
+  - identity
+  - capabilities
+  - comparison_dimensions
+  - knowledge
+
+properties:
+  meta:
+    type: object
+    required: [slug, name, category, status]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9_-]+$"
+        description: "URL-safe identifier"
+      name:
+        type: string
+        maxLength: 200
+      version:
+        type: string
+        default: "1.0.0"
+      category:
+        type: string
+        enum:
+          - data_ingestion
+          - chunking
+          - embeddings
+          - vector_databases
+          - retrieval
+          - rag_architectures
+          - llm_layer
+          - agent_systems
+          - evaluation
+          - caching
+          - fine_tuning
+          - deployment
+          - voice_conversational
+          - workflow_orchestration
+          - security_compliance
+          - search_discovery
+          - specialized_applications
+          - infrastructure_comparison
+      subcategory:
+        type: string
+      status:
+        type: string
+        enum: [stable, beta, deprecated, emerging]
+      last_updated:
+        type: string
+        format: date
+      maintainer:
+        type: string
+        enum: [system, community, auto-generated]
+
+  identity:
+    type: object
+    required: [tagline, description]
+    properties:
+      tagline:
+        type: string
+        maxLength: 500
+      description:
+        type: string
+      logo_url:
+        type: string
+      website:
+        type: string
+        format: uri
+      documentation:
+        type: string
+        format: uri
+      github:
+        type: string
+        format: uri
+      license:
+        type: string
+      pricing_model:
+        type: string
+        enum: [open_source, freemium, paid, enterprise, free]
+
+  capabilities:
+    type: object
+    properties:
+      primary_use_cases:
+        type: array
+        items:
+          type: string
+      supported_operations:
+        type: array
+        items:
+          type: string
+      integrations:
+        type: array
+        items:
+          type: object
+          required: [slug, type]
+          properties:
+            slug:
+              type: string
+            type:
+              type: string
+              enum: [native, compatible, community]
+
+  technical_specs:
+    type: object
+    additionalProperties: true
+
+  comparison_dimensions:
+    type: object
+    properties:
+      performance:
+        $ref: "#/$defs/dimension_score"
+      scalability:
+        $ref: "#/$defs/dimension_score"
+      ease_of_use:
+        $ref: "#/$defs/dimension_score"
+      cost_efficiency:
+        $ref: "#/$defs/dimension_score"
+      community:
+        $ref: "#/$defs/dimension_score"
+      maturity:
+        $ref: "#/$defs/dimension_score"
+      flexibility:
+        $ref: "#/$defs/dimension_score"
+      data_privacy:
+        $ref: "#/$defs/dimension_score"
+
+  knowledge:
+    type: object
+    required: [entries]
+    properties:
+      entries:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [topic, content]
+          properties:
+            topic:
+              type: string
+            content:
+              type: string
+            tags:
+              type: array
+              items:
+                type: string
+
+  code_examples:
+    type: array
+    items:
+      type: object
+      required: [title, language, code]
+      properties:
+        title:
+          type: string
+        language:
+          type: string
+        code:
+          type: string
+
+  benchmarks:
+    type: object
+    properties:
+      last_run:
+        type: string
+        format: date
+      results:
+        type: array
+        items:
+          type: object
+          required: [name, value, unit]
+          properties:
+            name:
+              type: string
+            value:
+              type: number
+            unit:
+              type: string
+            context:
+              type: string
+
+  relationships:
+    type: object
+    properties:
+      alternatives:
+        type: array
+        items:
+          type: object
+          required: [slug]
+          properties:
+            slug:
+              type: string
+            note:
+              type: string
+      complements:
+        type: array
+        items:
+          type: object
+          required: [slug]
+          properties:
+            slug:
+              type: string
+            role:
+              type: string
+      typical_pipeline_position:
+        type: string
+      pipeline_predecessors:
+        type: array
+        items:
+          type: string
+      pipeline_successors:
+        type: array
+        items:
+          type: string
+
+$defs:
+  dimension_score:
+    type: object
+    required: [score, justification]
+    properties:
+      score:
+        type: integer
+        minimum: 1
+        maximum: 10
+      justification:
+        type: string

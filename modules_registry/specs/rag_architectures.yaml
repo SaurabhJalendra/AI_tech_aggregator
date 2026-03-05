@@ -1,0 +1,308 @@
+meta:
+  slug: "rag_architectures"
+  name: "RAG Architectures"
+  version: "1.0.0"
+  category: "rag_architectures"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Architectural patterns for Retrieval-Augmented Generation systems"
+  description: |
+    RAG (Retrieval-Augmented Generation) combines information retrieval with language model
+    generation. Instead of relying solely on a model's training data, RAG systems retrieve
+    relevant context from a knowledge base and include it in the prompt, producing more
+    accurate, grounded, and up-to-date responses.
+
+    RAG architectures have evolved from simple retrieve-then-generate pipelines to sophisticated
+    systems with query transformation, multi-stage retrieval, reranking, and iterative
+    refinement. The choice of architecture depends on the complexity of queries, accuracy
+    requirements, latency constraints, and the nature of the knowledge base.
+
+    This module covers the major RAG patterns from naive RAG through advanced, modular,
+    graph-based, and agentic approaches, helping you choose the right architecture for
+    your specific use case.
+  documentation: "https://python.langchain.com/docs/tutorials/rag/"
+  license: "N/A"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Question answering over documents"
+    - "Enterprise knowledge bases"
+    - "Customer support automation"
+    - "Research assistance"
+    - "Legal document analysis"
+  supported_operations:
+    - "naive_rag"
+    - "advanced_rag"
+    - "modular_rag"
+    - "graph_rag"
+    - "agentic_rag"
+    - "corrective_rag"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+
+technical_specs:
+  patterns:
+    naive_rag:
+      description: "Simple retrieve-then-generate pipeline"
+      stages: ["embed_query", "vector_search", "generate"]
+      latency: "1-3 seconds"
+      accuracy: "medium"
+    advanced_rag:
+      description: "Multi-stage with query transformation and reranking"
+      stages: ["query_transform", "vector_search", "rerank", "generate"]
+      latency: "2-5 seconds"
+      accuracy: "high"
+    modular_rag:
+      description: "Composable pipeline with interchangeable components"
+      stages: ["routing", "retrieval", "post_processing", "generation"]
+      latency: "2-8 seconds"
+      accuracy: "high"
+    graph_rag:
+      description: "Knowledge graph enhanced retrieval"
+      stages: ["entity_extraction", "graph_traversal", "context_assembly", "generate"]
+      latency: "3-10 seconds"
+      accuracy: "very high for relational queries"
+    agentic_rag:
+      description: "LLM agent decides retrieval strategy dynamically"
+      stages: ["plan", "retrieve", "evaluate", "iterate", "generate"]
+      latency: "5-30 seconds"
+      accuracy: "highest"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "RAG significantly improves LLM accuracy on knowledge-intensive tasks. Advanced patterns achieve 85-95% answer accuracy."
+  scalability:
+    score: 7
+    justification: "Naive RAG scales well. Graph and agentic RAG have higher per-query costs. All patterns scale with vector DB."
+  ease_of_use:
+    score: 7
+    justification: "Naive RAG is straightforward with LangChain/LlamaIndex. Advanced patterns require more expertise and tuning."
+  cost_efficiency:
+    score: 6
+    justification: "Each retrieval + generation cycle costs tokens. Agentic RAG with multiple iterations is expensive."
+  community:
+    score: 10
+    justification: "Massive community. Thousands of tutorials, papers, and open-source implementations. The most discussed AI pattern."
+  maturity:
+    score: 8
+    justification: "Naive RAG is production-proven. Advanced patterns are well-understood. Agentic RAG is emerging but viable."
+  flexibility:
+    score: 9
+    justification: "Highly composable. Can mix and match retrieval strategies, rerankers, and generation approaches."
+  data_privacy:
+    score: 7
+    justification: "Data stays in your vector DB. Privacy depends on which LLM and embedding API you use."
+
+knowledge:
+  entries:
+    - topic: "Naive RAG vs Advanced RAG"
+      content: |
+        Naive RAG follows a simple three-step pipeline: embed the user query, search the vector
+        database for similar chunks, and pass the retrieved chunks as context to the LLM for
+        answer generation. This works well for straightforward factual queries over clean,
+        well-chunked documents.
+
+        Naive RAG fails when: queries are ambiguous or complex, the answer requires information
+        from multiple documents, the retrieved chunks don't contain the answer despite it being
+        in the corpus, or the user's query doesn't match the vocabulary used in the documents.
+
+        Advanced RAG addresses these failures with pre-retrieval and post-retrieval enhancements.
+        Pre-retrieval: query rewriting, hypothetical document embeddings (HyDE), query
+        decomposition for multi-part questions. Post-retrieval: reranking with cross-encoders,
+        context compression, and relevance filtering.
+
+        The transition from naive to advanced RAG typically improves answer accuracy by 15-30%
+        while increasing latency by 2-5x. For most production systems, the accuracy improvement
+        justifies the additional latency.
+      tags: ["comparison", "naive", "advanced"]
+
+    - topic: "Agentic RAG Patterns"
+      content: |
+        Agentic RAG gives the LLM agency over the retrieval process. Instead of a fixed
+        pipeline, the agent decides what to search for, evaluates whether the results are
+        sufficient, and iterates until it has enough context to answer confidently.
+
+        Key patterns in agentic RAG:
+
+        1. Self-RAG: The model generates an answer, then critiques whether it needs retrieval.
+        If the answer seems uncertain, it retrieves context and regenerates. This avoids
+        unnecessary retrieval for questions the model can answer from training data.
+
+        2. Corrective RAG (CRAG): After retrieval, a secondary model evaluates the relevance
+        of retrieved documents. If the documents are irrelevant, the system falls back to web
+        search or asks the user to clarify.
+
+        3. Adaptive RAG: Routes queries to different retrieval strategies based on query
+        complexity. Simple factual queries use naive RAG. Complex multi-hop queries use
+        iterative retrieval with query decomposition.
+
+        Agentic RAG is most valuable for enterprise applications where query complexity is
+        high and accuracy requirements are strict. The trade-off is higher latency (5-30s
+        per query) and cost (multiple LLM calls per query).
+      tags: ["agentic", "advanced", "patterns"]
+
+    - topic: "Graph RAG and Knowledge Graphs"
+      content: |
+        Graph RAG combines vector search with knowledge graph traversal. While vector search
+        excels at finding semantically similar content, it struggles with queries that require
+        understanding relationships between entities.
+
+        Example: "Which companies that invested in OpenAI also invested in Anthropic?" A vector
+        search might retrieve documents about OpenAI investors and Anthropic investors separately,
+        but won't find the intersection. A knowledge graph can directly traverse investor
+        relationships to find the answer.
+
+        Microsoft's GraphRAG implementation extracts entities and relationships from documents
+        during indexing, builds a graph, and uses community detection to create hierarchical
+        summaries. At query time, it searches both the vector index and the graph, combining
+        results for comprehensive answers.
+
+        Implementation approaches: Neo4j with LangChain's GraphCypherQAChain for full graph
+        queries, LlamaIndex's KnowledgeGraphIndex for simpler graph-enhanced retrieval, or
+        custom solutions using NetworkX for in-memory graphs on smaller datasets.
+      tags: ["graph-rag", "knowledge-graph", "advanced"]
+
+    - topic: "Common RAG Failure Modes and Solutions"
+      content: |
+        Understanding RAG failure modes is essential for building robust systems.
+
+        1. Missing context: The answer exists in the corpus but wasn't retrieved. Solution:
+        improve chunking to ensure answer-containing chunks are self-contained, add query
+        expansion, or use hybrid search (dense + sparse).
+
+        2. Wrong context: Retrieved chunks are topically relevant but don't contain the answer.
+        Solution: add a reranker (Cohere Rerank, cross-encoder) to filter irrelevant results.
+
+        3. Hallucination despite context: The LLM generates an answer that contradicts the
+        retrieved context. Solution: use constrained generation, add explicit grounding
+        instructions, or implement answer verification.
+
+        4. Context overflow: Too many chunks exceed the LLM context window. Solution: use
+        context compression (LongLLMLingua), map-reduce over chunks, or implement a
+        relevance-based truncation strategy.
+
+        5. Stale data: The knowledge base is outdated. Solution: implement incremental
+        indexing with change detection, set up automated refresh pipelines.
+
+        The RAGAS framework provides metrics to diagnose which failure mode is occurring:
+        context precision (wrong context), context recall (missing context), faithfulness
+        (hallucination), and answer relevance (off-topic).
+      tags: ["failure-modes", "debugging", "evaluation"]
+
+    - topic: "Production RAG Architecture Checklist"
+      content: |
+        A production-ready RAG system needs more than just retrieval and generation. Key
+        components that are often missed in prototypes:
+
+        1. Evaluation pipeline: Automated tests with ground-truth Q&A pairs. Measure retrieval
+        recall, answer accuracy, and faithfulness. Run on every knowledge base update.
+
+        2. Observability: Log every query, retrieval result, and generated answer. Track latency,
+        token usage, and cost per query. Tools: LangSmith, Phoenix (Arize), Langfuse.
+
+        3. Feedback loop: Let users flag incorrect answers. Use this feedback to improve chunking,
+        add missing knowledge, and fine-tune the retrieval model.
+
+        4. Guardrails: Detect and prevent hallucinations, off-topic responses, and inappropriate
+        content. Implement answer grounding checks that verify claims against retrieved context.
+
+        5. Caching: Cache embeddings for frequent queries. Cache LLM responses for repeated
+        questions. Semantic caching catches paraphrased versions of the same question.
+
+        6. Fallback strategy: When confidence is low, escalate to human review or ask the user
+        for clarification instead of guessing. A "I don't know" is better than a wrong answer.
+      tags: ["production", "checklist", "best-practices"]
+
+code_examples:
+  - title: "Naive RAG with LangChain"
+    language: "python"
+    code: |
+      from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+      from langchain_pinecone import PineconeVectorStore
+      from langchain_core.prompts import ChatPromptTemplate
+      from langchain_core.output_parsers import StrOutputParser
+      from langchain_core.runnables import RunnablePassthrough
+
+      # Setup
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+      vectorstore = PineconeVectorStore(index_name="docs", embedding=embeddings)
+      retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+      llm = ChatOpenAI(model="gpt-4o")
+
+      # RAG chain
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on the following context:\n\n{context}\n\nQuestion: {question}"
+      )
+      chain = (
+          {"context": retriever, "question": RunnablePassthrough()}
+          | prompt
+          | llm
+          | StrOutputParser()
+      )
+      answer = chain.invoke("What is the refund policy?")
+
+  - title: "Advanced RAG with Reranking"
+    language: "python"
+    code: |
+      from langchain.retrievers import ContextualCompressionRetriever
+      from langchain_cohere import CohereRerank
+
+      # Wrap retriever with reranker
+      compressor = CohereRerank(model="rerank-v3.5", top_n=3)
+      compression_retriever = ContextualCompressionRetriever(
+          base_compressor=compressor,
+          base_retriever=retriever,
+      )
+
+      # Use in chain (same as above but with compression_retriever)
+      chain = (
+          {"context": compression_retriever, "question": RunnablePassthrough()}
+          | prompt
+          | llm
+          | StrOutputParser()
+      )
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "naive_rag_accuracy"
+      value: 72
+      unit: "percent"
+      context: "Naive RAG on legal Q&A dataset, GPT-4o"
+    - name: "advanced_rag_accuracy"
+      value: 86
+      unit: "percent"
+      context: "Advanced RAG with reranking on legal Q&A dataset"
+    - name: "agentic_rag_accuracy"
+      value: 91
+      unit: "percent"
+      context: "Agentic RAG on legal Q&A dataset, iterative retrieval"
+    - name: "naive_rag_latency"
+      value: 2.1
+      unit: "seconds"
+      context: "Naive RAG end-to-end, GPT-4o"
+    - name: "advanced_rag_latency"
+      value: 4.5
+      unit: "seconds"
+      context: "Advanced RAG with reranking, GPT-4o"
+
+relationships:
+  alternatives: []
+  complements:
+    - slug: "chunking_mechanisms"
+      role: "Prepares documents for RAG indexing"
+    - slug: "embedding_models"
+      role: "Generates embeddings for vector retrieval"
+    - slug: "pinecone"
+      role: "Stores and retrieves embedded chunks"
+  typical_pipeline_position: "architecture"
+  pipeline_predecessors: ["vector_databases"]
+  pipeline_successors: ["llm_generation"]

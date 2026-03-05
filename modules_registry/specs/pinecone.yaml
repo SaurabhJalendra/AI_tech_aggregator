@@ -1,0 +1,389 @@
+meta:
+  slug: "pinecone"
+  name: "Pinecone"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "managed"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Fully managed vector database for production AI applications"
+  description: |
+    Pinecone is a managed vector database designed for machine learning applications
+    that require fast and scalable similarity search. It handles the infrastructure
+    complexity of vector indexing, including sharding, replication, and scaling,
+    letting developers focus on building AI features rather than managing databases.
+
+    Pinecone's serverless architecture automatically scales based on usage, eliminating
+    the need to provision and manage infrastructure. It supports metadata filtering,
+    sparse-dense hybrid search, and namespaces for multi-tenant data isolation.
+
+    As one of the earliest purpose-built vector databases, Pinecone has strong enterprise
+    adoption and extensive integrations with frameworks like LangChain, LlamaIndex, and
+    the major LLM providers. The trade-off is vendor lock-in and higher cost compared
+    to open-source alternatives for large-scale deployments.
+  logo_url: "/assets/modules/pinecone.svg"
+  website: "https://www.pinecone.io"
+  documentation: "https://docs.pinecone.io"
+  github: "https://github.com/pinecone-io/pinecone-python-client"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Semantic search at scale"
+    - "RAG knowledge retrieval"
+    - "Recommendation systems"
+    - "Anomaly detection"
+    - "Image similarity search"
+  supported_operations:
+    - "upsert"
+    - "query"
+    - "delete"
+    - "fetch"
+    - "list"
+    - "update"
+    - "describe_index_stats"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "compatible"
+    - slug: "cohere_embeddings"
+      type: "compatible"
+    - slug: "haystack"
+      type: "community"
+
+technical_specs:
+  max_dimensions: 20000
+  max_vectors_per_index: "unlimited (serverless)"
+  supported_distance_metrics:
+    - "cosine"
+    - "euclidean"
+    - "dotproduct"
+  supported_index_types:
+    - "serverless"
+    - "pod-based"
+  metadata_filtering: true
+  hybrid_search: true
+  multi_tenancy: true
+  namespaces: true
+  max_metadata_size_bytes: 40960
+  max_vector_dimensionality: 20000
+  batch_upsert_limit: 100
+  sdk_languages:
+    - "python"
+    - "node"
+    - "go"
+    - "java"
+    - "rust"
+  cloud_providers:
+    - "AWS"
+    - "GCP"
+    - "Azure"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Sub-100ms p99 query latency at scale. Serverless architecture maintains consistent performance as data grows."
+  scalability:
+    score: 9
+    justification: "Serverless architecture scales automatically to handle billions of vectors without manual intervention."
+  ease_of_use:
+    score: 9
+    justification: "Fully managed with simple API, excellent documentation, and native integrations with major AI frameworks."
+  cost_efficiency:
+    score: 5
+    justification: "Free tier limited to 100K vectors. Serverless pricing based on read/write units can become expensive at scale compared to self-hosted alternatives."
+  community:
+    score: 7
+    justification: "Active developer community, strong enterprise adoption. Less community-driven than open-source alternatives."
+  maturity:
+    score: 9
+    justification: "Production-proven since 2021 with major enterprise customers including Shopify, Hubspot, and Notion."
+  flexibility:
+    score: 5
+    justification: "Managed-only service with no self-hosted option. Limited to supported distance metrics and index types."
+  data_privacy:
+    score: 7
+    justification: "SOC2 Type II certified. HIPAA available on enterprise plan. Data stays in chosen cloud region but cannot be self-hosted."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        Pinecone's architecture is built around the concept of indexes, which are collections
+        of vectors organized for efficient similarity search. In the serverless architecture
+        (the default since 2024), indexes automatically scale based on data volume and query load.
+
+        Each index can contain multiple namespaces, which provide logical separation within
+        an index. Namespaces are useful for multi-tenant applications where each tenant's
+        data should be isolated. Queries are scoped to a single namespace by default.
+
+        Under the hood, Pinecone uses a proprietary approximate nearest neighbor (ANN)
+        algorithm optimized for high-dimensional vectors. The indexing strategy is designed
+        to maintain consistent query latency as the dataset grows, unlike some open-source
+        solutions where performance can degrade with scale.
+
+        The pod-based architecture (legacy) required manual sizing and scaling of compute
+        pods. The serverless architecture abstracts this away, billing based on storage
+        (vectors stored) and compute (read/write units consumed).
+      tags: ["architecture", "internals"]
+
+    - topic: "When to Choose Pinecone"
+      content: |
+        Pinecone is the right choice when you need a production-ready vector database with
+        minimal operational overhead. It excels in scenarios where:
+
+        1. Your team lacks the DevOps capacity to manage database infrastructure. Pinecone
+        handles scaling, replication, backups, and upgrades automatically.
+
+        2. You need consistent, low-latency queries at scale. The serverless architecture
+        maintains sub-100ms p99 latency regardless of dataset size.
+
+        3. You're building a multi-tenant SaaS application. Namespaces provide clean data
+        isolation without the complexity of managing separate indexes.
+
+        4. Time-to-market is critical. Pinecone's simple API and framework integrations
+        let you go from prototype to production in days, not weeks.
+
+        Pinecone is NOT the right choice when: you need to self-host for compliance reasons,
+        cost is the primary concern for large datasets (1B+ vectors), you need full-text
+        search alongside vector search (consider Weaviate or Elasticsearch), or you need
+        graph-based relationships between vectors (consider Neo4j or Weaviate).
+      tags: ["decision", "comparison"]
+
+    - topic: "Cost Model and Optimization"
+      content: |
+        Pinecone serverless pricing is based on three components: storage, read units, and
+        write units.
+
+        Storage is billed per GB-month of vectors stored. A single 1536-dimensional vector
+        (float32) is approximately 6KB. One million vectors at 1536 dimensions costs roughly
+        $0.33/month for storage alone.
+
+        Read units are consumed by queries. A single query against a small index might consume
+        5-10 read units. With metadata filtering, costs increase. A million queries per month
+        at 10 RU per query costs approximately $8.
+
+        Write units are consumed by upserts, updates, and deletes. Batch upserts (up to 100
+        vectors per call) are more efficient than individual upserts.
+
+        Cost optimization strategies: (1) Use smaller embedding dimensions (e.g., text-embedding-3-small
+        at 1536d instead of text-embedding-3-large at 3072d), (2) Batch upserts to minimize
+        write unit consumption, (3) Use metadata filtering to narrow queries before vector
+        search, (4) Consider the free tier (100K vectors) for development and testing.
+      tags: ["pricing", "cost", "optimization"]
+
+    - topic: "Integration with LangChain"
+      content: |
+        Pinecone has first-class support in LangChain through the langchain-pinecone package.
+        The integration supports all standard LangChain vector store operations: from_documents,
+        from_texts, similarity_search, similarity_search_with_score, and max_marginal_relevance_search.
+
+        Setup requires creating a Pinecone index first (via the Pinecone console or SDK), then
+        connecting LangChain to it. The PineconeVectorStore class handles embedding generation,
+        upsert, and querying through a unified interface.
+
+        For RAG applications, the standard pattern is to create a retriever from the vector
+        store and chain it with a language model. LangChain's RetrievalQA chain or the newer
+        LCEL (LangChain Expression Language) syntax both work with Pinecone.
+
+        Advanced features like metadata filtering, namespace selection, and hybrid search are
+        all accessible through the LangChain integration's search_kwargs parameter.
+      tags: ["integration", "langchain", "code"]
+
+    - topic: "Hybrid Search with Sparse-Dense Vectors"
+      content: |
+        Pinecone supports hybrid search by combining dense vectors (from embedding models)
+        with sparse vectors (from BM25 or SPLADE). This combines the semantic understanding
+        of dense embeddings with the keyword-matching precision of sparse retrieval.
+
+        Sparse vectors represent documents as weighted term frequencies, similar to traditional
+        TF-IDF or BM25 scoring. When a user searches for "Kubernetes deployment error 4032",
+        the sparse component ensures that the specific error code is matched, while the dense
+        component understands the semantic context of deployment issues.
+
+        To use hybrid search in Pinecone, include both dense_vector and sparse_vector in your
+        upsert and query calls. The alpha parameter controls the balance between sparse and
+        dense scoring (0 = purely sparse, 1 = purely dense).
+
+        Tools like Pinecone's built-in sparse encoder or external libraries like SPLADE can
+        generate sparse vectors. For most applications, an alpha of 0.5-0.7 (slightly favoring
+        dense) produces the best results.
+      tags: ["hybrid-search", "sparse", "advanced"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of Pinecone to be aware of:
+
+        1. No self-hosted option. If regulatory requirements mandate on-premises data storage,
+        Pinecone cannot be used. Consider Weaviate, Qdrant, or Milvus instead.
+
+        2. Metadata size limit of 40KB per vector. If you need to store large payloads alongside
+        vectors, you'll need a separate database for the full documents.
+
+        3. No built-in full-text search. Sparse vectors provide keyword matching, but it's not
+        equivalent to a full-text search engine like Elasticsearch.
+
+        4. Batch upsert limit of 100 vectors per call. For large initial loads, this means
+        many API calls. Use async/concurrent upserts to speed up bulk loading.
+
+        5. Index deletion is permanent and immediate. There's no soft-delete or recovery option
+        at the index level. Vector-level deletes are supported.
+
+        6. Query results are limited to 10,000 vectors per query. For use cases requiring
+        full-collection scans, Pinecone is not appropriate.
+
+        7. Cold start latency for serverless indexes. If an index hasn't been queried recently,
+        the first query may be slower as resources spin up.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Upsert and Query"
+    language: "python"
+    code: |
+      from pinecone import Pinecone
+
+      pc = Pinecone(api_key="your-api-key")
+      index = pc.Index("my-index")
+
+      # Upsert vectors with metadata
+      index.upsert(
+          vectors=[
+              {
+                  "id": "doc-1",
+                  "values": [0.1, 0.2, ...],  # 1536-dim embedding
+                  "metadata": {"source": "contracts", "year": 2024}
+              }
+          ],
+          namespace="legal-docs"
+      )
+
+      # Query with metadata filter
+      results = index.query(
+          vector=[0.1, 0.2, ...],
+          top_k=5,
+          namespace="legal-docs",
+          filter={"year": {"$gte": 2023}},
+          include_metadata=True
+      )
+
+  - title: "RAG Pipeline with LangChain"
+    language: "python"
+    code: |
+      from langchain_pinecone import PineconeVectorStore
+      from langchain_openai import OpenAIEmbeddings
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      # Create vector store from documents
+      vectorstore = PineconeVectorStore.from_documents(
+          documents,
+          embeddings,
+          index_name="my-index",
+          namespace="knowledge-base"
+      )
+
+      # Create retriever
+      retriever = vectorstore.as_retriever(
+          search_type="mmr",
+          search_kwargs={"k": 5, "fetch_k": 20}
+      )
+
+      # Use in a RAG chain
+      from langchain_core.prompts import ChatPromptTemplate
+      from langchain_openai import ChatOpenAI
+
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on context:\n{context}\n\nQuestion: {question}"
+      )
+      llm = ChatOpenAI(model="gpt-4o")
+      chain = prompt | llm
+
+  - title: "Hybrid Search with Sparse-Dense"
+    language: "python"
+    code: |
+      from pinecone import Pinecone
+      from pinecone_text.sparse import BM25Encoder
+
+      pc = Pinecone(api_key="your-api-key")
+      index = pc.Index("hybrid-index")
+
+      # Fit BM25 on your corpus
+      bm25 = BM25Encoder()
+      bm25.fit(corpus_texts)
+
+      # Upsert with both dense and sparse vectors
+      for doc_id, text, dense_vector in documents:
+          sparse_vector = bm25.encode_documents(text)
+          index.upsert(vectors=[{
+              "id": doc_id,
+              "values": dense_vector,
+              "sparse_values": sparse_vector,
+              "metadata": {"text": text[:1000]}
+          }])
+
+      # Query with hybrid search
+      query_dense = embed_model.encode(query)
+      query_sparse = bm25.encode_queries(query)
+
+      results = index.query(
+          vector=query_dense,
+          sparse_vector=query_sparse,
+          top_k=10,
+          include_metadata=True
+      )
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "insert_throughput"
+      value: 5000
+      unit: "vectors/sec"
+      context: "1536-dim, batch size 100, serverless"
+    - name: "query_latency_p50"
+      value: 12
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors"
+    - name: "query_latency_p99"
+      value: 45
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors"
+    - name: "query_latency_p99_10m"
+      value: 68
+      unit: "ms"
+      context: "1536-dim, top-k=10, 10M vectors"
+    - name: "recall_at_10"
+      value: 0.95
+      unit: "ratio"
+      context: "1536-dim, 1M vectors, approximate search"
+    - name: "hybrid_search_p50"
+      value: 18
+      unit: "ms"
+      context: "1536-dim sparse+dense, top-k=10, 1M vectors"
+
+relationships:
+  alternatives:
+    - slug: "weaviate"
+      note: "Open-source with built-in vectorization and GraphQL API"
+    - slug: "qdrant"
+      note: "Open-source Rust-based with strong filtering and payload support"
+    - slug: "chromadb"
+      note: "Developer-focused embedded vector database for prototyping"
+    - slug: "milvus"
+      note: "Open-source distributed vector database for enterprise scale"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Generates embeddings stored in Pinecone indexes"
+    - slug: "langchain"
+      role: "Orchestration framework with native Pinecone integration"
+    - slug: "llamaindex"
+      role: "Data framework for connecting LLMs with Pinecone"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

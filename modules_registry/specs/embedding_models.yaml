@@ -1,0 +1,273 @@
+meta:
+  slug: "embedding_models"
+  name: "Embedding Models"
+  version: "1.0.0"
+  category: "embeddings"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Models that convert text into dense vector representations for semantic search"
+  description: |
+    Embedding models transform text into fixed-size numerical vectors that capture semantic
+    meaning. Two pieces of text with similar meanings produce vectors that are close together
+    in the embedding space, enabling similarity search, clustering, and classification.
+
+    The choice of embedding model impacts every downstream component in a RAG pipeline: the
+    quality of vector search, the relevance of retrieved context, and ultimately the accuracy
+    of LLM-generated answers. Key factors include dimensionality, maximum input length,
+    multilingual support, and the trade-off between quality and cost.
+
+    The landscape has evolved rapidly, with new models consistently pushing the state of the
+    art on benchmarks like MTEB. OpenAI's text-embedding-3 family, Cohere's embed-v4, and
+    open-source models like BAAI/bge and Nomic embed compete on different axes of quality,
+    cost, and deployment flexibility.
+  documentation: "https://huggingface.co/spaces/mteb/leaderboard"
+  license: "Various"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Semantic search and retrieval"
+    - "RAG context embedding"
+    - "Document clustering"
+    - "Text classification"
+    - "Duplicate detection"
+  supported_operations:
+    - "text_embedding"
+    - "batch_embedding"
+    - "dimension_reduction"
+    - "fine_tuning"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "weaviate"
+      type: "compatible"
+
+technical_specs:
+  popular_models:
+    openai_text_embedding_3_small:
+      dimensions: 1536
+      max_input_tokens: 8191
+      pricing_per_million_tokens: 0.02
+      mteb_average_score: 62.3
+    openai_text_embedding_3_large:
+      dimensions: 3072
+      max_input_tokens: 8191
+      pricing_per_million_tokens: 0.13
+      mteb_average_score: 64.6
+    cohere_embed_v3:
+      dimensions: 1024
+      max_input_tokens: 512
+      pricing_per_million_tokens: 0.10
+      mteb_average_score: 64.5
+    voyage_3:
+      dimensions: 1024
+      max_input_tokens: 32000
+      pricing_per_million_tokens: 0.06
+      mteb_average_score: 67.6
+    bge_large_en_v1_5:
+      dimensions: 1024
+      max_input_tokens: 512
+      pricing_per_million_tokens: 0.0
+      mteb_average_score: 64.0
+      self_hosted: true
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Top API models achieve 64-68 MTEB scores. Quality varies significantly between models."
+  scalability:
+    score: 8
+    justification: "API-based models scale infinitely. Self-hosted models limited by GPU availability."
+  ease_of_use:
+    score: 9
+    justification: "Simple API call for API models. Self-hosted requires GPU setup but HuggingFace simplifies this."
+  cost_efficiency:
+    score: 7
+    justification: "API costs range from $0.02 to $0.13 per million tokens. Self-hosted models are free but require GPU."
+  community:
+    score: 9
+    justification: "Extremely active community. MTEB leaderboard, HuggingFace hub, and extensive benchmarking."
+  maturity:
+    score: 9
+    justification: "Text embeddings are a mature technology. Major providers offer stable, production-ready APIs."
+  flexibility:
+    score: 8
+    justification: "Wide range of models from tiny (384-dim) to large (3072-dim). Fine-tuning available for most."
+  data_privacy:
+    score: 6
+    justification: "API models send data to providers. Self-hosted models keep data local. Choose based on requirements."
+
+knowledge:
+  entries:
+    - topic: "Model Selection Guide"
+      content: |
+        Choosing the right embedding model depends on your specific requirements across five
+        dimensions: quality, cost, latency, input length, and deployment constraints.
+
+        For highest quality without cost constraints, Voyage AI's voyage-3 leads the MTEB
+        leaderboard. OpenAI's text-embedding-3-large is a close second with broader adoption.
+
+        For cost-sensitive applications, OpenAI's text-embedding-3-small offers excellent
+        quality at $0.02 per million tokens — roughly 100x cheaper than LLM API calls.
+
+        For privacy-sensitive deployments requiring self-hosting, BAAI/bge-large-en-v1.5 and
+        Nomic embed provide competitive quality with the ability to run on your own hardware.
+
+        For long documents, Voyage AI supports up to 32K tokens per input. Most other models
+        are limited to 512-8191 tokens, requiring document chunking before embedding.
+      tags: ["decision", "comparison", "model-selection"]
+
+    - topic: "Dimensionality and Quality Trade-offs"
+      content: |
+        Embedding dimensionality directly affects storage cost, query latency, and retrieval
+        quality. Higher dimensions capture more semantic nuance but cost more to store and search.
+
+        OpenAI's text-embedding-3 models support Matryoshka representation learning, which means
+        you can truncate vectors to lower dimensions without retraining. A 3072-dim embedding
+        truncated to 256 dimensions retains most of its quality while using 12x less storage.
+
+        For most RAG applications, 1024-1536 dimensions provide an excellent balance. Going to
+        3072 dimensions improves retrieval by 2-5% but doubles storage and query costs. Going
+        below 512 dimensions starts to noticeably impact quality.
+
+        When using pgvector or other non-specialized vector stores, lower dimensions (512-1024)
+        can significantly improve query performance due to reduced memory bandwidth requirements.
+      tags: ["dimensionality", "optimization"]
+
+    - topic: "Fine-Tuning Embedding Models"
+      content: |
+        Fine-tuning adapts a pre-trained embedding model to your specific domain, improving
+        retrieval quality for specialized content. This is especially valuable for domains with
+        unique terminology (legal, medical, scientific) or specific retrieval patterns.
+
+        The standard approach uses contrastive learning: provide pairs of (query, relevant_document)
+        and optionally (query, irrelevant_document). The model learns to push relevant pairs
+        closer together and irrelevant pairs further apart in the embedding space.
+
+        OpenAI supports fine-tuning text-embedding-3-small and text-embedding-3-large via their
+        API. Provide a JSONL file of training pairs. Cohere offers similar functionality.
+
+        For open-source models, the sentence-transformers library provides a comprehensive
+        fine-tuning pipeline. Use MultipleNegativesRankingLoss for contrastive learning with
+        in-batch negatives, which is efficient and effective for retrieval tasks.
+
+        Expect 5-15% improvement in domain-specific retrieval after fine-tuning with 1,000-10,000
+        training pairs. Diminishing returns typically set in beyond 50,000 pairs.
+      tags: ["fine-tuning", "advanced"]
+
+    - topic: "Benchmarking with MTEB"
+      content: |
+        The Massive Text Embedding Benchmark (MTEB) is the standard benchmark for evaluating
+        embedding models. It covers 8 task types across 58 datasets: retrieval, classification,
+        clustering, pair classification, reranking, STS, summarization, and bitext mining.
+
+        The MTEB leaderboard (huggingface.co/spaces/mteb/leaderboard) is updated regularly
+        and is the most reliable source for comparing embedding model quality. However, MTEB
+        scores are averages across many tasks — your specific use case may differ significantly.
+
+        Key metrics to focus on for RAG: the Retrieval subset score (nDCG@10 on retrieval
+        datasets) is most relevant. Models that rank highly on retrieval may rank differently
+        on classification or clustering tasks.
+
+        Always validate MTEB rankings on your own data. Create a test set of 50-100 queries
+        with known relevant documents and measure recall@k with different embedding models.
+        Domain-specific performance can vary dramatically from MTEB averages.
+      tags: ["benchmarks", "evaluation", "mteb"]
+
+    - topic: "Batch Processing and Cost Optimization"
+      content: |
+        Embedding large document collections requires careful batch processing to manage costs
+        and throughput. API rate limits, batch size optimization, and caching strategies all
+        impact the total cost and time of an embedding job.
+
+        OpenAI's embedding API supports batches of up to 2048 texts per request. Larger batches
+        are more efficient due to reduced HTTP overhead. For large collections, use the Batch
+        API for 50% cost savings with 24-hour turnaround.
+
+        Caching is critical for cost control. Store embeddings in your vector database and only
+        re-embed when source documents change. Use content hashing to detect changes. For
+        a 1M-document collection, re-embedding everything costs $20-130 with OpenAI. Incremental
+        updates based on change detection reduce this to pennies per day.
+
+        For self-hosted models, GPU batch processing with sentence-transformers can achieve
+        10,000+ embeddings per second on a single A100 GPU, making the cost essentially zero
+        after hardware investment.
+      tags: ["batch-processing", "cost", "optimization"]
+
+code_examples:
+  - title: "OpenAI Embeddings"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()
+      response = client.embeddings.create(
+          model="text-embedding-3-small",
+          input=["Hello world", "Semantic search is powerful"],
+          dimensions=1536,  # optional: reduce dimensions
+      )
+      embeddings = [item.embedding for item in response.data]
+
+  - title: "Self-Hosted with Sentence Transformers"
+    language: "python"
+    code: |
+      from sentence_transformers import SentenceTransformer
+
+      model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+      texts = ["Hello world", "Semantic search is powerful"]
+      embeddings = model.encode(texts, normalize_embeddings=True)
+
+  - title: "LangChain Integration"
+    language: "python"
+    code: |
+      from langchain_openai import OpenAIEmbeddings
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+      vectors = embeddings.embed_documents(["doc1", "doc2", "doc3"])
+      query_vector = embeddings.embed_query("search query")
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "mteb_retrieval_openai_small"
+      value: 51.7
+      unit: "nDCG@10"
+      context: "text-embedding-3-small, MTEB retrieval tasks"
+    - name: "mteb_retrieval_openai_large"
+      value: 55.4
+      unit: "nDCG@10"
+      context: "text-embedding-3-large, MTEB retrieval tasks"
+    - name: "mteb_retrieval_voyage_3"
+      value: 58.2
+      unit: "nDCG@10"
+      context: "voyage-3, MTEB retrieval tasks"
+    - name: "mteb_retrieval_bge_large"
+      value: 54.3
+      unit: "nDCG@10"
+      context: "bge-large-en-v1.5, MTEB retrieval tasks"
+    - name: "throughput_openai_batch"
+      value: 3000
+      unit: "texts/sec"
+      context: "text-embedding-3-small, batch size 2048"
+    - name: "throughput_self_hosted"
+      value: 10000
+      unit: "texts/sec"
+      context: "bge-large-en-v1.5, A100 GPU, batch size 256"
+
+relationships:
+  alternatives: []
+  complements:
+    - slug: "pinecone"
+      role: "Stores and indexes the generated embeddings"
+    - slug: "chunking_mechanisms"
+      role: "Chunks text before embedding"
+  typical_pipeline_position: "embedding"
+  pipeline_predecessors: ["chunking"]
+  pipeline_successors: ["vector_databases"]
