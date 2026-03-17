@@ -1,0 +1,356 @@
+meta:
+  slug: "gptcache"
+  name: "GPTCache"
+  version: "1.0.0"
+  category: "caching"
+  subcategory: "llm_caching"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source semantic caching library for LLM applications to reduce cost and latency"
+  description: |
+    GPTCache is an open-source library that provides semantic caching for LLM API calls.
+    It stores LLM responses and serves them for semantically similar future queries, reducing
+    both API costs and response latency. GPTCache achieves this by embedding queries and
+    comparing them against previously cached query-response pairs using vector similarity.
+
+    The library is modular, with pluggable components for embedding generation, vector storage,
+    similarity evaluation, and cache management. It supports multiple embedding backends
+    (OpenAI, ONNX, Hugging Face), multiple storage backends (SQLite+FAISS, Redis, PostgreSQL,
+    Milvus), and configurable similarity thresholds.
+
+    GPTCache integrates with OpenAI, LangChain, and other LLM frameworks through adapter
+    patterns that intercept API calls and check the cache before making external requests.
+    This makes it a drop-in optimization for existing LLM applications.
+
+    Developed by Zilliz (the team behind Milvus), GPTCache has seen strong adoption in
+    cost-sensitive LLM deployments, particularly for chatbots, Q&A systems, and applications
+    with repetitive query patterns.
+  logo_url: "/assets/modules/gptcache.svg"
+  website: "https://gptcache.readthedocs.io/"
+  documentation: "https://gptcache.readthedocs.io/"
+  github: "https://github.com/zilliztech/GPTCache"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Caching LLM API responses to reduce costs"
+    - "Reducing latency for semantically similar queries"
+    - "Scaling LLM-powered chatbots cost-effectively"
+    - "Offline-capable LLM applications using cache"
+    - "Rate limit mitigation through caching"
+  supported_operations:
+    - "semantic_cache_lookup"
+    - "cache_store"
+    - "cache_eviction"
+    - "adapter_openai"
+    - "adapter_langchain"
+    - "similarity_evaluation"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "milvus"
+      type: "native"
+    - slug: "redis_vector"
+      type: "compatible"
+
+technical_specs:
+  embedding_backends:
+    - "ONNX (default, local)"
+    - "OpenAI"
+    - "Hugging Face"
+    - "Cohere"
+    - "sentence-transformers"
+  storage_backends:
+    - name: "SQLite + FAISS"
+      description: "Default local backend, good for development"
+    - name: "Redis"
+      description: "Production-ready with TTL support"
+    - name: "PostgreSQL + pgvector"
+      description: "Integrated with existing Postgres infrastructure"
+    - name: "Milvus"
+      description: "Scalable vector storage for large caches"
+    - name: "ChromaDB"
+      description: "Lightweight vector store option"
+  similarity_evaluators:
+    - "ONNX model (default)"
+    - "numpy cosine similarity"
+    - "exact match"
+    - "custom evaluator"
+  max_cache_size: "Configurable, limited by storage backend"
+  cache_lookup_latency: "5-15ms (local), 10-30ms (remote)"
+  python_version: "3.8+"
+  installation: "pip install gptcache"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Cache hits return in 5-15ms vs 500-3000ms for LLM API calls. 100x latency improvement for cached queries."
+  scalability:
+    score: 7
+    justification: "Scales with the chosen storage backend. Milvus and Redis backends support millions of cached entries."
+  ease_of_use:
+    score: 7
+    justification: "Adapter pattern makes integration straightforward for OpenAI and LangChain. Custom configurations require understanding the modular architecture."
+  cost_efficiency:
+    score: 9
+    justification: "Open-source with no license costs. Direct LLM API cost savings proportional to cache hit rate. Embedding costs for cache lookup are minimal."
+  community:
+    score: 6
+    justification: "Growing community backed by Zilliz. Active development with regular releases. Documentation is improving but still has gaps."
+  maturity:
+    score: 6
+    justification: "Released in 2023, production usage is growing. Some edge cases in cache invalidation and multi-turn conversations still being addressed."
+  flexibility:
+    score: 8
+    justification: "Highly modular with pluggable embedding, storage, and evaluation components. Supports custom similarity functions and cache policies."
+  data_privacy:
+    score: 8
+    justification: "Fully self-hosted with local storage backends. No data leaves the infrastructure. ONNX embedding runs locally without external API calls."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        GPTCache has a modular architecture with four core components:
+
+        1. Pre-processor: Extracts and normalizes the query from the LLM request. For chat
+        completions, it extracts the last user message. Custom pre-processors can include
+        conversation context.
+
+        2. Embedding Generator: Converts the extracted query into a vector embedding. The
+        default ONNX backend runs locally without external API calls. OpenAI and Hugging Face
+        backends are also supported.
+
+        3. Cache Manager: Combines a scalar store (for query/response text, metadata) with
+        a vector store (for embeddings). The default is SQLite + FAISS. Production deployments
+        typically use Redis or Milvus.
+
+        4. Similarity Evaluator: Determines whether a cache hit is similar enough to return.
+        The default ONNX evaluator uses a trained model to assess semantic similarity. Custom
+        evaluators can implement domain-specific similarity logic.
+
+        The flow: request arrives -> pre-processor extracts query -> embedding generated ->
+        vector search in cache -> if similarity > threshold, return cached response ->
+        otherwise, forward to LLM, cache the response, and return it.
+      tags: ["architecture", "components"]
+
+    - topic: "Configuration and Tuning"
+      content: |
+        Key configuration parameters for optimal GPTCache performance:
+
+        Similarity threshold: Controls when a cache hit is returned. Default is model-based
+        evaluation. For cosine similarity, start with 0.90 and adjust based on accuracy
+        monitoring. Lower thresholds increase hit rate but risk incorrect responses.
+
+        Embedding model: The default ONNX model is fast and runs locally but has lower
+        quality than OpenAI or sentence-transformers embeddings. For production, consider
+        using the same embedding model as your application to ensure consistent semantics.
+
+        Cache size and eviction: Configure maximum cache size based on available storage.
+        GPTCache supports LRU (least recently used) eviction. For time-sensitive applications,
+        set TTL (time-to-live) on cache entries.
+
+        Pre-processing: For multi-turn conversations, configure the pre-processor to include
+        relevant conversation history in the cache key. Without this, the cache only considers
+        the last message, which may be ambiguous without context.
+
+        Storage backend: Use SQLite + FAISS for development and testing. Switch to Redis or
+        Milvus for production deployments that need persistence, scalability, and TTL support.
+      tags: ["configuration", "tuning", "best-practices"]
+
+    - topic: "Integration Patterns"
+      content: |
+        GPTCache provides adapter patterns for common LLM frameworks:
+
+        OpenAI adapter: Replace `openai.ChatCompletion.create` with the GPTCache-wrapped
+        version. The adapter intercepts calls, checks the cache, and only forwards to OpenAI
+        on cache misses. This is the simplest integration path.
+
+        LangChain adapter: GPTCache can be used as a LangChain cache backend via the
+        `GPTCache` class in `langchain.cache`. Set it globally with `set_llm_cache()` or
+        per-chain.
+
+        Custom adapter: For other frameworks, use GPTCache's core API directly. Call
+        `cache.get()` before your LLM call and `cache.put()` after receiving the response.
+
+        Multi-model caching: GPTCache supports caching across different LLM models. A response
+        from GPT-4 can be served for a similar query even if the current request targets
+        GPT-4o, if configured to do so. This is useful during model migrations.
+
+        Streaming support: GPTCache can cache and replay streaming responses, maintaining
+        the streaming experience for the user even on cache hits.
+      tags: ["integration", "patterns"]
+
+    - topic: "Limitations and Considerations"
+      content: |
+        Important limitations to consider:
+
+        1. Multi-turn conversation caching is challenging. The same question ("Can you explain
+        more?") has different meanings depending on conversation context. The pre-processor
+        must include relevant context in the cache key.
+
+        2. Personalized responses cannot be cached across users. If the LLM response depends
+        on user-specific context (preferences, history), the cache must be scoped per user.
+
+        3. Cache warming is not automatic. New topics or query patterns will always miss the
+        cache until they've been seen at least once.
+
+        4. Embedding quality directly affects cache accuracy. Low-quality embeddings produce
+        more false hits and misses. Invest in a good embedding model for the cache.
+
+        5. Cache size management requires planning. Each entry stores an embedding vector
+        plus the response text. For large-scale deployments, storage costs and eviction
+        policies need attention.
+
+        6. No built-in cache invalidation for content changes. If your knowledge base changes,
+        you must manually invalidate relevant cache entries or implement custom invalidation logic.
+      tags: ["limitations", "considerations"]
+
+code_examples:
+  - title: "Basic GPTCache with OpenAI"
+    language: "python"
+    code: |
+      from gptcache import Cache
+      from gptcache.adapter import openai
+      from gptcache.embedding import Onnx
+      from gptcache.manager import manager_factory
+      from gptcache.similarity_evaluation import OnnxModelEvaluation
+
+      # Initialize cache
+      cache = Cache()
+      onnx = Onnx()
+
+      data_manager = manager_factory(
+          "sqlite,faiss",
+          vector_params={"dimension": onnx.dimension}
+      )
+
+      cache.init(
+          embedding_func=onnx.to_embeddings,
+          data_manager=data_manager,
+          similarity_evaluation=OnnxModelEvaluation()
+      )
+
+      # Use the cached OpenAI adapter
+      response = openai.ChatCompletion.create(
+          model="gpt-4o",
+          messages=[
+              {"role": "user", "content": "What is machine learning?"}
+          ],
+          cache_obj=cache
+      )
+      print(response["choices"][0]["message"]["content"])
+
+  - title: "GPTCache with Redis Backend"
+    language: "python"
+    code: |
+      from gptcache import Cache
+      from gptcache.embedding import OpenAI as OpenAIEmbedding
+      from gptcache.manager import manager_factory
+      from gptcache.similarity_evaluation import OnnxModelEvaluation
+
+      cache = Cache()
+
+      # Use OpenAI embeddings for higher quality
+      embedding = OpenAIEmbedding(model="text-embedding-3-small")
+
+      # Redis backend for production
+      data_manager = manager_factory(
+          "redis,redis_vector",
+          scalar_config={"url": "redis://localhost:6379"},
+          vector_config={
+              "url": "redis://localhost:6379",
+              "dimension": embedding.dimension
+          }
+      )
+
+      cache.init(
+          embedding_func=embedding.to_embeddings,
+          data_manager=data_manager,
+          similarity_evaluation=OnnxModelEvaluation()
+      )
+
+  - title: "GPTCache with LangChain"
+    language: "python"
+    code: |
+      from langchain.cache import GPTCache
+      from langchain.globals import set_llm_cache
+      from langchain_openai import ChatOpenAI
+      from gptcache import Cache
+      from gptcache.embedding import Onnx
+      from gptcache.manager import manager_factory
+      from gptcache.similarity_evaluation import OnnxModelEvaluation
+
+      def init_gptcache(cache_obj: Cache, llm: str):
+          onnx = Onnx()
+          data_manager = manager_factory(
+              "sqlite,faiss",
+              vector_params={"dimension": onnx.dimension}
+          )
+          cache_obj.init(
+              embedding_func=onnx.to_embeddings,
+              data_manager=data_manager,
+              similarity_evaluation=OnnxModelEvaluation()
+          )
+
+      # Set as global LangChain cache
+      set_llm_cache(GPTCache(init_gptcache))
+
+      llm = ChatOpenAI(model="gpt-4o")
+
+      # First call - cache miss
+      result1 = llm.invoke("Explain transformers in AI")
+
+      # Second call - cache hit (semantically similar)
+      result2 = llm.invoke("What are transformer models in artificial intelligence?")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "cache_hit_latency"
+      value: 8
+      unit: "ms"
+      context: "SQLite + FAISS backend, local"
+    - name: "cache_hit_latency_redis"
+      value: 15
+      unit: "ms"
+      context: "Redis backend, same network"
+    - name: "cache_miss_overhead"
+      value: 25
+      unit: "ms"
+      context: "Additional latency for embedding + cache check on miss"
+    - name: "hit_rate_chatbot"
+      value: 45
+      unit: "percent"
+      context: "Customer support chatbot, 50K daily queries"
+    - name: "cost_reduction"
+      value: 42
+      unit: "percent"
+      context: "LLM API cost savings with 45% cache hit rate"
+    - name: "onnx_embedding_latency"
+      value: 3
+      unit: "ms"
+      context: "Local ONNX embedding generation per query"
+
+relationships:
+  alternatives:
+    - slug: "semantic_caching"
+      note: "General concept; GPTCache is a specific implementation"
+    - slug: "prompt_caching"
+      note: "Provider-level caching for prompt prefixes rather than full semantic caching"
+  complements:
+    - slug: "milvus"
+      role: "Scalable vector storage backend for GPTCache"
+    - slug: "redis_vector"
+      role: "Production-ready cache storage with TTL support"
+    - slug: "langchain"
+      role: "Framework integration via GPTCache LangChain adapter"
+  typical_pipeline_position: "caching"
+  pipeline_predecessors: ["user_query"]
+  pipeline_successors: ["retrieval", "llm_generation"]

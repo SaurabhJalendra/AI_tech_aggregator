@@ -1,0 +1,241 @@
+meta:
+  slug: "firecrawl"
+  name: "Firecrawl"
+  version: "1.0.0"
+  category: "data_ingestion"
+  subcategory: "web_scraping"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Turn any website into LLM-ready markdown or structured data"
+  description: |
+    Firecrawl is a web scraping and crawling API designed specifically for AI
+    and LLM applications. It converts web pages into clean markdown or structured
+    data, handling JavaScript rendering, anti-bot protections, and content
+    extraction automatically. Unlike traditional scraping tools, Firecrawl is
+    optimized for producing output that works well as context for language models.
+
+    Firecrawl offers three main capabilities: scraping individual pages, crawling
+    entire websites, and mapping site structures. The scrape endpoint converts
+    a single URL to markdown. The crawl endpoint follows links to scrape multiple
+    pages from a domain. The map endpoint discovers all URLs on a site without
+    extracting content.
+
+    The service can be used as a cloud API or self-hosted via the open-source
+    repository. It has become a key component in RAG pipelines where web content
+    needs to be ingested as a knowledge source.
+  logo_url: "/assets/modules/firecrawl.svg"
+  website: "https://firecrawl.dev"
+  documentation: "https://docs.firecrawl.dev"
+  github: "https://github.com/mendableai/firecrawl"
+  license: "AGPL-3.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Web content ingestion for RAG"
+    - "Documentation crawling"
+    - "Website-to-markdown conversion"
+    - "Structured data extraction from web pages"
+    - "Knowledge base building from web sources"
+  supported_operations:
+    - "scrape"
+    - "crawl"
+    - "map"
+    - "extract"
+    - "batch_scrape"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "crewai"
+      type: "compatible"
+
+technical_specs:
+  output_formats:
+    - "markdown"
+    - "html"
+    - "links"
+    - "structured_data"
+  javascript_rendering: true
+  anti_bot_bypass: true
+  proxy_rotation: true
+  concurrent_crawling: true
+  max_crawl_pages: 10000
+  sdk_languages:
+    - "python"
+    - "node"
+    - "go"
+    - "rust"
+  self_hostable: true
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Good scraping speed with JavaScript rendering. Crawling large sites can take minutes but parallelization helps."
+  scalability:
+    score: 8
+    justification: "Cloud API handles concurrent scraping well. Self-hosted version can be scaled horizontally."
+  ease_of_use:
+    score: 9
+    justification: "Simple API with excellent defaults. One API call to convert any URL to clean markdown."
+  cost_efficiency:
+    score: 7
+    justification: "Free tier with 500 credits. Self-hosting option available for high-volume use cases under AGPL license."
+  community:
+    score: 7
+    justification: "Active open-source community. Good adoption in the RAG and AI agent ecosystems."
+  maturity:
+    score: 6
+    justification: "Launched in 2024. Rapidly evolving with frequent feature additions. API stability improving."
+  flexibility:
+    score: 8
+    justification: "Multiple output formats, structured extraction with LLM, configurable crawl parameters. Self-hosting available."
+  data_privacy:
+    score: 7
+    justification: "Open-source with self-hosting option for full data control. Cloud version processes pages on Firecrawl servers."
+
+knowledge:
+  entries:
+    - topic: "Firecrawl vs Traditional Scraping Tools"
+      content: |
+        Traditional web scraping tools like BeautifulSoup, Scrapy, or Puppeteer require
+        significant custom code for each website. You need to write selectors, handle
+        pagination, manage JavaScript rendering, and clean HTML into usable text.
+
+        Firecrawl abstracts all of this. A single API call with a URL returns clean
+        markdown. It handles: JavaScript-rendered content (SPAs, dynamic pages),
+        cookie banners and popups, navigation and footer removal, content prioritization,
+        and anti-bot protections.
+
+        For AI applications, the markdown output is particularly valuable because it
+        preserves document structure (headings, lists, tables) while removing visual
+        noise. This structure helps LLMs understand the content hierarchy and improves
+        RAG retrieval quality.
+
+        The trade-off is control: Firecrawl's automatic extraction works well for
+        most pages but may miss content or include irrelevant sections on unusual
+        page layouts. For these cases, custom scraping with targeted selectors
+        may still be necessary.
+      tags: ["comparison", "scraping"]
+
+    - topic: "Building a RAG Knowledge Base from Websites"
+      content: |
+        A common pattern is using Firecrawl to build a RAG knowledge base from
+        documentation sites or company wikis. The workflow is:
+
+        1. Use the map endpoint to discover all URLs on the target site.
+        2. Filter URLs to include only relevant pages (e.g., /docs/ paths).
+        3. Use the crawl endpoint to scrape all filtered pages.
+        4. Split the markdown output into chunks using a text splitter.
+        5. Generate embeddings and store in a vector database.
+
+        Firecrawl's LangChain integration (FireCrawlLoader) simplifies this by
+        directly returning LangChain Document objects that can be passed to a
+        text splitter and vector store.
+
+        For keeping the knowledge base current, you can set up periodic re-crawls
+        and use content hashing to detect changes, only re-embedding pages that
+        have been updated.
+      tags: ["rag", "knowledge-base", "workflow"]
+
+code_examples:
+  - title: "Scrape a Single Page"
+    language: "python"
+    code: |
+      from firecrawl import FirecrawlApp
+
+      app = FirecrawlApp(api_key="your-api-key")
+
+      # Scrape a page to markdown
+      result = app.scrape_url(
+          "https://docs.example.com/getting-started",
+          params={"formats": ["markdown"]}
+      )
+
+      print(result["markdown"])
+
+  - title: "Crawl an Entire Documentation Site"
+    language: "python"
+    code: |
+      from firecrawl import FirecrawlApp
+
+      app = FirecrawlApp(api_key="your-api-key")
+
+      # Crawl with filters
+      crawl_result = app.crawl_url(
+          "https://docs.example.com",
+          params={
+              "limit": 100,
+              "includePaths": ["/docs/*"],
+              "excludePaths": ["/blog/*", "/changelog/*"],
+              "maxDepth": 3
+          },
+          poll_interval=5
+      )
+
+      for page in crawl_result["data"]:
+          print(f"URL: {page['metadata']['sourceURL']}")
+          print(f"Content length: {len(page['markdown'])} chars")
+
+  - title: "LangChain Integration for RAG"
+    language: "python"
+    code: |
+      from langchain_community.document_loaders import FireCrawlLoader
+      from langchain.text_splitter import RecursiveCharacterTextSplitter
+      from langchain_openai import OpenAIEmbeddings
+      from langchain_pinecone import PineconeVectorStore
+
+      # Load documents from website
+      loader = FireCrawlLoader(
+          url="https://docs.example.com",
+          mode="crawl",
+          params={"limit": 50}
+      )
+      docs = loader.load()
+
+      # Split and embed
+      splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+      chunks = splitter.split_documents(docs)
+
+      vectorstore = PineconeVectorStore.from_documents(
+          chunks,
+          OpenAIEmbeddings(model="text-embedding-3-small"),
+          index_name="knowledge-base"
+      )
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "single_page_scrape"
+      value: 2.3
+      unit: "seconds"
+      context: "Average time to scrape and convert a page to markdown"
+    - name: "crawl_throughput"
+      value: 15
+      unit: "pages/minute"
+      context: "Cloud API, concurrent crawling enabled"
+    - name: "content_extraction_accuracy"
+      value: 0.91
+      unit: "ratio"
+      context: "Main content correctly identified vs manual extraction"
+
+relationships:
+  alternatives:
+    - slug: "unstructured_io"
+      note: "Broader document parsing including PDFs, not just web"
+    - slug: "tavily"
+      note: "Search + extract, but less control over crawling"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with FireCrawlLoader integration"
+    - slug: "pinecone"
+      role: "Vector database to store crawled and embedded content"
+    - slug: "openai_embeddings"
+      role: "Generates embeddings from crawled markdown content"
+  typical_pipeline_position: "data_source"
+  pipeline_predecessors: ["url_discovery"]
+  pipeline_successors: ["chunking", "embeddings"]

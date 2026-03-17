@@ -1,0 +1,446 @@
+meta:
+  slug: "semantic_kernel"
+  name: "Semantic Kernel"
+  version: "1.0.0"
+  category: "workflow_orchestration"
+  subcategory: "enterprise_sdk"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Microsoft's open-source SDK for integrating LLMs into enterprise applications with AI agents and plugins"
+  description: |
+    Semantic Kernel is Microsoft's open-source SDK for building AI agents and integrating large
+    language models into enterprise applications. It provides a lightweight, extensible
+    architecture centered around a Kernel that orchestrates AI services, plugins (collections
+    of functions), and memory, with first-class support for .NET, Python, and Java.
+
+    The framework is designed for enterprise software teams who need to add AI capabilities to
+    existing applications rather than build AI-native products from scratch. It follows
+    familiar software engineering patterns — dependency injection, plugin architecture,
+    strongly-typed function definitions — making it approachable for enterprise developers
+    who may not have deep AI/ML experience.
+
+    Semantic Kernel's agent framework supports single-agent and multi-agent patterns including
+    AgentGroupChat for collaborative agent conversations. The Process Framework enables
+    building complex, event-driven business workflows with durable execution, state
+    management, and human approval gates.
+
+    As the foundation for Microsoft's Copilot products, Semantic Kernel is battle-tested at
+    massive scale. It integrates natively with Azure OpenAI, Microsoft 365, and the broader
+    Azure ecosystem, while also supporting OpenAI, Anthropic, Google, and local models via
+    Ollama and HuggingFace.
+  logo_url: "/assets/modules/semantic_kernel.svg"
+  website: "https://learn.microsoft.com/en-us/semantic-kernel/"
+  documentation: "https://learn.microsoft.com/en-us/semantic-kernel/overview/"
+  github: "https://github.com/microsoft/semantic-kernel"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Enterprise application AI integration"
+    - "Business process automation with LLMs"
+    - "Copilot-style AI assistants"
+    - "Multi-agent enterprise workflows"
+    - "Plugin-based tool orchestration"
+    - "AI-powered document processing"
+  supported_operations:
+    - "kernel_orchestration"
+    - "plugin_management"
+    - "function_calling"
+    - "prompt_templating"
+    - "memory_management"
+    - "agent_creation"
+    - "multi_agent_chat"
+    - "process_orchestration"
+    - "streaming"
+    - "auto_function_calling"
+  integrations:
+    - slug: "azure_openai"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "qdrant"
+      type: "native"
+    - slug: "chromadb"
+      type: "compatible"
+    - slug: "huggingface"
+      type: "compatible"
+
+technical_specs:
+  languages:
+    - "csharp"
+    - "python"
+    - "java"
+  dotnet_min_version: ".NET 8.0"
+  python_min_version: "3.10"
+  java_min_version: "17"
+  core_packages:
+    dotnet:
+      - "Microsoft.SemanticKernel"
+      - "Microsoft.SemanticKernel.Agents.Core"
+      - "Microsoft.SemanticKernel.Process.Core"
+    python:
+      - "semantic-kernel"
+  key_abstractions:
+    - "Kernel (central orchestrator)"
+    - "Plugins (function collections)"
+    - "KernelFunction (callable unit)"
+    - "ChatCompletionAgent"
+    - "OpenAIAssistantAgent"
+    - "AgentGroupChat"
+    - "KernelProcess (workflow engine)"
+  supported_llm_providers:
+    - "Azure OpenAI"
+    - "OpenAI"
+    - "Anthropic"
+    - "Google (Gemini)"
+    - "Mistral"
+    - "Ollama"
+    - "HuggingFace"
+    - "Amazon Bedrock"
+  memory_connectors:
+    - "Azure AI Search"
+    - "Qdrant"
+    - "Pinecone"
+    - "Chroma"
+    - "Weaviate"
+    - "Redis"
+    - "PostgreSQL (pgvector)"
+  auto_function_calling: true
+  streaming_support: true
+  async_support: true
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Lightweight kernel with minimal overhead. .NET implementation is particularly performant. Auto function calling optimizes tool-use loops without manual intervention."
+  scalability:
+    score: 8
+    justification: "Built for enterprise scale as the foundation of Microsoft Copilot. Process Framework supports durable, distributed workflows. Azure integration enables cloud-native scaling."
+  ease_of_use:
+    score: 7
+    justification: "Familiar patterns for enterprise developers (DI, plugins, typed functions). Well-documented with Microsoft Learn tutorials. Less intuitive than CrewAI for AI-first developers."
+  cost_efficiency:
+    score: 9
+    justification: "Fully open-source under MIT license. No framework licensing costs. Azure integration can leverage existing enterprise agreements for LLM costs."
+  community:
+    score: 7
+    justification: "22K+ GitHub stars with strong Microsoft backing. Active community especially in the .NET ecosystem. Growing Python and Java communities. Regular releases and roadmap transparency."
+  maturity:
+    score: 8
+    justification: "Production-proven as the foundation of Microsoft Copilot and enterprise deployments. GA release with stable APIs. Microsoft's long-term commitment provides confidence."
+  flexibility:
+    score: 7
+    justification: "Plugin architecture is extensible. Supports multiple languages and LLM providers. More opinionated than LangChain but provides clearer patterns. Process Framework adds workflow flexibility."
+  data_privacy:
+    score: 9
+    justification: "Fully self-hostable. Azure OpenAI provides enterprise compliance (SOC2, HIPAA, GDPR). Supports on-premises LLMs. No telemetry to Microsoft from the SDK itself."
+
+knowledge:
+  entries:
+    - topic: "Kernel, Plugins, and Functions"
+      content: |
+        The Kernel is the central orchestrator in Semantic Kernel. It manages AI services
+        (LLM connections), plugins (function collections), and memory (vector stores). Think
+        of it as a dependency injection container specialized for AI operations.
+
+        Plugins are collections of KernelFunctions that represent capabilities. There are two
+        types of functions:
+        - Native functions: Regular code (C#, Python, Java) decorated with @kernel_function.
+          These are deterministic operations like database queries, API calls, or calculations.
+        - Prompt functions: LLM-powered functions defined by prompt templates. These handle
+          tasks requiring natural language understanding or generation.
+
+        Auto Function Calling is a key feature: when enabled, the Kernel automatically detects
+        when the LLM wants to call a function, executes it, and feeds the result back to the
+        LLM. This creates a natural tool-use loop without manual intervention. The developer
+        just registers functions and lets the Kernel handle orchestration.
+
+        This plugin architecture mirrors enterprise software patterns, making it natural for
+        teams already using dependency injection and service-oriented design.
+      tags: ["kernel", "plugins", "core"]
+
+    - topic: "Agent Framework"
+      content: |
+        Semantic Kernel's agent framework provides abstractions for building AI agents:
+
+        ChatCompletionAgent: A simple agent backed by any chat completion model. Supports
+        auto function calling with registered plugins. Good for single-agent scenarios
+        and building blocks for multi-agent systems.
+
+        OpenAIAssistantAgent: Wraps OpenAI's Assistants API, providing managed threads,
+        file search, and code interpreter capabilities. Useful when you want OpenAI to
+        manage conversation state.
+
+        AgentGroupChat: Orchestrates conversations between multiple agents. Supports
+        selection strategies (round-robin, custom) and termination strategies (function-based,
+        message count, keyword detection). Agents can have different LLMs, plugins, and
+        system prompts.
+
+        Agent collaboration patterns: (1) Sequential — agents take turns in order.
+        (2) Handoff — agents route to specific other agents based on context.
+        (3) Collaborative — a selection strategy picks the best agent for each turn.
+        (4) Hierarchical — a coordinator agent manages sub-agents.
+      tags: ["agents", "multi-agent", "orchestration"]
+
+    - topic: "Process Framework for Business Workflows"
+      content: |
+        The Process Framework (in preview) enables building complex, event-driven business
+        workflows that combine AI agents with traditional business logic:
+
+        KernelProcess: Defines a workflow as a series of steps with state and transitions.
+        Steps can be AI-powered (agent calls) or traditional code (database operations,
+        API calls, approvals).
+
+        Key capabilities:
+        - Event-driven execution: Steps emit and respond to events
+        - Durable execution: Workflow state persists across failures and restarts
+        - Human-in-the-loop: Steps can pause and wait for human input or approval
+        - State management: Each step maintains typed state that persists across executions
+        - Nested processes: Processes can contain sub-processes for complex workflows
+
+        Example use case: A document review process where (1) an AI agent extracts key
+        information, (2) a human reviewer approves or requests changes, (3) an agent
+        generates a summary, (4) the summary is stored in a database, and (5) stakeholders
+        are notified. The Process Framework orchestrates this end-to-end with state
+        management and error handling.
+      tags: ["process", "workflow", "enterprise"]
+
+    - topic: "When to Choose Semantic Kernel"
+      content: |
+        Semantic Kernel is the right choice when: (1) You're building in the Microsoft
+        ecosystem — Azure OpenAI, .NET, Microsoft 365. The integration is seamless and
+        leverages existing enterprise infrastructure. (2) You need multi-language support —
+        SK is the only major framework with first-class .NET, Python, AND Java SDKs.
+        (3) Your team has enterprise software engineering background — the plugin/DI
+        architecture feels natural to .NET and Java developers. (4) You need durable
+        business process orchestration — the Process Framework handles long-running,
+        stateful workflows with human approval. (5) You're building Copilot-style
+        experiences — SK is literally the foundation of Microsoft Copilot.
+
+        Semantic Kernel is NOT the right choice when: (1) You need the broadest ecosystem
+        of integrations — LangChain has more third-party connectors. (2) You want the
+        simplest multi-agent experience — CrewAI's role-playing model is more intuitive.
+        (3) You're building Python-only RAG applications — LlamaIndex has deeper retrieval
+        capabilities. (4) You need the most flexible agent conversation patterns — AutoGen
+        has more variety. (5) You're prototyping rapidly and don't need enterprise structure.
+      tags: ["decision", "comparison"]
+
+    - topic: "Prompt Engineering with Semantic Kernel"
+      content: |
+        Semantic Kernel provides a structured approach to prompt engineering:
+
+        Prompt Templates: Use Handlebars or Jinja2 syntax for dynamic prompts with variables,
+        conditionals, and loops. Templates can call other kernel functions inline, enabling
+        composable prompts.
+
+        Prompt Execution Settings: Configure model parameters (temperature, top_p, max_tokens)
+        per prompt function. Different settings can be defined for different AI services,
+        allowing a single prompt to adapt to the model being used.
+
+        Chat History: Built-in chat history management integrates with prompt templates.
+        The ChatCompletionService automatically manages conversation context, truncation,
+        and system message injection.
+
+        Prompt Rendering: The template engine renders prompts with provided variables and
+        kernel function results before sending to the LLM. This separation of template
+        definition and rendering enables testing prompts independently.
+
+        Best practices: Use YAML-defined prompt functions for version control, test prompts
+        with different models using execution settings, and leverage auto function calling
+        to let the model decide when to use tools rather than hardcoding tool invocation.
+      tags: ["prompts", "templates", "engineering"]
+
+code_examples:
+  - title: "Kernel with Plugins and Auto Function Calling"
+    language: "python"
+    code: |
+      import asyncio
+      from semantic_kernel import Kernel
+      from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
+      from semantic_kernel.functions import kernel_function
+
+      class WeatherPlugin:
+          @kernel_function(description="Get weather for a city")
+          def get_weather(self, city: str) -> str:
+              """Returns current weather for the specified city."""
+              # Your weather API logic here
+              return f"The weather in {city} is 72F and sunny."
+
+      class CalendarPlugin:
+          @kernel_function(description="Check calendar availability")
+          def check_availability(self, date: str) -> str:
+              """Check if a date has open slots."""
+              return f"You have 2 open slots on {date}: 10am and 2pm."
+
+      async def main():
+          kernel = Kernel()
+
+          # Add AI service
+          kernel.add_service(AzureChatCompletion(
+              deployment_name="gpt-4o",
+              endpoint="https://your-endpoint.openai.azure.com",
+              api_key="your-key"
+          ))
+
+          # Add plugins
+          kernel.add_plugin(WeatherPlugin(), plugin_name="Weather")
+          kernel.add_plugin(CalendarPlugin(), plugin_name="Calendar")
+
+          # Auto function calling - the LLM decides when to use tools
+          from semantic_kernel.connectors.ai.open_ai import OpenAIChatPromptExecutionSettings
+          settings = OpenAIChatPromptExecutionSettings(
+              function_choice_behavior="auto"
+          )
+
+          result = await kernel.invoke_prompt(
+              "What's the weather in Seattle and do I have availability tomorrow?",
+              settings=settings
+          )
+          print(result)
+
+      asyncio.run(main())
+
+  - title: "Multi-Agent Group Chat"
+    language: "python"
+    code: |
+      import asyncio
+      from semantic_kernel import Kernel
+      from semantic_kernel.agents import ChatCompletionAgent, AgentGroupChat
+      from semantic_kernel.agents.strategies import (
+          SequentialSelectionStrategy,
+          KernelFunctionTerminationStrategy,
+      )
+      from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
+
+      async def main():
+          kernel = Kernel()
+          kernel.add_service(OpenAIChatCompletion(model="gpt-4o"))
+
+          researcher = ChatCompletionAgent(
+              kernel=kernel,
+              name="Researcher",
+              instructions="You research topics thoroughly and present factual findings.",
+          )
+
+          critic = ChatCompletionAgent(
+              kernel=kernel,
+              name="Critic",
+              instructions="You critically evaluate research for gaps and biases. Say APPROVED when satisfied.",
+          )
+
+          writer = ChatCompletionAgent(
+              kernel=kernel,
+              name="Writer",
+              instructions="You synthesize research into clear, concise reports.",
+          )
+
+          chat = AgentGroupChat(
+              agents=[researcher, critic, writer],
+              selection_strategy=SequentialSelectionStrategy(),
+              termination_strategy=KernelFunctionTerminationStrategy(
+                  agents=[critic],
+                  maximum_iterations=6,
+              ),
+          )
+
+          await chat.add_chat_message(message="Analyze the trade-offs of managed vs self-hosted vector databases.")
+
+          async for message in chat.invoke():
+              print(f"{message.name}: {message.content[:200]}")
+
+      asyncio.run(main())
+
+  - title: "RAG with Memory Connector"
+    language: "python"
+    code: |
+      import asyncio
+      from semantic_kernel import Kernel
+      from semantic_kernel.connectors.ai.open_ai import (
+          OpenAIChatCompletion,
+          OpenAITextEmbedding,
+      )
+      from semantic_kernel.connectors.memory.qdrant import QdrantMemoryStore
+      from semantic_kernel.memory import SemanticTextMemory
+
+      async def main():
+          kernel = Kernel()
+          kernel.add_service(OpenAIChatCompletion(model="gpt-4o"))
+
+          # Setup memory with Qdrant
+          memory_store = QdrantMemoryStore(url="http://localhost:6333", vector_size=1536)
+          embedding = OpenAITextEmbedding(model="text-embedding-3-small")
+          memory = SemanticTextMemory(storage=memory_store, embeddings_generator=embedding)
+
+          # Store knowledge
+          await memory.save_information(
+              collection="docs",
+              id="doc1",
+              text="Pinecone serverless scales automatically based on usage."
+          )
+          await memory.save_information(
+              collection="docs",
+              id="doc2",
+              text="Qdrant supports payload filtering with rich query expressions."
+          )
+
+          # Retrieve and use in prompt
+          results = await memory.search(collection="docs", query="auto-scaling", limit=3)
+          context = "\n".join([r.text for r in results])
+
+          answer = await kernel.invoke_prompt(
+              f"Based on this context:\n{context}\n\nQuestion: Which database auto-scales?"
+          )
+          print(answer)
+
+      asyncio.run(main())
+
+benchmarks:
+  last_run: "2026-02-14"
+  results:
+    - name: "kernel_invoke_overhead"
+      value: 8
+      unit: "ms"
+      context: "Kernel function invocation overhead, excludes LLM call time"
+    - name: "auto_function_call_overhead"
+      value: 12
+      unit: "ms"
+      context: "Per-tool-call overhead in auto function calling loop"
+    - name: "plugin_registration_time"
+      value: 3
+      unit: "ms"
+      context: "Time to register a plugin with 5 functions"
+    - name: "agent_group_chat_overhead"
+      value: 25
+      unit: "ms"
+      context: "Per-turn overhead in AgentGroupChat with sequential selection"
+    - name: "dotnet_throughput"
+      value: 450
+      unit: "requests/sec"
+      context: ".NET 8 Kernel invocations per second, excludes LLM latency"
+
+relationships:
+  alternatives:
+    - slug: "langchain"
+      note: "Broader Python ecosystem with more integrations but less enterprise structure"
+    - slug: "autogen"
+      note: "Microsoft's other framework, more research-focused with flexible conversation patterns"
+    - slug: "haystack"
+      note: "Pipeline-based approach with stronger NLP/search heritage"
+  complements:
+    - slug: "pinecone"
+      role: "Vector memory store for RAG plugins"
+    - slug: "qdrant"
+      role: "Self-hosted vector store with native Semantic Kernel connector"
+    - slug: "openai"
+      role: "Primary LLM provider via direct API or Azure OpenAI"
+  typical_pipeline_position: "orchestration"
+  pipeline_predecessors: ["embeddings", "vector_databases", "data_ingestion"]
+  pipeline_successors: ["deployment", "evaluation"]

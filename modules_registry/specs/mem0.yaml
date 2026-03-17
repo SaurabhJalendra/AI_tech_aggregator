@@ -1,0 +1,210 @@
+meta:
+  slug: "mem0"
+  name: "Mem0"
+  version: "1.0.0"
+  category: "agent_systems"
+  subcategory: "memory"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Memory layer for AI agents and LLM applications"
+  description: |
+    Mem0 (formerly Embedchain) is a memory management system for AI agents and
+    LLM applications. It provides a structured way to store, retrieve, and manage
+    memories across conversations and sessions, enabling AI assistants to remember
+    user preferences, past interactions, and learned information.
+
+    Mem0 uses a combination of vector search and knowledge graph storage to
+    maintain both semantic memories (facts and information) and episodic memories
+    (conversation history). It supports automatic memory extraction from
+    conversations, conflict resolution when new information contradicts existing
+    memories, and memory decay for relevance management.
+
+    The library integrates with popular LLM frameworks and can use various
+    vector databases and LLM providers as backends. It is available as both
+    an open-source library and a managed cloud service.
+  logo_url: "/assets/modules/mem0.svg"
+  website: "https://mem0.ai"
+  documentation: "https://docs.mem0.ai"
+  github: "https://github.com/mem0ai/mem0"
+  license: "Apache-2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Persistent memory for AI assistants"
+    - "User preference learning"
+    - "Cross-session context retention"
+    - "Agent memory management"
+    - "Personalized AI experiences"
+  supported_operations:
+    - "add"
+    - "search"
+    - "get_all"
+    - "update"
+    - "delete"
+    - "history"
+  integrations:
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "crewai"
+      type: "compatible"
+    - slug: "openai"
+      type: "native"
+
+technical_specs:
+  memory_types:
+    - "semantic (facts)"
+    - "episodic (conversations)"
+  storage_backends:
+    - "Qdrant"
+    - "ChromaDB"
+    - "Pinecone"
+    - "pgvector"
+  llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google"
+    - "Together"
+    - "Ollama"
+  automatic_extraction: true
+  conflict_resolution: true
+  user_isolation: true
+  cloud_service: true
+  sdk_languages:
+    - "python"
+    - "node"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Memory retrieval is fast via vector search. Memory extraction adds LLM call overhead to each interaction."
+  scalability:
+    score: 7
+    justification: "Scales with the underlying vector store. Cloud service handles multi-user workloads."
+  ease_of_use:
+    score: 8
+    justification: "Simple API for adding and retrieving memories. Automatic extraction reduces manual work."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source option available. Each memory operation requires LLM calls which add cost."
+  community:
+    score: 6
+    justification: "Growing community. Active development with frequent releases."
+  maturity:
+    score: 5
+    justification: "Relatively new library (rebranded from Embedchain in 2024). API is stabilizing."
+  flexibility:
+    score: 7
+    justification: "Pluggable backends for vector stores and LLMs. Works with various agent frameworks."
+  data_privacy:
+    score: 7
+    justification: "Self-hosted option with full data control. Cloud version stores memories on Mem0 servers."
+
+knowledge:
+  entries:
+    - topic: "Memory Architecture"
+      content: |
+        Mem0's memory system works in layers:
+
+        1. Memory Extraction: When a conversation is added, an LLM extracts
+        key facts, preferences, and information as discrete memory entries.
+
+        2. Memory Storage: Extracted memories are embedded and stored in a
+        vector database with metadata (user ID, timestamp, category).
+
+        3. Conflict Resolution: When new information contradicts existing
+        memories, Mem0 uses an LLM to determine whether to update, merge,
+        or keep both versions.
+
+        4. Memory Retrieval: When context is needed, relevant memories are
+        retrieved via semantic search and injected into the LLM prompt.
+
+        This architecture enables AI assistants to build up a persistent
+        understanding of each user over time, similar to how a human assistant
+        would remember details about clients.
+      tags: ["architecture", "memory", "design"]
+
+code_examples:
+  - title: "Basic Memory Usage"
+    language: "python"
+    code: |
+      from mem0 import Memory
+
+      m = Memory()
+
+      # Add memories from a conversation
+      m.add(
+          "I prefer Python over JavaScript and use VS Code as my editor.",
+          user_id="alice"
+      )
+
+      m.add(
+          "My current project uses FastAPI with PostgreSQL.",
+          user_id="alice"
+      )
+
+      # Search relevant memories
+      memories = m.search("What programming tools does Alice use?", user_id="alice")
+      for mem in memories:
+          print(f"Memory: {mem['memory']}")
+          print(f"Score: {mem['score']}")
+
+  - title: "Agent with Persistent Memory"
+    language: "python"
+    code: |
+      from mem0 import Memory
+      from openai import OpenAI
+
+      memory = Memory()
+      client = OpenAI()
+
+      def chat_with_memory(user_id: str, message: str) -> str:
+          # Retrieve relevant memories
+          relevant = memory.search(message, user_id=user_id, limit=5)
+          memory_context = "\n".join([m["memory"] for m in relevant])
+
+          # Generate response with memory context
+          response = client.chat.completions.create(
+              model="gpt-4o",
+              messages=[
+                  {"role": "system", "content": f"User memories:\n{memory_context}"},
+                  {"role": "user", "content": message}
+              ]
+          )
+
+          answer = response.choices[0].message.content
+
+          # Store new memories from this interaction
+          memory.add(f"User: {message}\nAssistant: {answer}", user_id=user_id)
+
+          return answer
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "memory_search_latency"
+      value: 50
+      unit: "ms"
+      context: "Vector search for relevant memories, 1000 stored memories"
+    - name: "memory_extraction_time"
+      value: 800
+      unit: "ms"
+      context: "LLM-based memory extraction from a conversation turn"
+
+relationships:
+  alternatives:
+    - slug: "langchain"
+      note: "Built-in memory classes for conversation history"
+  complements:
+    - slug: "openai"
+      role: "LLM for memory extraction and retrieval"
+    - slug: "qdrant"
+      role: "Vector store backend for memory storage"
+    - slug: "crewai"
+      role: "Agent framework with Mem0 memory integration"
+  typical_pipeline_position: "memory"
+  pipeline_predecessors: ["user_input"]
+  pipeline_successors: ["prompt_construction", "llm_generation"]

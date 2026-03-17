@@ -1,0 +1,199 @@
+meta:
+  slug: "mlflow"
+  name: "MLflow"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "ml_lifecycle"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source platform for the complete ML lifecycle"
+  description: |
+    MLflow is an open-source platform for managing the end-to-end machine learning
+    lifecycle. It provides tools for experiment tracking, model packaging, model
+    registry, and deployment. Originally created by Databricks, MLflow has become
+    the most widely used open-source ML lifecycle platform.
+
+    MLflow's four core components are: Tracking (logging parameters, metrics, and
+    artifacts), Projects (packaging ML code for reproducibility), Models (standard
+    format for packaging models), and Model Registry (centralized model store with
+    versioning and stage transitions).
+
+    MLflow has expanded to support LLM applications with MLflow AI Gateway (unified
+    API for multiple LLM providers), LLM evaluation tools, and tracing for LLM
+    pipelines. It integrates deeply with Databricks but runs independently on
+    any infrastructure.
+  logo_url: "/assets/modules/mlflow.svg"
+  website: "https://mlflow.org"
+  documentation: "https://mlflow.org/docs/latest/"
+  github: "https://github.com/mlflow/mlflow"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "ML experiment tracking"
+    - "Model versioning and registry"
+    - "ML model deployment"
+    - "LLM evaluation"
+    - "Reproducible ML pipelines"
+  supported_operations:
+    - "log_param"
+    - "log_metric"
+    - "log_artifact"
+    - "log_model"
+    - "register_model"
+    - "evaluate"
+    - "deploy"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "compatible"
+    - slug: "openai"
+      type: "native"
+
+technical_specs:
+  tracking_backend:
+    - "local filesystem"
+    - "SQLite"
+    - "PostgreSQL"
+    - "MySQL"
+  artifact_stores:
+    - "local"
+    - "S3"
+    - "GCS"
+    - "Azure Blob"
+    - "HDFS"
+  model_formats:
+    - "MLflow Model"
+    - "ONNX"
+    - "PyTorch"
+    - "TensorFlow"
+    - "Transformers"
+  self_hosted: true
+  managed_option: "Databricks"
+  sdk_languages:
+    - "python"
+    - "r"
+    - "java"
+    - "rest"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Lightweight tracking overhead. Server performance depends on backend database choice."
+  scalability:
+    score: 8
+    justification: "Scales with backend infrastructure. Production deployments handle millions of runs."
+  ease_of_use:
+    score: 7
+    justification: "Simple API for basic tracking. Full platform setup requires more configuration than managed alternatives."
+  cost_efficiency:
+    score: 10
+    justification: "Fully open-source with no licensing costs. Infrastructure costs are your own."
+  community:
+    score: 9
+    justification: "Largest open-source ML lifecycle community. Extensive integrations and contributions."
+  maturity:
+    score: 9
+    justification: "Created in 2018 by Databricks. Battle-tested at thousands of organizations."
+  flexibility:
+    score: 9
+    justification: "Works with any ML framework. Supports traditional ML and LLM applications. Self-hosted or managed."
+  data_privacy:
+    score: 9
+    justification: "Self-hosted on your own infrastructure with full data control. No external data sharing required."
+
+knowledge:
+  entries:
+    - topic: "MLflow vs Weights & Biases"
+      content: |
+        MLflow and W&B are the two dominant experiment tracking platforms:
+
+        MLflow advantages: fully open-source, self-hosted for complete data control,
+        broader ML lifecycle coverage (model registry, deployment), deep Databricks
+        integration, no vendor lock-in.
+
+        W&B advantages: better visualization and dashboards, easier setup (cloud-hosted),
+        more polished UI, better collaboration features, Weave for LLM evaluation.
+
+        Choose MLflow when: you need self-hosted for data privacy, you're on Databricks,
+        you want open-source with no vendor dependency, or you need the full ML lifecycle
+        (not just tracking).
+
+        Choose W&B when: you want the best visualization experience, cloud-hosted
+        convenience, collaborative team features, or LLM-specific evaluation with Weave.
+      tags: ["comparison", "weights-biases", "decision"]
+
+code_examples:
+  - title: "Experiment Tracking"
+    language: "python"
+    code: |
+      import mlflow
+
+      mlflow.set_experiment("rag-optimization")
+
+      with mlflow.start_run():
+          mlflow.log_params({
+              "embedding_model": "text-embedding-3-small",
+              "chunk_size": 512,
+              "retriever_top_k": 5
+          })
+
+          # Run your pipeline and evaluate
+          metrics = evaluate_rag_pipeline(config)
+
+          mlflow.log_metrics({
+              "faithfulness": metrics["faithfulness"],
+              "relevancy": metrics["relevancy"],
+              "latency_p50_ms": metrics["latency_p50"]
+          })
+
+  - title: "LLM Evaluation"
+    language: "python"
+    code: |
+      import mlflow
+
+      # Evaluate an LLM with built-in metrics
+      results = mlflow.evaluate(
+          model="openai:/gpt-4o",
+          data=eval_dataset,
+          targets="ground_truth",
+          model_type="question-answering",
+          extra_metrics=[
+              mlflow.metrics.faithfulness(),
+              mlflow.metrics.answer_relevancy()
+          ]
+      )
+
+      print(f"Faithfulness: {results.metrics['faithfulness/mean']}")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "log_overhead"
+      value: 1.5
+      unit: "ms"
+      context: "Per mlflow.log_metric() call with local backend"
+    - name: "artifact_logging"
+      value: 35
+      unit: "MB/second"
+      context: "Artifact upload to S3 backend"
+
+relationships:
+  alternatives:
+    - slug: "weights_biases"
+      note: "Managed platform with better visualization, proprietary server"
+    - slug: "langfuse"
+      note: "Focused on LLM observability rather than full ML lifecycle"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with MLflow callback integration"
+    - slug: "vllm"
+      role: "Model serving tracked and managed through MLflow"
+  typical_pipeline_position: "monitoring"
+  pipeline_predecessors: ["model_training", "llm_generation"]
+  pipeline_successors: ["model_improvement", "deployment"]

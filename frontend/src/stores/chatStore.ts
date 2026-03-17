@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ChatMessage, PanelCommand } from '@/types/chat';
+import { usePanelStore } from './panelStore';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -30,14 +31,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendMessage: (content: string) => {
     const { addUserMessage, addAssistantMessage, sessionId, setIsStreaming } = get();
 
-    // Add the user message to the store
     addUserMessage(content);
-
-    // Create a placeholder assistant message for streaming
     const assistantId = addAssistantMessage();
     setIsStreaming(true);
 
-    // Kick off the SSE fetch to the BFF route
     const body = JSON.stringify({
       message: content,
       session_id: sessionId,
@@ -45,7 +42,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer dev@example.com',
+      },
       body,
     })
       .then(async (response) => {
@@ -73,16 +73,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
               try {
                 const parsed = JSON.parse(dataStr);
 
-                if (parsed.token) {
-                  get().appendStreamChunk(assistantId, parsed.token);
+                if (parsed.type === 'text' && parsed.content) {
+                  get().appendStreamChunk(assistantId, parsed.content);
                 }
 
-                if (parsed.command) {
-                  get().addPanelCommand(assistantId, parsed.command);
+                if (parsed.type === 'panel_command' && parsed.command) {
+                  const command = parsed.command as PanelCommand;
+                  get().addPanelCommand(assistantId, command);
+                  usePanelStore.getState().renderPanel(command);
                 }
 
-                if (parsed.session_id && !get().sessionId) {
+                if (parsed.type === 'meta' && parsed.session_id && !get().sessionId) {
                   get().setSessionId(parsed.session_id);
+                }
+
+                if (parsed.type === 'done') {
+                  // Stream complete
                 }
               } catch {
                 // Ignore malformed JSON lines

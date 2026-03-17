@@ -1,0 +1,199 @@
+meta:
+  slug: "outlines"
+  name: "Outlines"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "structured_generation"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Structured text generation with LLMs using guided decoding"
+  description: |
+    Outlines is an open-source library for structured text generation with large
+    language models. Unlike post-hoc parsing approaches (like Instructor), Outlines
+    constrains the generation process itself at the token level, guaranteeing that
+    the output conforms to a specified format (JSON schema, regex, grammar, or
+    choice from a set of options).
+
+    Outlines works by modifying the token sampling probabilities during generation
+    to only allow tokens that are valid according to the specified structure. This
+    means the model can never produce invalid output, eliminating the need for
+    retries or error handling.
+
+    The library supports Hugging Face Transformers, vLLM, llama.cpp, and other
+    local model backends. It is particularly valuable for self-hosted models where
+    you cannot rely on provider-side JSON mode or function calling.
+  logo_url: "/assets/modules/outlines.svg"
+  website: "https://outlines-dev.github.io/outlines/"
+  documentation: "https://outlines-dev.github.io/outlines/"
+  github: "https://github.com/outlines-dev/outlines"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Guaranteed structured output from local LLMs"
+    - "JSON schema-constrained generation"
+    - "Regex-constrained generation"
+    - "Choice/classification from predefined options"
+    - "Grammar-based generation"
+  supported_operations:
+    - "generate_json"
+    - "generate_regex"
+    - "generate_choice"
+    - "generate_grammar"
+    - "generate_text"
+  integrations:
+    - slug: "vllm"
+      type: "native"
+    - slug: "ollama"
+      type: "compatible"
+
+technical_specs:
+  approach: "guided decoding (token-level constraints)"
+  supported_backends:
+    - "Hugging Face Transformers"
+    - "vLLM"
+    - "llama.cpp"
+    - "ExLlamaV2"
+    - "MLX"
+  schema_types:
+    - "JSON Schema"
+    - "Pydantic models"
+    - "regex"
+    - "context-free grammar"
+    - "choice"
+  guaranteed_valid_output: true
+  no_retries_needed: true
+  languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Minimal overhead for simple schemas. Complex schemas with many constraints can slow generation slightly."
+  scalability:
+    score: 7
+    justification: "Scales with the underlying model backend. Works with vLLM for high-throughput serving."
+  ease_of_use:
+    score: 7
+    justification: "Simple API for basic use cases. Understanding guided decoding concepts helps for advanced usage."
+  cost_efficiency:
+    score: 10
+    justification: "Open-source, runs locally. No retries needed means no wasted LLM compute."
+  community:
+    score: 7
+    justification: "Active open-source community. Growing adoption as self-hosted LLMs become more common."
+  maturity:
+    score: 6
+    justification: "Established since 2023. Stable core but API still evolving with new features."
+  flexibility:
+    score: 8
+    justification: "Multiple constraint types (JSON, regex, grammar). Works with various model backends."
+  data_privacy:
+    score: 10
+    justification: "Runs entirely locally with local models. No external services needed."
+
+knowledge:
+  entries:
+    - topic: "Outlines vs Instructor"
+      content: |
+        Outlines and Instructor solve the same problem (structured LLM output)
+        but at different levels:
+
+        Outlines: constrains generation at the token level. The model literally
+        cannot produce invalid output. Works with local models. Zero retries needed.
+        Best for self-hosted models where you control the inference process.
+
+        Instructor: validates output after generation and retries on failure.
+        Works with any API provider (OpenAI, Anthropic, etc.). More ergonomic
+        API with Pydantic integration. Best for API-based models where you
+        cannot control token sampling.
+
+        Use Outlines when: running local models, you need guaranteed valid output
+        with no retries, or you're using vLLM for serving.
+
+        Use Instructor when: using API-based models (OpenAI, Anthropic), you want
+        the simplest integration, or you need provider flexibility.
+      tags: ["comparison", "instructor", "decision"]
+
+code_examples:
+  - title: "JSON Schema Generation"
+    language: "python"
+    code: |
+      import outlines
+      from pydantic import BaseModel
+
+      model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.3")
+
+      class Character(BaseModel):
+          name: str
+          age: int
+          weapon: str
+
+      generator = outlines.generate.json(model, Character)
+
+      result = generator("Create a fantasy RPG character.")
+      print(result.name)    # Always valid
+      print(result.age)     # Always an integer
+      print(result.weapon)  # Always a string
+
+  - title: "Regex-Constrained Generation"
+    language: "python"
+    code: |
+      import outlines
+
+      model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.3")
+
+      # Generate valid IP addresses
+      ip_regex = r"(\d{1,3}\.){3}\d{1,3}"
+      generator = outlines.generate.regex(model, ip_regex)
+
+      result = generator("What is a common localhost IP address?")
+      print(result)  # e.g., "127.0.0.1" - guaranteed valid format
+
+  - title: "Choice Selection"
+    language: "python"
+    code: |
+      import outlines
+
+      model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.3")
+
+      generator = outlines.generate.choice(
+          model,
+          ["positive", "negative", "neutral"]
+      )
+
+      sentiment = generator("Classify: 'This product is amazing!'")
+      print(sentiment)  # Guaranteed to be one of the three options
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "json_generation_overhead"
+      value: 8
+      unit: "percent"
+      context: "Additional time vs unconstrained generation, simple schema"
+    - name: "valid_output_rate"
+      value: 100
+      unit: "percent"
+      context: "Guaranteed valid output by construction"
+
+relationships:
+  alternatives:
+    - slug: "instructor"
+      note: "Post-hoc validation approach, works with API providers"
+    - slug: "guardrails_ai"
+      note: "Broader validation framework including structured output"
+  complements:
+    - slug: "vllm"
+      role: "High-performance serving with Outlines guided decoding"
+    - slug: "mistral"
+      role: "Open-weight models commonly used with Outlines"
+    - slug: "ollama"
+      role: "Local model serving compatible with Outlines"
+  typical_pipeline_position: "output_parsing"
+  pipeline_predecessors: ["llm_generation"]
+  pipeline_successors: ["application_logic"]

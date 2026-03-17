@@ -1,0 +1,367 @@
+meta:
+  slug: "elasticsearch_vector"
+  name: "Elasticsearch Vector Search"
+  version: "1.0.0"
+  category: "search_discovery"
+  subcategory: "hybrid_search"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Enterprise search engine with native vector search, combining full-text and semantic retrieval"
+  description: |
+    Elasticsearch, the widely adopted distributed search and analytics engine, has evolved to
+    include native vector search capabilities through its dense_vector field type and kNN search
+    API. This makes it a compelling choice for organizations that need both traditional full-text
+    search and modern semantic vector search in a single platform.
+
+    Elasticsearch's vector search uses HNSW (Hierarchical Navigable Small World) graphs for
+    approximate nearest neighbor search, with support for exact brute-force search when precision
+    is paramount. The platform supports hybrid search natively, allowing queries to combine
+    BM25 text scoring with vector similarity using Reciprocal Rank Fusion (RRF) or custom
+    scoring functions.
+
+    For organizations already running Elasticsearch for log analytics, application search, or
+    observability, adding vector search capabilities avoids the need to introduce a separate
+    vector database. The Elastic Learned Sparse Encoder (ELSER) model provides semantic search
+    without requiring external embedding models, further simplifying the architecture.
+  logo_url: "/assets/modules/elasticsearch.svg"
+  website: "https://www.elastic.co/elasticsearch"
+  documentation: "https://www.elastic.co/guide/en/elasticsearch/reference/current/dense-vector.html"
+  github: "https://github.com/elastic/elasticsearch"
+  license: "AGPL-3.0 / Elastic License 2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Hybrid full-text and semantic search"
+    - "RAG knowledge retrieval"
+    - "E-commerce product search"
+    - "Enterprise knowledge management"
+    - "Log and observability analytics"
+    - "Recommendation systems"
+  supported_operations:
+    - "knn_search"
+    - "full_text_search"
+    - "hybrid_search_rrf"
+    - "bulk_index"
+    - "aggregations"
+    - "filtering"
+    - "semantic_reranking"
+    - "inference_pipeline"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "haystack"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "compatible"
+
+technical_specs:
+  vector_dimensions_max: 4096
+  distance_metrics:
+    - "cosine"
+    - "dot_product"
+    - "l2_norm"
+    - "max_inner_product"
+  index_algorithm: "HNSW"
+  quantization:
+    - "int8"
+    - "int4"
+    - "binary"
+  hybrid_search: true
+  metadata_filtering: true
+  distributed_architecture: true
+  max_shards_per_index: "configurable"
+  built_in_models:
+    - "ELSER (Elastic Learned Sparse Encoder)"
+    - "E5 multilingual"
+  inference_api: true
+  sdk_languages:
+    - "python"
+    - "java"
+    - "javascript"
+    - "go"
+    - "ruby"
+    - "php"
+    - "rust"
+  deployment_options:
+    - "Elastic Cloud (managed)"
+    - "Self-hosted"
+    - "ECK (Kubernetes operator)"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Solid vector search performance with HNSW and quantization. Not as fast as purpose-built vector DBs for pure vector workloads, but hybrid search is a unique strength."
+  scalability:
+    score: 9
+    justification: "Battle-tested distributed architecture with sharding and replication. Handles petabytes of data across hundreds of nodes."
+  ease_of_use:
+    score: 6
+    justification: "Powerful but complex. Steep learning curve for cluster management and query DSL. Vector search adds another layer of configuration."
+  cost_efficiency:
+    score: 6
+    justification: "Resource-intensive for vector workloads due to JVM overhead. Quantization helps reduce memory. Consolidating search and vector in one system can reduce total cost."
+  community:
+    score: 9
+    justification: "Massive ecosystem with decades of community investment. Extensive documentation, books, courses, and third-party tooling."
+  maturity:
+    score: 9
+    justification: "Elasticsearch has been production-proven since 2010. Vector search capabilities added in 8.x series and rapidly improving."
+  flexibility:
+    score: 9
+    justification: "Combines full-text search, vector search, analytics, and aggregations. Self-hosted or cloud. Extensive plugin ecosystem."
+  data_privacy:
+    score: 8
+    justification: "Self-hostable with full control. Field-level security, encryption at rest and in transit. SOC2 and HIPAA compliant managed offering."
+
+knowledge:
+  entries:
+    - topic: "Hybrid Search with Reciprocal Rank Fusion"
+      content: |
+        Elasticsearch's killer feature for AI applications is native hybrid search that combines
+        BM25 text scoring with kNN vector similarity. This is done using Reciprocal Rank Fusion
+        (RRF), which merges ranked result lists without requiring score normalization.
+
+        RRF works by assigning each result a score based on its rank position in each sub-query:
+        RRF_score = sum(1 / (k + rank_i)) where k is a constant (default 60) and rank_i is the
+        rank in each sub-query.
+
+        This approach is powerful because BM25 excels at exact keyword matching (product names,
+        error codes, acronyms) while vector search captures semantic meaning (synonyms,
+        paraphrases, conceptual similarity). Together they cover more retrieval scenarios
+        than either alone.
+
+        For RAG applications, hybrid search consistently outperforms pure vector search in
+        benchmarks, particularly on queries that contain specific identifiers, proper nouns,
+        or technical terms alongside natural language descriptions.
+      tags: ["hybrid-search", "rrf", "retrieval"]
+
+    - topic: "When to Choose Elasticsearch for Vector Search"
+      content: |
+        Elasticsearch vector search is the right choice when:
+
+        1. You already run Elasticsearch. Adding vector search to an existing cluster avoids
+        introducing a new database, reducing operational complexity and cost.
+
+        2. Hybrid search is critical. If your queries mix keyword precision with semantic
+        understanding, Elasticsearch's native RRF hybrid search is best-in-class.
+
+        3. You need rich filtering alongside vector search. Elasticsearch's query DSL provides
+        complex filtering, aggregations, and faceting that most vector databases lack.
+
+        4. Full-text search features are needed (fuzzy matching, stemming, analyzers, highlighting).
+        Purpose-built vector databases typically lack these capabilities.
+
+        5. You need a single platform for search, analytics, and vector retrieval.
+
+        Elasticsearch may NOT be the right choice when: pure vector search speed is paramount
+        (consider Pinecone, Qdrant), you need a lightweight embedded solution (consider ChromaDB),
+        memory/cost constraints are tight (JVM overhead is significant), or you're starting
+        from scratch with only vector search needs.
+      tags: ["decision", "comparison"]
+
+    - topic: "ELSER: Semantic Search Without External Embeddings"
+      content: |
+        The Elastic Learned Sparse Encoder (ELSER) is a retrieval model trained by Elastic
+        that runs directly within Elasticsearch. It generates sparse vector representations
+        of text, enabling semantic search without requiring external embedding models.
+
+        ELSER works by expanding query and document terms into semantically related tokens,
+        stored as sparse vectors. This means "automobile repair" will match documents about
+        "car maintenance" even without shared keywords, using Elasticsearch's native inverted
+        index infrastructure.
+
+        Advantages of ELSER: no external embedding service dependency, no dense vector storage
+        costs, works with existing Elasticsearch text infrastructure, and performs competitively
+        with dense embedding models on many benchmarks.
+
+        Limitations: English-only (as of v2), less effective than dense models on very long
+        documents, and requires ML node resources in the Elasticsearch cluster. For multilingual
+        or specialized domains, external dense embedding models may still be preferred.
+
+        ELSER can also be combined with dense vector search and BM25 in a three-way hybrid
+        search for maximum retrieval quality.
+      tags: ["elser", "semantic-search", "sparse-vectors"]
+
+    - topic: "Vector Search Performance Optimization"
+      content: |
+        Key strategies for optimizing Elasticsearch vector search performance:
+
+        1. Quantization: Use int8 or int4 scalar quantization to reduce memory footprint
+        by 4-8x with minimal recall loss. Binary quantization provides 32x compression
+        for initial candidate retrieval with rescoring.
+
+        2. HNSW parameters: Tune ef_construction (build-time accuracy, default 100) and
+        m (connections per node, default 16). Higher values improve recall but increase
+        indexing time and memory.
+
+        3. Oversampling: When using quantization, set num_candidates higher than k to
+        retrieve more candidates before rescoring with full-precision vectors.
+
+        4. Pre-filtering: Apply metadata filters before kNN search to reduce the search
+        space. Elasticsearch supports efficient pre-filtering through the filter parameter
+        in kNN queries.
+
+        5. Dedicated ML nodes: Run inference pipelines on dedicated ML nodes to avoid
+        impacting search performance.
+
+        6. Segment management: Force-merge indices to fewer segments for read-heavy workloads.
+        Fewer segments means fewer HNSW graphs to search.
+
+        Typical production configuration for 10M vectors at 768 dimensions with int8
+        quantization: ~15GB memory, sub-50ms p99 latency for top-10 kNN queries.
+      tags: ["performance", "optimization", "tuning"]
+
+code_examples:
+  - title: "Hybrid Search with RRF"
+    language: "python"
+    code: |
+      from elasticsearch import Elasticsearch
+
+      es = Elasticsearch("https://localhost:9200", api_key="your-api-key")
+
+      # Create index with dense_vector field
+      es.indices.create(index="documents", mappings={
+          "properties": {
+              "title": {"type": "text"},
+              "content": {"type": "text"},
+              "embedding": {
+                  "type": "dense_vector",
+                  "dims": 768,
+                  "index": True,
+                  "similarity": "cosine"
+              }
+          }
+      })
+
+      # Hybrid search: BM25 + kNN with RRF
+      results = es.search(
+          index="documents",
+          retriever={
+              "rrf": {
+                  "retrievers": [
+                      {
+                          "standard": {
+                              "query": {
+                                  "match": {"content": "machine learning deployment"}
+                              }
+                          }
+                      },
+                      {
+                          "knn": {
+                              "field": "embedding",
+                              "query_vector": query_embedding,
+                              "k": 10,
+                              "num_candidates": 100
+                          }
+                      }
+                  ]
+              }
+          }
+      )
+
+  - title: "Inference Pipeline with Built-in Model"
+    language: "python"
+    code: |
+      from elasticsearch import Elasticsearch
+
+      es = Elasticsearch("https://localhost:9200", api_key="your-api-key")
+
+      # Create an ingest pipeline that generates embeddings
+      es.ingest.put_pipeline(id="embedding-pipeline", body={
+          "processors": [
+              {
+                  "inference": {
+                      "model_id": ".elser_model_2_linux-x86_64",
+                      "input_output": [
+                          {
+                              "input_field": "content",
+                              "output_field": "content_embedding"
+                          }
+                      ]
+                  }
+              }
+          ]
+      })
+
+      # Index documents through the pipeline
+      es.index(
+          index="documents",
+          pipeline="embedding-pipeline",
+          document={
+              "title": "Introduction to RAG",
+              "content": "Retrieval-augmented generation combines search with LLMs..."
+          }
+      )
+
+  - title: "LangChain Integration"
+    language: "python"
+    code: |
+      from langchain_elasticsearch import ElasticsearchStore
+      from langchain_openai import OpenAIEmbeddings
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      vectorstore = ElasticsearchStore(
+          index_name="langchain-docs",
+          embedding=embeddings,
+          es_url="https://localhost:9200",
+          es_api_key="your-api-key",
+          strategy=ElasticsearchStore.ApproxRetrievalStrategy(
+              hybrid=True
+          )
+      )
+
+      # Hybrid retriever for RAG
+      retriever = vectorstore.as_retriever(
+          search_type="similarity",
+          search_kwargs={"k": 5}
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "knn_query_p50"
+      value: 18
+      unit: "ms"
+      context: "768-dim, top-10, 5M vectors, int8 quantized"
+    - name: "knn_query_p99"
+      value: 45
+      unit: "ms"
+      context: "768-dim, top-10, 5M vectors, int8 quantized"
+    - name: "hybrid_rrf_p50"
+      value: 28
+      unit: "ms"
+      context: "BM25 + kNN, RRF, 5M documents"
+    - name: "recall_at_10"
+      value: 0.93
+      unit: "ratio"
+      context: "768-dim, HNSW, default params, 5M vectors"
+    - name: "index_throughput"
+      value: 8000
+      unit: "docs/sec"
+      context: "768-dim vectors with text, bulk indexing, 3-node cluster"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Managed vector database, better for pure vector workloads"
+    - slug: "weaviate"
+      note: "Vector-native database with built-in vectorization"
+    - slug: "algolia_ai"
+      note: "Managed search-as-a-service with AI features"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Generates dense embeddings for indexing and querying"
+    - slug: "langchain"
+      role: "Orchestration framework with native Elasticsearch integration"
+    - slug: "llamaindex"
+      role: "Data framework for building RAG over Elasticsearch"
+  typical_pipeline_position: "retrieval"
+  pipeline_predecessors: ["embeddings", "data_ingestion"]
+  pipeline_successors: ["reranking", "llm_generation"]

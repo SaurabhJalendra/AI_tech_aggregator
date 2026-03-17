@@ -1,0 +1,322 @@
+meta:
+  slug: "reranking_models"
+  name: "Reranking Models"
+  version: "1.0.0"
+  category: "retrieval"
+  subcategory: "reranking"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Cross-encoder and late-interaction models for re-scoring retrieved documents"
+  description: |
+    Reranking models are a critical second-stage retrieval component that re-scores an initial
+    set of candidate documents to improve ranking quality. Unlike bi-encoder embedding models
+    that encode queries and documents independently, cross-encoder rerankers process the query
+    and document together, enabling richer interaction signals that capture nuanced relevance.
+
+    Leading reranking models include Cohere Rerank, BGE Reranker (from BAAI), Jina Reranker,
+    and cross-encoder models from the sentence-transformers library. These models typically
+    take a query-document pair as input and output a relevance score, allowing the retrieval
+    pipeline to re-order candidates for higher precision in the final top-k results.
+
+    Reranking is especially valuable in RAG pipelines where the initial retrieval (via vector
+    similarity or BM25) returns a broad set of candidates. By applying a more computationally
+    expensive but more accurate reranker on a smaller candidate set (e.g., top-50 to top-100),
+    systems achieve significantly better end-to-end answer quality without the cost of running
+    cross-encoders on the entire corpus.
+  logo_url: "/assets/modules/reranking_models.svg"
+  website: "https://docs.cohere.com/docs/reranking"
+  documentation: "https://docs.cohere.com/reference/rerank"
+  github: "https://github.com/FlagOpen/FlagEmbedding"
+  license: "Various"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Re-scoring retrieved documents for higher precision"
+    - "Improving RAG answer quality"
+    - "Search result ranking refinement"
+    - "Multi-stage retrieval pipelines"
+    - "Domain-specific relevance tuning"
+  supported_operations:
+    - "rerank"
+    - "score"
+    - "batch_rerank"
+    - "cross-encode"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "weaviate"
+      type: "compatible"
+    - slug: "haystack"
+      type: "native"
+
+technical_specs:
+  popular_models:
+    - name: "Cohere Rerank v3.5"
+      type: "API"
+      max_documents_per_call: 1000
+      max_tokens_per_document: 4096
+    - name: "BGE Reranker v2 (bge-reranker-v2-m3)"
+      type: "open-source"
+      parameters: "568M"
+      max_length: 8192
+    - name: "BGE Reranker Large"
+      type: "open-source"
+      parameters: "560M"
+      max_length: 512
+    - name: "Jina Reranker v2"
+      type: "API + open-weights"
+      max_length: 8192
+    - name: "cross-encoder/ms-marco-MiniLM-L-12-v2"
+      type: "open-source"
+      parameters: "33M"
+      max_length: 512
+  typical_candidate_set_size: "20-100 documents"
+  latency_range: "50-500ms depending on model and batch size"
+  gpu_recommended: true
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Cross-encoder rerankers consistently outperform bi-encoders on ranking quality benchmarks like MS MARCO and BEIR. They capture fine-grained query-document interactions."
+  scalability:
+    score: 5
+    justification: "Cross-encoders require processing each query-document pair individually, making them O(n) per query. Only practical as a second stage on a small candidate set."
+  ease_of_use:
+    score: 8
+    justification: "API-based rerankers like Cohere Rerank are drop-in additions to existing pipelines. Open-source models require GPU setup but are well-documented."
+  cost_efficiency:
+    score: 7
+    justification: "API costs are modest for typical candidate set sizes. Open-source models like BGE Reranker are free but require GPU compute."
+  community:
+    score: 7
+    justification: "Active research community with frequent model releases. Strong adoption in production RAG systems."
+  maturity:
+    score: 8
+    justification: "Cross-encoder reranking is a well-established technique from information retrieval. Production-ready implementations available since 2023."
+  flexibility:
+    score: 7
+    justification: "Multiple model choices from lightweight to large. Can be fine-tuned on domain-specific data. Works with any first-stage retriever."
+  data_privacy:
+    score: 7
+    justification: "Open-source models can run fully on-premises. API-based options require sending document content to third-party servers."
+
+knowledge:
+  entries:
+    - topic: "How Reranking Works"
+      content: |
+        Reranking models operate as a second stage in a two-stage retrieval pipeline. The first
+        stage (retrieval) uses a fast method like vector similarity search or BM25 to identify
+        a broad set of candidates, typically 20-100 documents. The second stage (reranking)
+        applies a more computationally expensive model to re-score and re-order these candidates.
+
+        Cross-encoder rerankers concatenate the query and document into a single input sequence
+        and process them through a transformer model jointly. This allows attention layers to
+        capture fine-grained interactions between query and document tokens, producing more
+        accurate relevance scores than bi-encoders that encode them independently.
+
+        The trade-off is computational cost: a bi-encoder computes one embedding per document
+        (amortized), while a cross-encoder must process every query-document pair at query time.
+        This is why rerankers are applied only to a small candidate set rather than the full corpus.
+
+        Late-interaction models like ColBERT offer a middle ground, pre-computing per-token
+        document embeddings and performing lightweight interaction at query time. This can be
+        faster than full cross-encoders while retaining much of the ranking quality.
+      tags: ["architecture", "cross-encoder", "two-stage"]
+
+    - topic: "Choosing a Reranking Model"
+      content: |
+        The choice of reranking model depends on latency requirements, deployment constraints,
+        and accuracy needs:
+
+        For API-based simplicity, Cohere Rerank v3.5 offers state-of-the-art accuracy with
+        minimal integration effort. It supports up to 1000 documents per call and handles
+        multilingual content well. Cost is per-search (approximately $1 per 1000 searches).
+
+        For self-hosted deployments, BGE Reranker v2 (bge-reranker-v2-m3) provides excellent
+        multilingual quality with a manageable 568M parameter size. It supports up to 8192
+        tokens per document, making it suitable for longer documents.
+
+        For latency-sensitive applications, smaller models like cross-encoder/ms-marco-MiniLM-L-12-v2
+        (33M parameters) offer fast inference with reasonable quality. They can run on CPU for
+        moderate throughput requirements.
+
+        For maximum accuracy on English content, larger models like BGE Reranker Large or
+        Cohere Rerank tend to top the MTEB/BEIR leaderboards.
+
+        Fine-tuning on domain-specific data can significantly improve reranking quality for
+        specialized domains like legal, medical, or scientific literature.
+      tags: ["decision", "model-selection"]
+
+    - topic: "Integration Patterns"
+      content: |
+        The most common integration pattern is to add reranking as a post-processing step
+        after initial retrieval. In LangChain, this is done via the ContextualCompressionRetriever
+        with a reranking compressor. In LlamaIndex, the SentenceTransformerRerank or
+        CohereRerank node postprocessors serve this purpose.
+
+        A typical pipeline looks like:
+        1. User query arrives
+        2. First-stage retriever fetches top-50 candidates via vector similarity
+        3. Reranker scores all 50 query-document pairs
+        4. Top-5 reranked documents are passed to the LLM as context
+        5. LLM generates the final answer
+
+        This two-stage approach typically improves answer quality by 10-30% on retrieval
+        benchmarks compared to using only the first-stage retriever, with modest latency
+        overhead (typically 100-300ms for 50 documents).
+
+        For production systems, consider caching reranker scores for frequently asked queries
+        and implementing timeouts to gracefully degrade to first-stage results if the reranker
+        is slow.
+      tags: ["integration", "pipeline", "best-practices"]
+
+    - topic: "Limitations and Considerations"
+      content: |
+        Key limitations to consider when implementing reranking:
+
+        1. Latency overhead. Cross-encoder reranking adds 50-500ms depending on the model
+        size and candidate set. For real-time applications, this may require careful optimization.
+
+        2. Token length limits. Most rerankers truncate documents beyond their max length
+        (512-8192 tokens). For long documents, consider chunking before reranking or using
+        models with longer context windows.
+
+        3. Cost at scale. API-based rerankers charge per search. For high-traffic applications,
+        self-hosted models may be more cost-effective.
+
+        4. Candidate set size matters. Reranking cannot surface documents that were not in the
+        initial candidate set. If the first-stage retriever misses a relevant document, reranking
+        cannot recover it. Ensure adequate first-stage recall (top-50 to top-100).
+
+        5. Not a silver bullet. If the embedding model and first-stage retriever are well-tuned
+        for the domain, reranking may provide diminishing returns. Always measure the improvement
+        on your specific use case.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Cohere Rerank with LangChain"
+    language: "python"
+    code: |
+      from langchain.retrievers import ContextualCompressionRetriever
+      from langchain_cohere import CohereRerank
+      from langchain_pinecone import PineconeVectorStore
+
+      # First-stage retriever
+      vectorstore = PineconeVectorStore(
+          index_name="my-index",
+          embedding=embeddings
+      )
+      base_retriever = vectorstore.as_retriever(search_kwargs={"k": 50})
+
+      # Add reranking
+      reranker = CohereRerank(
+          model="rerank-v3.5",
+          top_n=5
+      )
+      retriever = ContextualCompressionRetriever(
+          base_compressor=reranker,
+          base_retriever=base_retriever
+      )
+
+      # Use in RAG chain
+      docs = retriever.invoke("What is the best vector database?")
+
+  - title: "BGE Reranker with sentence-transformers"
+    language: "python"
+    code: |
+      from sentence_transformers import CrossEncoder
+
+      # Load reranker model
+      reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", max_length=8192)
+
+      # Score query-document pairs
+      query = "How does vector search work?"
+      documents = [
+          "Vector search uses embeddings to find similar items...",
+          "SQL databases use B-tree indexes for lookups...",
+          "Approximate nearest neighbor algorithms like HNSW..."
+      ]
+
+      # Get relevance scores
+      pairs = [[query, doc] for doc in documents]
+      scores = reranker.predict(pairs)
+
+      # Sort by relevance
+      ranked = sorted(
+          zip(documents, scores),
+          key=lambda x: x[1],
+          reverse=True
+      )
+
+  - title: "LlamaIndex Reranking Pipeline"
+    language: "python"
+    code: |
+      from llama_index.core import VectorStoreIndex
+      from llama_index.postprocessor.cohere_rerank import CohereRerank
+
+      # Build index and query engine with reranking
+      index = VectorStoreIndex.from_documents(documents)
+
+      reranker = CohereRerank(
+          model="rerank-v3.5",
+          top_n=5,
+          api_key="your-cohere-key"
+      )
+
+      query_engine = index.as_query_engine(
+          similarity_top_k=50,
+          node_postprocessors=[reranker]
+      )
+
+      response = query_engine.query("Explain RAG architectures")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "ndcg_at_10_cohere_rerank"
+      value: 0.72
+      unit: "ratio"
+      context: "Cohere Rerank v3.5 on BEIR benchmark average"
+    - name: "ndcg_at_10_bge_reranker"
+      value: 0.70
+      unit: "ratio"
+      context: "BGE Reranker v2 on BEIR benchmark average"
+    - name: "rerank_latency_cohere"
+      value: 180
+      unit: "ms"
+      context: "50 documents, Cohere Rerank API"
+    - name: "rerank_latency_bge_gpu"
+      value: 95
+      unit: "ms"
+      context: "50 documents, BGE Reranker v2, A100 GPU"
+    - name: "rerank_latency_minilm_cpu"
+      value: 250
+      unit: "ms"
+      context: "50 documents, MiniLM cross-encoder, CPU"
+    - name: "rag_quality_improvement"
+      value: 18
+      unit: "percent"
+      context: "Average improvement in answer accuracy when adding reranking to RAG pipeline"
+
+relationships:
+  alternatives:
+    - slug: "embedding_models"
+      note: "Bi-encoder embeddings as single-stage retrieval without reranking"
+  complements:
+    - slug: "pinecone"
+      role: "First-stage vector retrieval before reranking"
+    - slug: "langchain"
+      role: "Orchestration framework with native reranking support"
+    - slug: "llamaindex"
+      role: "Data framework with reranking node postprocessors"
+  typical_pipeline_position: "reranking"
+  pipeline_predecessors: ["vector_store", "retrieval"]
+  pipeline_successors: ["llm_generation"]

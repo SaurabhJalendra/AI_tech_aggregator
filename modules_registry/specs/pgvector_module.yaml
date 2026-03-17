@@ -1,0 +1,384 @@
+meta:
+  slug: "pgvector_module"
+  name: "pgvector"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "extension"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source PostgreSQL extension for vector similarity search"
+  description: |
+    pgvector is an open-source extension for PostgreSQL that adds vector data types and
+    similarity search capabilities. It allows storing embeddings directly alongside
+    relational data in your existing PostgreSQL database, eliminating the need for a
+    separate vector database in many use cases.
+
+    The extension supports exact and approximate nearest neighbor search using IVFFlat
+    and HNSW indexing algorithms. Vectors can be queried using L2 distance, inner product,
+    cosine distance, and L1 distance operators. pgvector integrates naturally with
+    PostgreSQL's query planner, transaction support, and existing indexing infrastructure.
+
+    pgvector's biggest advantage is simplicity: if you already use PostgreSQL, you can add
+    vector search by installing an extension -- no new database to deploy, manage, or learn.
+    Your vectors participate in the same ACID transactions as your relational data, can be
+    joined with other tables, and benefit from PostgreSQL's mature backup, replication, and
+    security features. The trade-off is lower query performance compared to purpose-built
+    vector databases at very large scale (100M+ vectors).
+  logo_url: "/assets/modules/pgvector_module.svg"
+  website: "https://github.com/pgvector/pgvector"
+  documentation: "https://github.com/pgvector/pgvector/blob/master/README.md"
+  github: "https://github.com/pgvector/pgvector"
+  license: "PostgreSQL License"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Adding vector search to existing PostgreSQL applications"
+    - "RAG with unified relational + vector storage"
+    - "Small to medium scale vector search (up to ~10M vectors)"
+    - "Applications requiring ACID transactions on vector data"
+    - "Multi-tenant vector storage with row-level security"
+  supported_operations:
+    - "insert"
+    - "update"
+    - "delete"
+    - "exact_nearest_neighbor"
+    - "approximate_nearest_neighbor"
+    - "range_search"
+    - "join"
+    - "aggregate"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "django"
+      type: "community"
+    - slug: "sqlalchemy"
+      type: "community"
+    - slug: "spring_ai"
+      type: "native"
+
+technical_specs:
+  max_dimensions: 16000
+  index_types:
+    - "IVFFlat"
+    - "HNSW"
+  distance_functions:
+    - "L2 (Euclidean)"
+    - "Inner product"
+    - "Cosine"
+    - "L1 (Manhattan)"
+  data_types:
+    - "vector (float4)"
+    - "halfvec (float2)"
+    - "sparsevec"
+    - "bit"
+  acid_compliant: true
+  row_level_security: true
+  full_text_search: true
+  json_support: true
+  replication: true
+  partitioning: true
+  min_postgresql_version: "12"
+  hosted_options:
+    - "Supabase"
+    - "Neon"
+    - "AWS RDS"
+    - "Azure Database for PostgreSQL"
+    - "Google Cloud SQL"
+    - "Tembo"
+  sdk_languages:
+    - "python (psycopg, asyncpg, SQLAlchemy)"
+    - "node (pg, Prisma)"
+    - "ruby (pg gem)"
+    - "go (pgx)"
+    - "java (JDBC)"
+    - "rust (sqlx)"
+    - "dotnet (Npgsql)"
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "HNSW queries at 5-15ms for 1M vectors. Adequate for most applications but 5-10x slower than in-memory solutions like Redis or purpose-built databases like Qdrant."
+  scalability:
+    score: 6
+    justification: "Handles up to ~10M vectors well on a single node. Performance degrades beyond that. Table partitioning helps but lacks the distributed architecture of Milvus or Pinecone."
+  ease_of_use:
+    score: 10
+    justification: "If you know PostgreSQL, you know pgvector. Standard SQL interface, familiar tools (psql, pgAdmin), existing ORMs work. No new database to learn or operate."
+  cost_efficiency:
+    score: 9
+    justification: "Free extension on any PostgreSQL instance. No separate database to run. Uses existing PostgreSQL infrastructure, backups, and monitoring. Cheapest option for teams already on PostgreSQL."
+  community:
+    score: 8
+    justification: "12k+ GitHub stars, rapidly growing. Supported by all major PostgreSQL cloud providers. Active development with regular releases. Backed by the massive PostgreSQL ecosystem."
+  maturity:
+    score: 7
+    justification: "Released 2021, HNSW support added 2023. Rapidly maturing with each release. Battle-tested at companies like Supabase and Neon. PostgreSQL itself is 30+ years mature."
+  flexibility:
+    score: 9
+    justification: "Full SQL power: joins, CTEs, window functions, aggregations on vector results. Row-level security for multi-tenancy. Combine with PostGIS, full-text search, JSONB in single queries."
+  data_privacy:
+    score: 10
+    justification: "Self-hosted PostgreSQL with zero external dependencies. Full control over data. Benefits from PostgreSQL's mature security model including SSL, RLS, and role-based access."
+
+knowledge:
+  entries:
+    - topic: "HNSW vs IVFFlat Indexes"
+      content: |
+        pgvector offers two approximate nearest neighbor index types:
+
+        HNSW (Hierarchical Navigable Small World):
+        - Build time: Slow (hours for millions of vectors)
+        - Query time: Fast and consistent (~5-15ms for 1M vectors)
+        - Memory: Higher (2-3x the vector data size)
+        - Recall: High (>95% with default parameters)
+        - Can be queried during build
+        - Recommended for most use cases since pgvector 0.5.0
+
+        IVFFlat (Inverted File with Flat quantization):
+        - Build time: Faster than HNSW
+        - Query time: Good but less consistent than HNSW
+        - Memory: Lower than HNSW
+        - Recall: Depends heavily on nlist/nprobe parameters
+        - Requires training data (existing rows) before building
+        - Best for large datasets where HNSW memory is prohibitive
+
+        HNSW parameters: m (connections per layer, default 16) and ef_construction
+        (build-time search width, default 64). Higher values improve recall but increase
+        build time and memory. For production, m=16 and ef_construction=128 is a good
+        starting point.
+
+        IVFFlat parameters: lists (number of clusters, recommended sqrt(n) for <1M vectors,
+        sqrt(sqrt(n)) for >1M). Query-time probes parameter controls recall/speed trade-off.
+      tags: ["indexing", "hnsw", "ivfflat", "performance"]
+
+    - topic: "When to Choose pgvector"
+      content: |
+        pgvector is the right choice when:
+
+        1. You already use PostgreSQL. Adding vector search is just CREATE EXTENSION and
+        ALTER TABLE. No new database to deploy, monitor, backup, or secure.
+
+        2. Your vector dataset is under 10M vectors. pgvector performs well at this scale
+        and the operational simplicity outweighs the performance gap vs specialized DBs.
+
+        3. You need ACID transactions on vector data. Insert a document, its embedding,
+        and update a counter -- all in one transaction that rolls back on failure.
+
+        4. You need to join vector results with relational data. Find similar products AND
+        filter by inventory status, user permissions, and geographic region in one query.
+
+        5. Multi-tenancy with row-level security. PostgreSQL's RLS policies apply to vector
+        queries, ensuring tenants only search their own data.
+
+        pgvector is NOT the right choice when: you need sub-millisecond query latency
+        (use Redis or Qdrant), you have 100M+ vectors (use Milvus or Pinecone), you need
+        real-time index updates at high write throughput (HNSW rebalancing is expensive),
+        or you don't already use PostgreSQL and want the best-in-class vector search.
+      tags: ["decision", "comparison"]
+
+    - topic: "Performance Tuning"
+      content: |
+        Key tuning parameters for pgvector performance:
+
+        1. HNSW index parameters:
+           - m: Higher values (24-48) improve recall at cost of memory
+           - ef_construction: Higher values (128-256) improve index quality
+           - At query time, SET hnsw.ef_search = 100 (default 40) for higher recall
+
+        2. PostgreSQL configuration:
+           - shared_buffers: Set to 25% of RAM for caching index pages
+           - effective_cache_size: Set to 75% of RAM
+           - maintenance_work_mem: Increase for faster index builds (1-4GB)
+           - max_parallel_maintenance_workers: Parallelize index builds
+
+        3. Table design:
+           - Store vectors in a separate table and JOIN when needed, to keep the main
+             table's sequential scans fast
+           - Use partial indexes for common filter patterns
+           - Partition large tables by a filter column to limit search scope
+
+        4. Query optimization:
+           - Always use ORDER BY with LIMIT for KNN queries
+           - Pre-filter with WHERE clauses when possible (pgvector 0.7+ supports
+             filtered HNSW search)
+           - Use halfvec (float2) instead of vector (float4) to halve memory usage
+             with minimal accuracy loss
+      tags: ["performance", "tuning", "optimization"]
+
+    - topic: "Hybrid Search with Full-Text"
+      content: |
+        pgvector can be combined with PostgreSQL's built-in full-text search (tsvector)
+        for hybrid retrieval. This combines semantic understanding from embeddings with
+        keyword precision from full-text search.
+
+        Pattern 1 - Reciprocal Rank Fusion (RRF):
+        Run vector search and full-text search separately, then combine rankings using
+        RRF scoring: 1/(k + rank_vector) + 1/(k + rank_fulltext). This is simple and
+        effective.
+
+        Pattern 2 - Pre-filter then vector search:
+        Use full-text search to narrow candidates, then rerank by vector similarity.
+        Efficient when the text filter is highly selective.
+
+        Pattern 3 - Combined scoring in single query:
+        Use a CTE or subquery to compute both vector distance and text rank, then
+        combine with weighted scoring in the final ORDER BY.
+
+        PostgreSQL's full-text search supports language-aware stemming, phrase matching,
+        and ranking functions (ts_rank, ts_rank_cd). Combined with pgvector, this provides
+        a complete hybrid search solution without external dependencies.
+      tags: ["hybrid-search", "full-text", "retrieval"]
+
+code_examples:
+  - title: "Setup and Basic Vector Search"
+    language: "sql"
+    code: |
+      -- Enable the extension
+      CREATE EXTENSION IF NOT EXISTS vector;
+
+      -- Create a table with a vector column
+      CREATE TABLE documents (
+          id SERIAL PRIMARY KEY,
+          title TEXT,
+          content TEXT,
+          metadata JSONB,
+          embedding vector(1536)
+      );
+
+      -- Create HNSW index
+      CREATE INDEX ON documents
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 128);
+
+      -- Insert a document with embedding
+      INSERT INTO documents (title, content, embedding)
+      VALUES ('My Doc', 'Document content...', '[0.1, 0.2, ...]');
+
+      -- Find 5 most similar documents
+      SELECT id, title, 1 - (embedding <=> '[0.1, 0.2, ...]') AS similarity
+      FROM documents
+      ORDER BY embedding <=> '[0.1, 0.2, ...]'
+      LIMIT 5;
+
+      -- Filtered vector search
+      SELECT id, title, 1 - (embedding <=> '[0.1, 0.2, ...]') AS similarity
+      FROM documents
+      WHERE metadata->>'category' = 'technical'
+      ORDER BY embedding <=> '[0.1, 0.2, ...]'
+      LIMIT 5;
+
+  - title: "Python with SQLAlchemy"
+    language: "python"
+    code: |
+      from sqlalchemy import create_engine, Column, Integer, String, select
+      from sqlalchemy.orm import DeclarativeBase, Session
+      from pgvector.sqlalchemy import Vector
+
+      class Base(DeclarativeBase):
+          pass
+
+      class Document(Base):
+          __tablename__ = "documents"
+          id = Column(Integer, primary_key=True)
+          content = Column(String)
+          embedding = Column(Vector(1536))
+
+      engine = create_engine("postgresql://user:pass@localhost/mydb")
+      Base.metadata.create_all(engine)
+
+      with Session(engine) as session:
+          # Insert
+          doc = Document(content="Hello world", embedding=embedding_vector)
+          session.add(doc)
+          session.commit()
+
+          # Search
+          results = session.scalars(
+              select(Document)
+              .order_by(Document.embedding.cosine_distance(query_vector))
+              .limit(5)
+          ).all()
+
+  - title: "LangChain RAG with pgvector"
+    language: "python"
+    code: |
+      from langchain_postgres import PGVector
+      from langchain_openai import OpenAIEmbeddings
+
+      CONNECTION_STRING = "postgresql+psycopg://user:pass@localhost/mydb"
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      vectorstore = PGVector.from_documents(
+          documents,
+          embeddings,
+          connection=CONNECTION_STRING,
+          collection_name="knowledge_base",
+      )
+
+      # Similarity search with metadata filter
+      results = vectorstore.similarity_search(
+          "How does pgvector handle indexing?",
+          k=5,
+          filter={"source": "documentation"},
+      )
+
+      # Use as retriever
+      retriever = vectorstore.as_retriever(
+          search_type="mmr",
+          search_kwargs={"k": 5, "fetch_k": 20}
+      )
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "query_latency_p50_hnsw"
+      value: 8
+      unit: "ms"
+      context: "1536-dim, HNSW, top-k=10, 1M vectors"
+    - name: "query_latency_p99_hnsw"
+      value: 22
+      unit: "ms"
+      context: "1536-dim, HNSW, top-k=10, 1M vectors"
+    - name: "recall_at_10_hnsw"
+      value: 0.96
+      unit: "ratio"
+      context: "1536-dim, HNSW m=16 ef_search=100, 1M vectors"
+    - name: "insert_throughput"
+      value: 8000
+      unit: "vectors/sec"
+      context: "1536-dim, COPY command, no index"
+    - name: "index_build_time_1m"
+      value: 420
+      unit: "sec"
+      context: "HNSW, 1536-dim, 1M vectors, m=16, ef_construction=128"
+    - name: "memory_per_million_vectors"
+      value: 8.5
+      unit: "GB"
+      context: "1536-dim, FLOAT4, with HNSW index"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Managed vector database with higher performance at scale"
+    - slug: "qdrant"
+      note: "Purpose-built vector database with advanced filtering and Rust performance"
+    - slug: "weaviate"
+      note: "Full-featured vector database with built-in vectorization"
+    - slug: "chromadb"
+      note: "Embedded vector database for prototyping and small workloads"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Generates embeddings stored in pgvector columns"
+    - slug: "langchain"
+      role: "Orchestration framework with native pgvector integration"
+    - slug: "unstructured_io"
+      role: "Document processing pipeline that outputs to pgvector"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

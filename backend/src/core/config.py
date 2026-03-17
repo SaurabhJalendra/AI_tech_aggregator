@@ -15,6 +15,11 @@ class Settings(BaseSettings):
 
     # Anthropic
     anthropic_api_key: str = ""
+    anthropic_model: str = "claude-opus-4-20250514"
+    use_claude_code: bool = True
+
+    # OpenAI (for embeddings)
+    openai_api_key: str = ""
 
     # Auth
     nextauth_secret: str = "dev-secret-change-in-production"

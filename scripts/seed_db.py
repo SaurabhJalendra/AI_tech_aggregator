@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
 from src.core.config import settings  # noqa: E402
 from src.db.session import async_session_factory, engine  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 from src.db.base import Base  # noqa: E402
 from src.models import *  # noqa: E402, F401, F403
 from src.modules.loader import load_all_specs  # noqa: E402
@@ -81,6 +82,7 @@ async def main():
     # Create tables if they don't exist
     print("Creating tables...")
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
     print("  Tables created/verified")
     print()

@@ -1,0 +1,161 @@
+meta:
+  slug: "anyscale"
+  name: "Anyscale"
+  version: "1.0.0"
+  category: "deployment"
+  subcategory: "ml_platform"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Production AI platform built on Ray for scalable ML workloads"
+  description: |
+    Anyscale is a managed platform built on Ray, the open-source distributed
+    computing framework. It provides infrastructure for training, fine-tuning,
+    and serving AI models at scale. Anyscale simplifies the operational complexity
+    of running distributed ML workloads across clusters of CPUs and GPUs.
+
+    Anyscale is the commercial offering from the creators of Ray, providing
+    managed Ray clusters, GPU orchestration, model serving (via Ray Serve and
+    vLLM), and fine-tuning pipelines. It is designed for teams that need the
+    power of distributed computing without managing infrastructure.
+
+    The platform is particularly strong for LLM serving at scale, distributed
+    training, and batch inference workloads where Ray's distributed computing
+    primitives provide significant advantages.
+  logo_url: "/assets/modules/anyscale.svg"
+  website: "https://www.anyscale.com"
+  documentation: "https://docs.anyscale.com"
+  github: "https://github.com/anyscale"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Distributed LLM serving"
+    - "Model fine-tuning at scale"
+    - "Distributed training"
+    - "Batch inference"
+    - "Ray cluster management"
+  supported_operations:
+    - "serve_model"
+    - "fine_tune"
+    - "batch_inference"
+    - "cluster_management"
+    - "autoscaling"
+  integrations:
+    - slug: "vllm"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  framework: "Ray"
+  serving_engine: "Ray Serve + vLLM"
+  gpu_support:
+    - "NVIDIA A100"
+    - "NVIDIA H100"
+  distributed_training: true
+  auto_scaling: true
+  multi_cloud: true
+  fine_tuning: true
+  sdk_languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Ray's distributed computing provides excellent performance for parallel workloads. vLLM integration for fast serving."
+  scalability:
+    score: 9
+    justification: "Built for scale. Ray handles distributed workloads across hundreds of GPUs seamlessly."
+  ease_of_use:
+    score: 6
+    justification: "Requires understanding of Ray concepts. More complex than serverless alternatives like Modal."
+  cost_efficiency:
+    score: 6
+    justification: "Enterprise pricing. Cost-effective at scale but expensive for small workloads."
+  community:
+    score: 7
+    justification: "Large Ray community provides indirect support. Anyscale-specific community is smaller."
+  maturity:
+    score: 8
+    justification: "Built on battle-tested Ray framework. Platform has been in production since 2020."
+  flexibility:
+    score: 8
+    justification: "Supports arbitrary distributed Python workloads via Ray. Not limited to specific ML tasks."
+  data_privacy:
+    score: 7
+    justification: "Runs on cloud infrastructure with enterprise security controls. VPC peering available."
+
+knowledge:
+  entries:
+    - topic: "Anyscale vs Modal"
+      content: |
+        Anyscale and Modal both provide GPU compute for AI workloads:
+
+        Anyscale: Built on Ray for distributed computing. Best for workloads that
+        benefit from Ray's distributed primitives (distributed training, multi-GPU
+        serving, batch processing across clusters). More complex but more powerful
+        for truly distributed workloads.
+
+        Modal: Serverless functions with GPU. Best for single-function workloads,
+        simple API serving, and scenarios where operational simplicity matters most.
+        Simpler but less powerful for distributed computing.
+
+        Choose Anyscale when: you need distributed training, multi-node model
+        serving, or complex batch processing. Choose Modal when: you want
+        the simplest possible deployment for single-model serving or GPU functions.
+      tags: ["comparison", "modal", "decision"]
+
+code_examples:
+  - title: "Deploy LLM with Anyscale"
+    language: "python"
+    code: |
+      import anyscale
+      from ray import serve
+      from vllm import LLM, SamplingParams
+
+      @serve.deployment(ray_actor_options={"num_gpus": 1})
+      class LLMDeployment:
+          def __init__(self):
+              self.llm = LLM(model="meta-llama/Llama-3.1-70B-Instruct",
+                             tensor_parallel_size=4)
+
+          async def __call__(self, request):
+              prompt = request.query_params.get("prompt")
+              params = SamplingParams(temperature=0.7, max_tokens=256)
+              outputs = self.llm.generate([prompt], params)
+              return outputs[0].outputs[0].text
+
+      app = LLMDeployment.bind()
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "serving_throughput"
+      value: 500
+      unit: "requests/second"
+      context: "Llama 3.1 70B, 4x A100, batch serving"
+    - name: "fine_tuning_speed"
+      value: 1200
+      unit: "tokens/second"
+      context: "Llama 3.1 8B fine-tuning, 8x A100"
+
+relationships:
+  alternatives:
+    - slug: "modal"
+      note: "Simpler serverless GPU compute without Ray"
+    - slug: "together_ai"
+      note: "Managed inference API without infrastructure management"
+    - slug: "replicate"
+      note: "Simpler model hosting focused on deployment"
+  complements:
+    - slug: "vllm"
+      role: "LLM serving engine integrated with Anyscale"
+    - slug: "weights_biases"
+      role: "Experiment tracking for training jobs"
+  typical_pipeline_position: "infrastructure"
+  pipeline_predecessors: ["model_training"]
+  pipeline_successors: ["inference_api"]

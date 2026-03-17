@@ -1,0 +1,194 @@
+meta:
+  slug: "browserbase"
+  name: "Browserbase"
+  version: "1.0.0"
+  category: "agent_systems"
+  subcategory: "browser_automation"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Headless browser infrastructure for AI agents and web automation"
+  description: |
+    Browserbase provides managed headless browser infrastructure designed for
+    AI agents. It offers cloud-hosted browser sessions that AI agents can control
+    to navigate websites, fill forms, extract data, and perform web-based tasks
+    that require a real browser environment.
+
+    Unlike simple HTTP scraping, Browserbase provides full browser capabilities
+    including JavaScript execution, session persistence, CAPTCHA handling, and
+    residential proxies. This makes it suitable for agents that need to interact
+    with modern web applications that require authentication, dynamic rendering,
+    or anti-bot evasion.
+
+    Browserbase integrates with popular browser automation libraries (Playwright,
+    Puppeteer, Selenium) and AI agent frameworks, providing the browser infrastructure
+    that agents need without managing browser servers or proxy networks.
+  logo_url: "/assets/modules/browserbase.svg"
+  website: "https://www.browserbase.com"
+  documentation: "https://docs.browserbase.com"
+  github: "https://github.com/browserbase"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Browser control for AI agents"
+    - "Web data extraction with JavaScript rendering"
+    - "Automated web interactions"
+    - "Form filling and submission"
+    - "Session-based web navigation"
+  supported_operations:
+    - "create_session"
+    - "navigate"
+    - "screenshot"
+    - "execute_script"
+    - "manage_cookies"
+    - "proxy_management"
+  integrations:
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "crewai"
+      type: "compatible"
+
+technical_specs:
+  browser_engine: "Chromium"
+  automation_protocols:
+    - "Chrome DevTools Protocol"
+    - "Playwright"
+    - "Puppeteer"
+    - "Selenium"
+  session_persistence: true
+  captcha_handling: true
+  residential_proxies: true
+  stealth_mode: true
+  concurrent_sessions: true
+  recording: true
+  sdk_languages:
+    - "python"
+    - "node"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Cloud-hosted browsers with good performance. Network latency is the main bottleneck."
+  scalability:
+    score: 8
+    justification: "Managed infrastructure scales to many concurrent sessions. No browser server management needed."
+  ease_of_use:
+    score: 8
+    justification: "Connect via standard Playwright/Puppeteer APIs. No infrastructure setup needed."
+  cost_efficiency:
+    score: 6
+    justification: "Per-session pricing. Can be expensive for high-volume scraping vs self-hosted solutions."
+  community:
+    score: 5
+    justification: "Growing community in the AI agent space. Relatively niche compared to general browser automation tools."
+  maturity:
+    score: 5
+    justification: "Young service focused on the emerging AI agent browser use case."
+  flexibility:
+    score: 7
+    justification: "Standard browser APIs. Works with any automation library. Good proxy and stealth features."
+  data_privacy:
+    score: 5
+    justification: "Browser sessions run on Browserbase infrastructure. Session data passes through their servers."
+
+knowledge:
+  entries:
+    - topic: "Browser Automation for AI Agents"
+      content: |
+        AI agents increasingly need to interact with the web in ways that go
+        beyond simple API calls or HTTP scraping:
+
+        1. Web research: navigating multiple pages, following links, reading
+        dynamically rendered content.
+
+        2. Task automation: filling forms, submitting applications, managing
+        accounts on web platforms.
+
+        3. Data extraction: scraping JavaScript-rendered content that static
+        HTTP requests cannot access.
+
+        Browserbase provides the infrastructure for these interactions, handling
+        the complexity of running browser instances, managing sessions, rotating
+        proxies, and bypassing anti-bot protections. This lets agent developers
+        focus on the agent logic rather than browser infrastructure.
+      tags: ["agents", "browser", "automation"]
+
+code_examples:
+  - title: "Basic Browser Session with Playwright"
+    language: "python"
+    code: |
+      from browserbase import Browserbase
+      from playwright.sync_api import sync_playwright
+
+      bb = Browserbase(api_key="your-api-key")
+
+      # Create a browser session
+      session = bb.sessions.create(project_id="your-project-id")
+
+      with sync_playwright() as p:
+          browser = p.chromium.connect_over_cdp(session.connect_url)
+          page = browser.new_page()
+
+          # Navigate and interact
+          page.goto("https://example.com")
+          content = page.content()
+          screenshot = page.screenshot()
+
+          # Extract text
+          text = page.inner_text("body")
+          print(text[:500])
+
+          browser.close()
+
+  - title: "Agent Web Research Tool"
+    language: "python"
+    code: |
+      from browserbase import Browserbase
+      from playwright.async_api import async_playwright
+
+      bb = Browserbase(api_key="your-api-key")
+
+      async def web_research(url: str, question: str) -> str:
+          session = bb.sessions.create(project_id="your-project-id")
+
+          async with async_playwright() as p:
+              browser = await p.chromium.connect_over_cdp(session.connect_url)
+              page = await browser.new_page()
+
+              await page.goto(url)
+              content = await page.inner_text("main")
+
+              await browser.close()
+
+          return content[:5000]  # Return content for LLM processing
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "session_creation"
+      value: 3.5
+      unit: "seconds"
+      context: "Time to create and connect to a new browser session"
+    - name: "page_load"
+      value: 2.8
+      unit: "seconds"
+      context: "Average page load time including JavaScript rendering"
+
+relationships:
+  alternatives:
+    - slug: "firecrawl"
+      note: "Web scraping API, simpler but no interactive browser control"
+  complements:
+    - slug: "crewai"
+      role: "Agent framework that can use Browserbase for web tasks"
+    - slug: "langchain"
+      role: "Orchestration framework with browser tool capabilities"
+    - slug: "openai"
+      role: "LLM that decides browser actions and processes extracted content"
+  typical_pipeline_position: "data_source"
+  pipeline_predecessors: ["agent_planning"]
+  pipeline_successors: ["data_ingestion", "llm_generation"]

@@ -1,0 +1,206 @@
+meta:
+  slug: "dspy"
+  name: "DSPy"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "programming_framework"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Programming framework for optimizing LLM pipelines with automatic prompt tuning"
+  description: |
+    DSPy is a framework from Stanford NLP for programming and optimizing LLM
+    pipelines. Instead of manually engineering prompts, DSPy treats LLM calls as
+    declarative modules with input/output signatures. An optimizer (compiler)
+    automatically generates and tunes prompts or fine-tunes models to maximize
+    a specified metric.
+
+    DSPy introduces a paradigm shift: rather than writing prompts, you write
+    programs using modules (ChainOfThought, ReAct, RAG) and let the optimizer
+    find the best prompts, few-shot examples, and configurations. This makes
+    LLM pipelines more systematic, reproducible, and maintainable.
+
+    The framework supports all major LLM providers and can optimize prompts
+    for any model. It is particularly valuable for complex pipelines where
+    manual prompt engineering is insufficient or unmaintainable.
+  logo_url: "/assets/modules/dspy.svg"
+  website: "https://dspy.ai"
+  documentation: "https://dspy.ai"
+  github: "https://github.com/stanfordnlp/dspy"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Automatic prompt optimization"
+    - "LLM pipeline programming"
+    - "RAG optimization"
+    - "Multi-step reasoning pipelines"
+    - "LLM-based classification"
+  supported_operations:
+    - "compile"
+    - "optimize"
+    - "evaluate"
+    - "chain_of_thought"
+    - "react"
+    - "retrieve"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "native"
+    - slug: "chromadb"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+
+technical_specs:
+  core_modules:
+    - "Predict"
+    - "ChainOfThought"
+    - "ReAct"
+    - "ProgramOfThought"
+    - "MultiChainComparison"
+  optimizers:
+    - "BootstrapFewShot"
+    - "BootstrapFewShotWithRandomSearch"
+    - "MIPRO"
+    - "COPRO"
+    - "BayesianSignatureOptimizer"
+  supported_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google"
+    - "Together"
+    - "Ollama"
+    - "any litellm provider"
+  languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Optimized prompts often outperform hand-crafted ones. Compilation can find non-obvious improvements."
+  scalability:
+    score: 7
+    justification: "Pipeline programs scale well. Optimization process requires evaluation budget (many LLM calls)."
+  ease_of_use:
+    score: 6
+    justification: "Requires learning a new programming paradigm. Simple use cases are easy but advanced optimization has a learning curve."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source library. Optimization requires LLM calls but produces better-performing prompts that may save costs long-term."
+  community:
+    score: 7
+    justification: "Strong academic backing from Stanford NLP. Growing industry adoption and active community."
+  maturity:
+    score: 6
+    justification: "Research project since 2023. API has evolved significantly. Stabilizing for production use."
+  flexibility:
+    score: 8
+    justification: "Works with any LLM provider. Composable modules for arbitrary pipelines. Multiple optimization strategies."
+  data_privacy:
+    score: 8
+    justification: "Client-side library. Data privacy depends on the LLM provider used."
+
+knowledge:
+  entries:
+    - topic: "DSPy vs LangChain"
+      content: |
+        DSPy and LangChain take fundamentally different approaches to LLM programming:
+
+        LangChain is imperative: you manually craft prompts, chain them together,
+        and iterate on prompt text through trial and error. Great for building
+        applications quickly with explicit control.
+
+        DSPy is declarative: you define what the pipeline should do (signatures
+        and modules) and let the optimizer figure out how (prompts, examples,
+        configurations). Better for systematic optimization and reproducibility.
+
+        Use LangChain when: you need rapid prototyping, explicit control over
+        prompts, extensive integrations, or a mature ecosystem with many examples.
+
+        Use DSPy when: you want systematic prompt optimization, your pipeline
+        has multiple LLM steps that need co-optimization, you have evaluation
+        data and metrics to optimize against, or manual prompt engineering
+        is hitting diminishing returns.
+
+        They can be used together: DSPy can optimize prompts that are then
+        deployed in a LangChain application.
+      tags: ["comparison", "langchain", "decision"]
+
+code_examples:
+  - title: "Basic RAG with DSPy"
+    language: "python"
+    code: |
+      import dspy
+
+      # Configure LLM
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      # Define RAG module
+      class RAG(dspy.Module):
+          def __init__(self, num_passages=3):
+              self.retrieve = dspy.Retrieve(k=num_passages)
+              self.generate = dspy.ChainOfThought("context, question -> answer")
+
+          def forward(self, question):
+              context = self.retrieve(question).passages
+              return self.generate(context=context, question=question)
+
+      # Use
+      rag = RAG()
+      result = rag(question="What is vector search?")
+      print(result.answer)
+
+  - title: "Optimize with BootstrapFewShot"
+    language: "python"
+    code: |
+      import dspy
+      from dspy.evaluate import Evaluate
+      from dspy.teleprompt import BootstrapFewShot
+
+      # Define metric
+      def answer_accuracy(example, prediction, trace=None):
+          return prediction.answer.lower() == example.answer.lower()
+
+      # Compile/optimize
+      optimizer = BootstrapFewShot(metric=answer_accuracy, max_bootstrapped_demos=4)
+      optimized_rag = optimizer.compile(RAG(), trainset=train_examples)
+
+      # Evaluate
+      evaluator = Evaluate(devset=dev_examples, metric=answer_accuracy)
+      score = evaluator(optimized_rag)
+      print(f"Accuracy: {score}%")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "optimization_improvement"
+      value: 15
+      unit: "percent"
+      context: "Average accuracy improvement after BootstrapFewShot optimization on HotPotQA"
+    - name: "compilation_cost"
+      value: 2.50
+      unit: "USD"
+      context: "Cost of optimizing a RAG pipeline with GPT-4o-mini, 200 training examples"
+
+relationships:
+  alternatives:
+    - slug: "langchain"
+      note: "Imperative LLM orchestration with manual prompt engineering"
+    - slug: "llamaindex"
+      note: "Data-focused framework for RAG and retrieval"
+  complements:
+    - slug: "openai"
+      role: "LLM provider for DSPy programs and optimization"
+    - slug: "chromadb"
+      role: "Vector store for DSPy retrieval modules"
+    - slug: "ragas"
+      role: "Evaluation metrics for DSPy RAG pipelines"
+  typical_pipeline_position: "orchestration"
+  pipeline_predecessors: ["data_preparation"]
+  pipeline_successors: ["evaluation", "deployment"]

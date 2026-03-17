@@ -1,0 +1,459 @@
+meta:
+  slug: "google_gemini"
+  name: "Google Gemini"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "cloud_api"
+  status: "stable"
+  last_updated: "2026-03-01"
+  maintainer: "system"
+
+identity:
+  tagline: "Multimodal AI models with massive context windows and deep Google Cloud integration"
+  description: |
+    Google Gemini is a family of multimodal large language models developed by Google
+    DeepMind. The lineup includes Gemini 2.0 Flash, Gemini 2.0 Pro, and Gemini 1.5 Pro,
+    offering a range of capability and cost tradeoffs. Gemini models are natively
+    multimodal, processing text, images, audio, and video in a single model architecture.
+
+    The standout feature of Gemini is its massive context window. Gemini 1.5 Pro supports
+    up to 2 million tokens of context, enabling processing of entire books, hours of video,
+    or very large codebases in a single request. Gemini 2.0 Flash provides 1 million tokens
+    of context at significantly lower cost and faster speed.
+
+    Gemini is accessible via the Google AI Studio (Gemini API) for developers and via
+    Vertex AI for enterprise deployments. The Vertex AI integration provides access to
+    Google Cloud's MLOps ecosystem, including grounding with Google Search for factual
+    accuracy, enterprise security controls, and VPC Service Controls for data isolation.
+
+    Gemini's competitive advantages include the longest context windows available, strong
+    cost efficiency (especially Flash models), native multimodal understanding, and tight
+    integration with the Google Cloud ecosystem. Trade-offs include a smaller third-party
+    ecosystem compared to OpenAI and less community mindshare.
+  logo_url: "/assets/modules/google_gemini.svg"
+  website: "https://deepmind.google/technologies/gemini/"
+  documentation: "https://ai.google.dev/gemini-api/docs"
+  github: "https://github.com/google-gemini/generative-ai-python"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Long document and multi-document analysis"
+    - "Video and audio understanding"
+    - "Multimodal reasoning across text, images, and video"
+    - "Code generation and debugging"
+    - "Grounded search with factual verification"
+    - "Large-scale data extraction and summarization"
+  supported_operations:
+    - "generate_content"
+    - "streaming"
+    - "function_calling"
+    - "grounding"
+    - "code_execution"
+    - "structured_output"
+    - "vision"
+    - "audio_understanding"
+    - "video_understanding"
+    - "embeddings"
+    - "context_caching"
+    - "batch_prediction"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "vertex_ai"
+      type: "native"
+    - slug: "firebase"
+      type: "native"
+    - slug: "google_cloud_functions"
+      type: "native"
+
+technical_specs:
+  models:
+    - name: "gemini-2.0-flash"
+      context_window: 1048576
+      max_output_tokens: 8192
+      training_cutoff: "2025-08"
+      modalities: ["text", "image", "audio", "video"]
+    - name: "gemini-2.0-pro"
+      context_window: 1048576
+      max_output_tokens: 8192
+      training_cutoff: "2025-08"
+      modalities: ["text", "image", "audio", "video"]
+    - name: "gemini-1.5-pro"
+      context_window: 2097152
+      max_output_tokens: 8192
+      training_cutoff: "2024-11"
+      modalities: ["text", "image", "audio", "video"]
+    - name: "gemini-2.0-flash-lite"
+      context_window: 1048576
+      max_output_tokens: 8192
+      training_cutoff: "2025-08"
+      modalities: ["text", "image"]
+  function_calling: true
+  grounding_with_search: true
+  code_execution: true
+  context_caching: true
+  streaming: true
+  structured_output: true
+  native_multimodal: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "go"
+    - "dart"
+    - "swift"
+    - "kotlin"
+  available_via:
+    - "Google AI Studio (Gemini API)"
+    - "Google Cloud Vertex AI"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Gemini 2.0 Pro is competitive with GPT-4o and Claude Opus on major benchmarks. Flash models offer excellent quality for their speed tier. Strong on multimodal tasks."
+  scalability:
+    score: 9
+    justification: "Fully managed via Google infrastructure. Vertex AI provides enterprise-grade scaling, provisioned throughput, and batch prediction for high-volume workloads."
+  ease_of_use:
+    score: 7
+    justification: "Good documentation and SDKs. Google AI Studio provides a web-based playground. Ecosystem is growing but still smaller than OpenAI's."
+  cost_efficiency:
+    score: 8
+    justification: "Flash models are very competitive. Gemini 2.0 Flash at $0.10/$0.40 per 1M tokens is among the cheapest frontier-class models. Free tier available in Google AI Studio."
+  community:
+    score: 7
+    justification: "Growing developer community. Strong in the Google Cloud ecosystem. Less third-party tooling and tutorials compared to OpenAI but rapidly expanding."
+  maturity:
+    score: 7
+    justification: "Production-ready since late 2023. Enterprise adoption growing via Vertex AI. Google's AI infrastructure is mature but the Gemini brand is relatively newer."
+  flexibility:
+    score: 6
+    justification: "Cloud-only API with no self-hosting. Available via two access paths (AI Studio and Vertex AI). Fine-tuning available for select models on Vertex AI."
+  data_privacy:
+    score: 7
+    justification: "Vertex AI offers VPC Service Controls, CMEK encryption, and data residency options. Google AI Studio free tier data may be used for improvement. Enterprise agreements available."
+
+knowledge:
+  entries:
+    - topic: "Model Selection Guide"
+      content: |
+        Google offers several Gemini models optimized for different use cases:
+
+        Gemini 2.0 Flash: The recommended default for most applications. Extremely fast,
+        low cost ($0.10/$0.40 per 1M input/output tokens), and capable across text, image,
+        audio, and video. 1M token context window handles most long-document tasks.
+
+        Gemini 2.0 Pro: The most capable model for complex reasoning, coding, and
+        multi-step analysis. Higher cost but stronger on hard benchmarks. Use when Flash
+        quality is insufficient for your task.
+
+        Gemini 1.5 Pro: Previous generation but still valuable for its unique 2M token
+        context window - the largest available from any major provider. Use when you need
+        to process extremely long inputs that exceed 1M tokens.
+
+        Gemini 2.0 Flash Lite: The fastest and cheapest option. Best for high-volume,
+        lower-complexity tasks like classification, entity extraction, and content
+        moderation.
+
+        General guidance: Start with Gemini 2.0 Flash. It is remarkably capable for its
+        cost. Move to 2.0 Pro only for tasks requiring deeper reasoning. Use 1.5 Pro
+        when context length beyond 1M tokens is needed. Use Flash Lite for simple,
+        high-throughput tasks.
+      tags: ["model-selection", "decision"]
+
+    - topic: "Long Context Processing"
+      content: |
+        Gemini's massive context windows (1M-2M tokens) enable use cases that are impractical
+        with other providers:
+
+        Entire codebases: Process 50,000+ lines of code in a single request for architecture
+        review, bug hunting, or migration planning.
+
+        Long video analysis: Gemini can process hours of video natively, extracting insights,
+        generating summaries, and answering questions about visual content.
+
+        Multi-document analysis: Load dozens of documents simultaneously for cross-reference
+        analysis, contradiction detection, or comprehensive summarization.
+
+        Full book processing: A 2M token context can hold approximately 1.5 million words -
+        enough for most books or lengthy report collections.
+
+        Context caching: For repeated queries against the same long context, use Gemini's
+        context caching feature to cache the input and pay only once for processing the
+        long prefix. Cached context has a configurable TTL and reduces input costs by up
+        to 75%.
+
+        Performance note: While Gemini handles very long contexts, quality can degrade for
+        information retrieval in the middle of extremely long inputs (the "lost in the
+        middle" effect). For retrieval-critical applications over very long documents,
+        consider combining Gemini with a RAG pipeline that pre-retrieves relevant sections.
+      tags: ["long-context", "advanced"]
+
+    - topic: "Grounding with Google Search"
+      content: |
+        Gemini offers a unique grounding feature that connects the model to Google Search
+        for factual verification and up-to-date information. When grounding is enabled,
+        Gemini can search the web to verify claims, access current information beyond its
+        training cutoff, and provide source citations.
+
+        How it works: Enable grounding by adding a google_search_retrieval tool to your
+        request. Gemini decides when to search based on the query, retrieves relevant web
+        results, and incorporates them into its response with citations.
+
+        Use cases:
+        - Factual Q&A where accuracy is critical and information may be recent
+        - Research tasks requiring current data (market trends, recent events)
+        - Reducing hallucination for domain-specific queries
+        - Building applications that need both reasoning and current knowledge
+
+        Grounding is particularly valuable for reducing hallucination on factual questions.
+        Instead of relying solely on training data, Gemini verifies information against
+        current web sources.
+
+        Cost: Grounding adds a small per-request charge. It is most cost-effective for
+        queries where factual accuracy is critical. Disable it for creative tasks, code
+        generation, or other tasks where web search adds no value.
+      tags: ["grounding", "search", "factual-accuracy"]
+
+    - topic: "Multimodal Capabilities"
+      content: |
+        Gemini is natively multimodal, meaning it was trained from the ground up to
+        understand text, images, audio, and video together, rather than having separate
+        encoders bolted on.
+
+        Image understanding: Analyze photos, diagrams, charts, screenshots, handwritten
+        notes, and documents. Supports multiple images per request. Strong on OCR,
+        diagram interpretation, and visual reasoning.
+
+        Audio understanding: Process audio files directly. Transcribe speech, analyze
+        tone, identify speakers, and answer questions about audio content. No separate
+        speech-to-text step needed.
+
+        Video understanding: Process video files with both visual and audio tracks.
+        Summarize videos, answer questions about specific moments, extract information
+        from presentations, and analyze visual content over time.
+
+        Combining modalities: The real power is in combining modalities. For example,
+        analyze a recorded meeting (video + audio) and produce meeting notes referencing
+        both what was said and what was shown on screen. Or process a technical document
+        with embedded diagrams and reason about the relationship between the text and
+        the visuals.
+
+        Upload files via the File API or include inline as base64-encoded content. The
+        File API is recommended for larger files and supports uploads up to 2GB.
+      tags: ["multimodal", "vision", "audio", "video"]
+
+    - topic: "When to Choose Gemini vs Alternatives"
+      content: |
+        Choose Google Gemini when:
+        - You need the longest context windows available (1M-2M tokens)
+        - Multimodal processing (especially video and audio) is important
+        - Cost efficiency is a priority (Flash models are very affordable)
+        - You want grounding with Google Search for factual accuracy
+        - You are in the Google Cloud ecosystem (Vertex AI, BigQuery, GCS)
+        - You need native mobile SDK support (Dart, Swift, Kotlin)
+
+        Consider OpenAI GPT when:
+        - You need the largest third-party ecosystem and community
+        - Fine-tuning API access is required
+        - You want the most battle-tested enterprise deployment option
+
+        Consider Anthropic Claude when:
+        - Analysis quality and nuanced instruction following are top priorities
+        - You need extended thinking for complex reasoning
+        - Prompt caching with 90% discount is valuable for your workload
+        - Multi-cloud availability (direct + Bedrock + Vertex) is important
+
+        Consider Ollama / local models when:
+        - Data must never leave your infrastructure
+        - You need offline or air-gapped operation
+        - You want zero per-token costs
+      tags: ["decision", "comparison"]
+
+    - topic: "Context Caching for Cost Optimization"
+      content: |
+        Gemini's context caching feature allows you to cache large input contexts and
+        reuse them across multiple requests, dramatically reducing costs for repeated
+        queries against the same large document or dataset.
+
+        How it works:
+        1. Create a cached content object with the large context you want to reuse
+        2. Set a TTL (time to live) for the cache
+        3. Reference the cache in subsequent requests instead of resending the full context
+
+        Pricing: Cached tokens are charged at a 75% discount compared to regular input
+        tokens. There is a small storage cost per hour for maintaining the cache.
+
+        Best use cases:
+        - Chat applications where users ask multiple questions about the same document
+        - Batch processing where many queries run against the same knowledge base
+        - Development and testing where you iterate on prompts against fixed context
+
+        Compared to Anthropic's prompt caching (90% discount, 5-minute TTL, automatic),
+        Gemini's caching is more explicit (you manage cache objects) but offers longer
+        TTLs and works well for both interactive and batch scenarios.
+
+        Cache minimum size is 32,768 tokens. For smaller contexts, standard input
+        processing is more cost-effective.
+      tags: ["caching", "cost", "optimization"]
+
+code_examples:
+  - title: "Basic Text Generation"
+    language: "python"
+    code: |
+      import google.generativeai as genai
+
+      genai.configure(api_key="your-api-key")  # Or use GOOGLE_API_KEY env var
+
+      model = genai.GenerativeModel("gemini-2.0-flash")
+
+      response = model.generate_content(
+          "Explain the differences between SQL and NoSQL databases in a table format."
+      )
+
+      print(response.text)
+
+  - title: "Multimodal - Image Analysis"
+    language: "python"
+    code: |
+      import google.generativeai as genai
+      from PIL import Image
+
+      genai.configure(api_key="your-api-key")
+      model = genai.GenerativeModel("gemini-2.0-flash")
+
+      image = Image.open("architecture_diagram.png")
+
+      response = model.generate_content([
+          "Analyze this system architecture diagram. Identify all components, "
+          "their relationships, and potential single points of failure.",
+          image
+      ])
+
+      print(response.text)
+
+  - title: "Function Calling with Grounding"
+    language: "python"
+    code: |
+      import google.generativeai as genai
+
+      genai.configure(api_key="your-api-key")
+
+      # Define tools
+      get_stock_price = genai.protos.FunctionDeclaration(
+          name="get_stock_price",
+          description="Get the current stock price for a ticker symbol",
+          parameters=genai.protos.Schema(
+              type=genai.protos.Type.OBJECT,
+              properties={
+                  "ticker": genai.protos.Schema(type=genai.protos.Type.STRING),
+              },
+              required=["ticker"]
+          )
+      )
+
+      tool = genai.protos.Tool(function_declarations=[get_stock_price])
+
+      model = genai.GenerativeModel(
+          "gemini-2.0-flash",
+          tools=[tool]
+      )
+
+      chat = model.start_chat()
+      response = chat.send_message("What is NVIDIA's current stock price?")
+
+      # Handle function call
+      for part in response.parts:
+          if fn := part.function_call:
+              print(f"Function: {fn.name}")
+              print(f"Args: {dict(fn.args)}")
+
+  - title: "Long Context with Caching"
+    language: "python"
+    code: |
+      import google.generativeai as genai
+
+      genai.configure(api_key="your-api-key")
+
+      # Upload a large document for caching
+      large_document = open("annual_report.pdf", "rb").read()
+
+      # Create cached content
+      cache = genai.caching.CachedContent.create(
+          model="gemini-1.5-pro",
+          contents=[
+              {
+                  "role": "user",
+                  "parts": [{"text": large_document_text}]  # 500K+ tokens
+              }
+          ],
+          ttl="3600s"  # Cache for 1 hour
+      )
+
+      # Use cached content for multiple queries (75% input discount)
+      model = genai.GenerativeModel.from_cached_content(cache)
+
+      response1 = model.generate_content("What were the total revenues?")
+      print(response1.text)
+
+      response2 = model.generate_content("Summarize the risk factors section.")
+      print(response2.text)
+
+      # Clean up
+      cache.delete()
+
+benchmarks:
+  last_run: "2026-02-25"
+  results:
+    - name: "mmlu_pro"
+      value: 75.8
+      unit: "percent"
+      context: "Gemini 2.0 Pro on MMLU-Pro benchmark"
+    - name: "humaneval"
+      value: 86.5
+      unit: "percent"
+      context: "Gemini 2.0 Pro pass@1 on HumanEval coding benchmark"
+    - name: "gpqa_diamond"
+      value: 69.4
+      unit: "percent"
+      context: "Gemini 2.0 Pro on GPQA Diamond graduate-level reasoning"
+    - name: "latency_first_token_p50"
+      value: 250
+      unit: "ms"
+      context: "Gemini 2.0 Flash streaming, short prompt"
+    - name: "latency_full_response_p50"
+      value: 800
+      unit: "ms"
+      context: "Gemini 2.0 Flash, ~200 output tokens"
+    - name: "max_context_window"
+      value: 2097152
+      unit: "tokens"
+      context: "Gemini 1.5 Pro maximum context window"
+    - name: "cost_per_1m_input_tokens"
+      value: 0.10
+      unit: "USD"
+      context: "Gemini 2.0 Flash pricing"
+
+relationships:
+  alternatives:
+    - slug: "openai"
+      note: "Largest ecosystem with strong general performance and broadest model range"
+    - slug: "anthropic_claude"
+      note: "Strong analysis and writing quality with 200K context and prompt caching"
+    - slug: "ollama"
+      note: "Self-hosted open-weight models for full data control and zero API costs"
+    - slug: "mistral"
+      note: "European AI lab with competitive open-weight and hosted models"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for RAG retrieval pipelines alongside Gemini generation"
+    - slug: "langchain"
+      role: "Orchestration framework with native Gemini integration via ChatGoogleGenerativeAI"
+    - slug: "vertex_ai"
+      role: "Google Cloud ML platform providing enterprise-grade Gemini deployment"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation", "caching"]

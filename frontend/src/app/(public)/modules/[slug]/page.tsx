@@ -267,14 +267,15 @@ export default function ModulePage({ params }: ModulePageProps) {
             <h2 className="mb-4 text-xl font-semibold">Scores</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               {Object.entries(scores).map(([key, dim]) => {
-                const score = typeof dim === 'object' && dim !== null ? (dim as { value: number; justification: string }) : null;
-                if (!score) return null;
+                const dimObj = typeof dim === 'object' && dim !== null ? (dim as { score?: number; value?: number; justification?: string }) : null;
+                if (!dimObj) return null;
+                const scoreVal = dimObj.score ?? dimObj.value ?? 5;
                 return (
                   <ScoreBar
                     key={key}
                     label={DIMENSION_LABELS[key] || key}
-                    score={score.value}
-                    justification={score.justification}
+                    score={scoreVal}
+                    justification={dimObj.justification || ''}
                   />
                 );
               })}

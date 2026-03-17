@@ -1,0 +1,344 @@
+meta:
+  slug: "ragas"
+  name: "RAGAS"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "rag_evaluation"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Framework for evaluating Retrieval Augmented Generation pipelines with reference-free metrics"
+  description: |
+    RAGAS (Retrieval Augmented Generation Assessment) is an open-source evaluation framework
+    specifically designed for assessing the quality of RAG pipelines. It provides a suite of
+    metrics that evaluate both the retrieval and generation components of a RAG system, many
+    of which are reference-free -- meaning they do not require human-annotated ground truth
+    answers.
+
+    The core metrics include faithfulness (is the answer grounded in the retrieved context?),
+    answer relevancy (does the answer address the question?), context precision (are the
+    retrieved documents relevant?), and context recall (are all necessary documents retrieved?).
+    These metrics use LLMs as judges, making evaluation scalable without human annotators.
+
+    RAGAS also provides synthetic test data generation, allowing teams to create evaluation
+    datasets from their own documents. This solves the cold-start problem where teams lack
+    labeled evaluation data when first building a RAG system. The framework integrates with
+    LangChain, LlamaIndex, and can be used with any RAG implementation through its simple API.
+  logo_url: "/assets/modules/ragas.svg"
+  website: "https://ragas.io"
+  documentation: "https://docs.ragas.io"
+  github: "https://github.com/explodinggradients/ragas"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "RAG pipeline quality evaluation"
+    - "Retrieval quality assessment"
+    - "LLM response faithfulness checking"
+    - "Synthetic test data generation"
+    - "CI/CD quality gates for RAG systems"
+  supported_operations:
+    - "evaluate"
+    - "generate_test_data"
+    - "single_turn_metrics"
+    - "multi_turn_metrics"
+    - "custom_metric_creation"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai"
+      type: "compatible"
+    - slug: "huggingface"
+      type: "compatible"
+    - slug: "mlflow"
+      type: "community"
+
+technical_specs:
+  core_metrics:
+    - "faithfulness"
+    - "answer_relevancy"
+    - "context_precision"
+    - "context_recall"
+    - "context_entity_recall"
+    - "answer_similarity"
+    - "answer_correctness"
+    - "aspect_critique"
+  multi_turn_metrics:
+    - "conversation_faithfulness"
+    - "conversation_relevancy"
+  requires_llm: true
+  supported_llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Azure OpenAI"
+    - "HuggingFace"
+    - "Local models via vLLM/Ollama"
+  synthetic_data_generation: true
+  custom_metrics: true
+  async_evaluation: true
+  batch_evaluation: true
+  sdk_languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Evaluation speed depends on LLM API latency. Async evaluation helps with throughput. Single evaluation takes 2-10 seconds depending on metrics and LLM provider."
+  scalability:
+    score: 7
+    justification: "Async batch evaluation scales well. Limited by LLM API rate limits. Can evaluate thousands of samples in parallel with proper batching."
+  ease_of_use:
+    score: 9
+    justification: "Simple evaluate() function with sensible defaults. Clear metric definitions. Excellent documentation with tutorials for common RAG evaluation scenarios."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source framework itself is free. However, each evaluation requires LLM calls, which incur API costs. Using cheaper models or local LLMs reduces cost."
+  community:
+    score: 8
+    justification: "7k+ GitHub stars, active development. Growing as the standard for RAG evaluation. Regular releases and responsive maintainers."
+  maturity:
+    score: 7
+    justification: "Released in 2023, rapidly adopted as the de facto RAG evaluation standard. Metrics are well-validated but the field of LLM-as-judge evaluation is still evolving."
+  flexibility:
+    score: 8
+    justification: "Custom metrics can be defined. Works with any LLM provider. Framework-agnostic evaluation. Supports both single-turn and multi-turn evaluation."
+  data_privacy:
+    score: 6
+    justification: "Evaluation data is sent to LLM providers for judging. Can use local LLMs to keep data on-premises, but accuracy may be lower with smaller judge models."
+
+knowledge:
+  entries:
+    - topic: "Core Metrics Explained"
+      content: |
+        RAGAS defines four core metrics for RAG evaluation:
+
+        1. Faithfulness (0-1): Measures whether the generated answer is factually consistent
+        with the retrieved context. It decomposes the answer into individual claims and
+        checks each claim against the context. A faithfulness of 1.0 means every claim in
+        the answer is supported by the retrieved documents. This catches hallucination.
+
+        2. Answer Relevancy (0-1): Measures whether the answer addresses the question asked.
+        It generates hypothetical questions from the answer and measures their similarity
+        to the original question. Penalizes irrelevant or incomplete answers.
+
+        3. Context Precision (0-1): Measures whether the retrieved documents are relevant
+        to the question and properly ranked. Higher precision means the most relevant
+        documents appear first in the retrieval results.
+
+        4. Context Recall (0-1): Measures whether all the information needed to answer the
+        question was retrieved. Requires a ground truth answer for comparison. Identifies
+        gaps in retrieval.
+
+        Together, these metrics cover the full RAG pipeline: retrieval quality (precision +
+        recall) and generation quality (faithfulness + relevancy).
+      tags: ["metrics", "evaluation", "fundamentals"]
+
+    - topic: "When to Choose RAGAS"
+      content: |
+        RAGAS is the right choice when:
+
+        1. You're building a RAG pipeline and need automated quality evaluation. RAGAS
+        provides purpose-built metrics that understand retrieval and generation quality.
+
+        2. You lack human-annotated evaluation data. RAGAS's reference-free metrics
+        (faithfulness, answer relevancy, context precision) don't require ground truth
+        answers, making them ideal for early-stage development.
+
+        3. You want to set up CI/CD quality gates. RAGAS metrics can be integrated into
+        automated pipelines to catch regressions when prompts, retrievers, or models change.
+
+        4. You need to generate synthetic test data. RAGAS can create question-answer pairs
+        from your documents, bootstrapping an evaluation dataset.
+
+        Alternatives to consider: DeepEval for broader LLM testing beyond RAG, custom
+        LLM-as-judge prompts for domain-specific evaluation, human evaluation for
+        high-stakes applications, or TruLens for evaluation with built-in observability.
+      tags: ["decision", "comparison"]
+
+    - topic: "Synthetic Test Data Generation"
+      content: |
+        RAGAS provides a test data generator that creates evaluation datasets from your
+        documents. This solves a critical bootstrapping problem: you need evaluation data
+        to measure RAG quality, but creating labeled data manually is expensive and slow.
+
+        The generator works by:
+        1. Reading your source documents
+        2. Identifying key information and relationships
+        3. Generating questions of varying difficulty (simple, reasoning, multi-context)
+        4. Creating reference answers grounded in the source documents
+
+        The distribution of question types can be controlled to test specific capabilities.
+        Simple questions test basic retrieval, reasoning questions test whether the LLM can
+        synthesize information, and multi-context questions test whether the retriever can
+        gather information from multiple documents.
+
+        Best practices: Generate 50-100 synthetic questions for initial evaluation, then
+        gradually add human-curated questions for edge cases and domain-specific scenarios.
+        Always review synthetic data for quality before using it as a benchmark.
+      tags: ["synthetic-data", "test-generation", "evaluation"]
+
+    - topic: "Integration with CI/CD Pipelines"
+      content: |
+        RAGAS can be integrated into CI/CD pipelines to automatically evaluate RAG quality
+        on every code change. The typical setup:
+
+        1. Maintain a versioned evaluation dataset (synthetic + curated) in your repository.
+
+        2. On each PR that modifies the RAG pipeline (prompts, retriever config, model):
+           - Run the RAG pipeline on the evaluation dataset
+           - Compute RAGAS metrics (faithfulness, relevancy, precision, recall)
+           - Compare against baseline thresholds
+           - Fail the PR if metrics drop below thresholds
+
+        3. Recommended thresholds to start with:
+           - Faithfulness >= 0.85 (catch hallucination)
+           - Answer relevancy >= 0.80
+           - Context precision >= 0.75
+           - Context recall >= 0.70 (if ground truth available)
+
+        4. Track metrics over time in your experiment tracker (MLflow, W&B) to identify
+        trends and catch gradual degradation.
+
+        Cost tip: Use a smaller evaluation set (20-50 samples) for PR checks, and run the
+        full evaluation set nightly or on release candidates.
+      tags: ["ci-cd", "automation", "best-practices"]
+
+code_examples:
+  - title: "Basic RAG Evaluation"
+    language: "python"
+    code: |
+      from ragas import evaluate
+      from ragas.metrics import (
+          faithfulness,
+          answer_relevancy,
+          context_precision,
+          context_recall,
+      )
+      from datasets import Dataset
+
+      # Prepare evaluation data
+      eval_data = Dataset.from_dict({
+          "question": ["What is PagedAttention?"],
+          "answer": ["PagedAttention is a memory management technique..."],
+          "contexts": [["PagedAttention divides KV cache into blocks..."]],
+          "ground_truth": ["PagedAttention manages KV cache using paging..."]
+      })
+
+      # Run evaluation
+      result = evaluate(
+          eval_data,
+          metrics=[
+              faithfulness,
+              answer_relevancy,
+              context_precision,
+              context_recall,
+          ],
+      )
+
+      print(result)
+      # {'faithfulness': 0.92, 'answer_relevancy': 0.88,
+      #  'context_precision': 0.85, 'context_recall': 0.90}
+
+  - title: "Synthetic Test Data Generation"
+    language: "python"
+    code: |
+      from ragas.testset import TestsetGenerator
+      from ragas.testset.evolutions import simple, reasoning, multi_context
+      from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+      from langchain_community.document_loaders import DirectoryLoader
+
+      # Load documents
+      loader = DirectoryLoader("./docs", glob="**/*.md")
+      documents = loader.load()
+
+      # Configure generator
+      generator_llm = ChatOpenAI(model="gpt-4o")
+      critic_llm = ChatOpenAI(model="gpt-4o")
+      embeddings = OpenAIEmbeddings()
+
+      generator = TestsetGenerator.from_langchain(
+          generator_llm, critic_llm, embeddings
+      )
+
+      # Generate test set
+      testset = generator.generate_with_langchain_docs(
+          documents,
+          test_size=50,
+          distributions={simple: 0.5, reasoning: 0.25, multi_context: 0.25}
+      )
+
+      # Convert to evaluation format
+      eval_dataset = testset.to_dataset()
+
+  - title: "Custom Metric Definition"
+    language: "python"
+    code: |
+      from ragas.metrics.base import MetricWithLLM
+      from ragas.metrics import AspectCritique
+
+      # Use built-in aspect critique for custom dimensions
+      conciseness = AspectCritique(
+          name="conciseness",
+          definition="Is the answer concise and to the point without unnecessary verbosity?",
+      )
+
+      technical_accuracy = AspectCritique(
+          name="technical_accuracy",
+          definition="Does the answer use correct technical terminology and avoid factual errors about the technology described?",
+      )
+
+      # Evaluate with custom metrics
+      from ragas import evaluate
+
+      result = evaluate(
+          eval_data,
+          metrics=[conciseness, technical_accuracy],
+      )
+
+benchmarks:
+  last_run: "2026-02-18"
+  results:
+    - name: "faithfulness_correlation_human"
+      value: 0.82
+      unit: "spearman_rho"
+      context: "Correlation with human faithfulness judgments, GPT-4o judge"
+    - name: "relevancy_correlation_human"
+      value: 0.78
+      unit: "spearman_rho"
+      context: "Correlation with human relevancy judgments, GPT-4o judge"
+    - name: "eval_latency_per_sample"
+      value: 4.2
+      unit: "sec"
+      context: "4 core metrics, GPT-4o judge, single sample"
+    - name: "eval_cost_per_100_samples"
+      value: 2.50
+      unit: "usd"
+      context: "4 core metrics, GPT-4o-mini judge"
+    - name: "synthetic_data_quality"
+      value: 0.85
+      unit: "human_approval_rate"
+      context: "50 generated Q&A pairs reviewed by domain experts"
+
+relationships:
+  alternatives:
+    - slug: "deepeval"
+      note: "Broader LLM testing framework with unit-test style interface"
+    - slug: "trulens"
+      note: "RAG evaluation with built-in observability and tracing"
+    - slug: "phoenix"
+      note: "Arize Phoenix for LLM observability with evaluation capabilities"
+  complements:
+    - slug: "langchain"
+      role: "RAG framework evaluated by RAGAS metrics"
+    - slug: "llamaindex"
+      role: "RAG framework with native RAGAS integration"
+    - slug: "openai"
+      role: "LLM provider used as the judge model for evaluation"
+  typical_pipeline_position: "evaluation"
+  pipeline_predecessors: ["llm_generation", "retrieval"]
+  pipeline_successors: ["monitoring", "optimization"]

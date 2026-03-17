@@ -1,0 +1,395 @@
+meta:
+  slug: "gpt4"
+  name: "OpenAI GPT-4"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "foundation_model"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "OpenAI's frontier model family with the broadest ecosystem and fine-tuning support"
+  description: |
+    GPT-4 is OpenAI's family of frontier large language models, including GPT-4o,
+    GPT-4o-mini, and GPT-4 Turbo. These models power the largest deployed AI
+    application ecosystem in the world and set many of the de facto standards for
+    LLM API design, tool calling conventions, and structured output formats.
+
+    GPT-4o is OpenAI's flagship multimodal model, natively processing text, images,
+    and audio. It offers strong performance across reasoning, coding, creative tasks,
+    and multilingual applications. GPT-4o-mini provides a cost-efficient tier for
+    simpler tasks, while GPT-4 Turbo offers extended context at a premium.
+
+    A key differentiator for GPT-4 in production systems is fine-tuning support.
+    Organizations can fine-tune GPT-4o and GPT-4o-mini on their own data, enabling
+    domain-specific behavior, consistent output formatting, and reduced prompt
+    engineering complexity. Combined with the broadest third-party integration
+    ecosystem of any LLM, GPT-4 remains the default choice for many teams.
+
+    OpenAI's API also provides assistants, threads, file search, and code interpreter
+    capabilities, offering managed stateful agent infrastructure alongside the core
+    completion API.
+  logo_url: "/assets/modules/gpt4.svg"
+  website: "https://openai.com"
+  documentation: "https://platform.openai.com/docs"
+  github: "https://github.com/openai/openai-python"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "General-purpose text generation and reasoning"
+    - "Multimodal understanding (text, image, audio)"
+    - "Code generation and debugging"
+    - "Fine-tuned domain-specific applications"
+    - "Stateful assistants with file search and code execution"
+    - "Structured data extraction with guaranteed JSON output"
+  supported_operations:
+    - "chat_completion"
+    - "text_generation"
+    - "function_calling"
+    - "vision"
+    - "audio_input"
+    - "audio_output"
+    - "fine_tuning"
+    - "streaming"
+    - "batch_processing"
+    - "json_mode"
+    - "structured_outputs"
+    - "assistants_api"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "semantic_kernel"
+      type: "native"
+    - slug: "crewai"
+      type: "native"
+    - slug: "autogen"
+      type: "native"
+    - slug: "haystack"
+      type: "native"
+
+technical_specs:
+  model_tiers:
+    - name: "GPT-4o"
+      context_window: 128000
+      max_output_tokens: 16384
+      training_cutoff: "2024-10"
+      strengths: "Multimodal flagship, balanced speed and intelligence"
+    - name: "GPT-4o-mini"
+      context_window: 128000
+      max_output_tokens: 16384
+      training_cutoff: "2024-10"
+      strengths: "Cost-efficient, fast, fine-tunable"
+    - name: "GPT-4 Turbo"
+      context_window: 128000
+      max_output_tokens: 4096
+      training_cutoff: "2024-04"
+      strengths: "Extended knowledge, vision support"
+  supported_modalities:
+    - "text"
+    - "images"
+    - "audio"
+  fine_tuning_available: true
+  api_providers:
+    - "OpenAI API"
+    - "Azure OpenAI Service"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "GPT-4o is consistently top-tier on major benchmarks. Strong across coding, math, reasoning, and multilingual tasks. Audio and vision capabilities are class-leading."
+  scalability:
+    score: 9
+    justification: "Massive infrastructure backed by Microsoft Azure. Azure OpenAI provides enterprise-grade scaling with regional deployments and dedicated capacity."
+  ease_of_use:
+    score: 10
+    justification: "The most widely adopted LLM API. Extensive documentation, largest community, broadest framework support. Chat Completions API is the de facto industry standard."
+  cost_efficiency:
+    score: 7
+    justification: "GPT-4o-mini is very cost-effective. GPT-4o pricing is competitive. Fine-tuning can reduce costs by enabling shorter prompts for domain-specific tasks."
+  community:
+    score: 10
+    justification: "Largest developer community of any LLM. Every major AI framework has first-class OpenAI support. Most tutorials and examples use OpenAI as the default."
+  maturity:
+    score: 10
+    justification: "GPT-4 has been in production since March 2023. Battle-tested at massive scale across millions of applications. Well-understood failure modes and mitigations."
+  flexibility:
+    score: 9
+    justification: "Fine-tuning, Assistants API, function calling, structured outputs, vision, audio -- the most feature-complete LLM API available."
+  data_privacy:
+    score: 7
+    justification: "API data not used for training by default. Azure OpenAI provides VPC-isolated deployments with HIPAA, SOC2, and compliance certifications. No self-hosted option."
+
+knowledge:
+  entries:
+    - topic: "GPT-4o vs GPT-4o-mini: Choosing the Right Tier"
+      content: |
+        GPT-4o and GPT-4o-mini share the same API interface but differ significantly
+        in capability and cost:
+
+        GPT-4o: Use for tasks requiring strong reasoning, nuanced understanding, complex
+        code generation, or multimodal analysis. Input cost is approximately 5x higher
+        than mini. Ideal for customer-facing applications where quality directly impacts
+        user experience, complex RAG pipelines, and agentic workflows.
+
+        GPT-4o-mini: Use for high-throughput tasks where speed and cost matter more
+        than peak reasoning ability. Excellent for classification, entity extraction,
+        simple summarization, query routing, and any task where you've validated that
+        mini's quality is sufficient. Fine-tuning mini for specific tasks often matches
+        or exceeds base GPT-4o performance at a fraction of the cost.
+
+        Decision framework: Start with GPT-4o-mini and measure quality on your specific
+        task. If quality is insufficient, try few-shot prompting with mini before
+        upgrading to GPT-4o. If you need GPT-4o quality at mini prices, fine-tuning
+        mini on task-specific examples is often the best path.
+      tags: ["model-selection", "cost", "architecture"]
+
+    - topic: "Fine-Tuning GPT-4 Models"
+      content: |
+        GPT-4o and GPT-4o-mini support fine-tuning, which is a significant advantage
+        for production applications. Fine-tuning allows you to:
+
+        1. Teach consistent output formatting without lengthy system prompts
+        2. Encode domain-specific knowledge and terminology
+        3. Improve performance on specialized tasks beyond what prompting achieves
+        4. Reduce prompt length (and cost) by baking instructions into the model
+
+        Best practices: Start with at least 50-100 high-quality training examples.
+        Quality matters more than quantity. Use validation splits to detect overfitting.
+        Fine-tune mini first -- it's cheaper and often sufficient.
+
+        Common fine-tuning use cases: structured extraction from domain-specific
+        documents, consistent brand voice for content generation, specialized code
+        generation for internal frameworks, and classification tasks with nuanced
+        categories.
+
+        Limitations: Fine-tuning adjusts behavior but doesn't add new factual
+        knowledge reliably. For domain knowledge, combine fine-tuning with RAG.
+        Fine-tuned models have the same rate limits and context windows as base
+        models.
+      tags: ["fine-tuning", "customization", "production"]
+
+    - topic: "Structured Outputs and Function Calling"
+      content: |
+        GPT-4 models support two complementary features for reliable structured output:
+
+        Structured Outputs: Guarantees that the model's response conforms to a provided
+        JSON schema. Unlike basic JSON mode, structured outputs are schema-validated at
+        the token generation level, ensuring 100% compliance. Use this for extraction
+        tasks, API response generation, and any scenario where downstream code expects
+        a specific shape.
+
+        Function Calling: Allows the model to indicate it wants to call external tools
+        by generating structured arguments matching a function schema. The model does
+        not execute the function -- your application handles execution and returns
+        results. Supports parallel function calls for efficiency.
+
+        Design tip: Prefer structured outputs when you need a specific data format.
+        Use function calling when the model needs to decide which actions to take.
+        They can be combined: use function calling for the agentic loop and structured
+        outputs for the final response format.
+      tags: ["structured-output", "function-calling", "tool-use"]
+
+    - topic: "Azure OpenAI vs Direct API"
+      content: |
+        OpenAI models are available through both the direct OpenAI API and Azure
+        OpenAI Service. The choice affects architecture, compliance, and operations:
+
+        Direct OpenAI API: Faster access to newest models, simpler setup, usage-based
+        billing only. Best for startups, prototyping, and applications without strict
+        compliance requirements.
+
+        Azure OpenAI: Models deployed in your Azure region with VPC isolation. Offers
+        HIPAA, FedRAMP, SOC2 compliance. Supports managed identity, private endpoints,
+        and content filtering policies. Provisioned throughput units (PTUs) provide
+        guaranteed capacity for latency-sensitive workloads. Best for enterprises with
+        existing Azure infrastructure and regulatory requirements.
+
+        The API interfaces are nearly identical. Most SDKs and frameworks support
+        both with a configuration change. Plan for Azure from the start if compliance
+        is likely to become a requirement.
+      tags: ["azure", "deployment", "compliance", "enterprise"]
+
+    - topic: "Limitations and Considerations"
+      content: |
+        Key limitations when building with GPT-4:
+
+        1. Context window is 128K tokens, smaller than Claude (200K) and Gemini (2M).
+        For very long document analysis, consider chunking or switching models.
+
+        2. Knowledge cutoff means no awareness of recent events. Use function calling
+        or RAG to provide current information.
+
+        3. No self-hosted option. For air-gapped or fully on-premises requirements,
+        consider Llama or Mistral open-source models.
+
+        4. Rate limits can be constraining for high-throughput applications. Azure
+        PTUs or batch API help but add complexity and cost.
+
+        5. Pricing for GPT-4o is higher than Claude Sonnet or Gemini Flash for
+        comparable tasks. Benchmark cost-per-quality on your specific workload.
+
+        6. Fine-tuning costs include training time and higher per-token inference
+        costs compared to the base model. Ensure the quality improvement justifies
+        the investment.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Structured Output Extraction"
+    language: "python"
+    code: |
+      from openai import OpenAI
+      from pydantic import BaseModel
+
+      client = OpenAI()
+
+      class Invoice(BaseModel):
+          vendor: str
+          amount: float
+          currency: str
+          date: str
+          line_items: list[dict]
+
+      response = client.beta.chat.completions.parse(
+          model="gpt-4o-2024-11-20",
+          messages=[
+              {"role": "system", "content": "Extract invoice data from the text."},
+              {"role": "user", "content": invoice_text}
+          ],
+          response_format=Invoice,
+      )
+
+      invoice = response.choices[0].message.parsed
+      print(f"Vendor: {invoice.vendor}, Amount: {invoice.amount} {invoice.currency}")
+
+  - title: "Fine-Tuning Workflow"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()
+
+      # Upload training data (JSONL format)
+      training_file = client.files.create(
+          file=open("training_data.jsonl", "rb"),
+          purpose="fine-tune"
+      )
+
+      # Create fine-tuning job
+      job = client.fine_tuning.jobs.create(
+          training_file=training_file.id,
+          model="gpt-4o-mini-2024-07-18",
+          hyperparameters={"n_epochs": 3}
+      )
+
+      # Monitor progress
+      events = client.fine_tuning.jobs.list_events(
+          fine_tuning_job_id=job.id, limit=10
+      )
+      for event in events.data:
+          print(f"{event.created_at}: {event.message}")
+
+      # Use fine-tuned model
+      response = client.chat.completions.create(
+          model=job.fine_tuned_model,
+          messages=[{"role": "user", "content": "Extract entities from this text..."}]
+      )
+
+  - title: "Parallel Function Calling Agent"
+    language: "python"
+    code: |
+      from openai import OpenAI
+      import json
+
+      client = OpenAI()
+      tools = [
+          {
+              "type": "function",
+              "function": {
+                  "name": "get_weather",
+                  "description": "Get weather for a city",
+                  "parameters": {
+                      "type": "object",
+                      "properties": {"city": {"type": "string"}},
+                      "required": ["city"]
+                  }
+              }
+          },
+          {
+              "type": "function",
+              "function": {
+                  "name": "get_stock_price",
+                  "description": "Get current stock price",
+                  "parameters": {
+                      "type": "object",
+                      "properties": {"symbol": {"type": "string"}},
+                      "required": ["symbol"]
+                  }
+              }
+          }
+      ]
+
+      messages = [{"role": "user", "content": "Weather in NYC and AAPL price?"}]
+      response = client.chat.completions.create(
+          model="gpt-4o", tools=tools, messages=messages
+      )
+
+      # Process parallel tool calls
+      tool_calls = response.choices[0].message.tool_calls
+      messages.append(response.choices[0].message)
+      for tc in tool_calls:
+          result = execute_function(tc.function.name, json.loads(tc.function.arguments))
+          messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "mmlu_pro"
+      value: 0.86
+      unit: "accuracy"
+      context: "GPT-4o, 5-shot"
+    - name: "humaneval_plus"
+      value: 0.90
+      unit: "pass@1"
+      context: "GPT-4o"
+    - name: "gpqa_diamond"
+      value: 0.54
+      unit: "accuracy"
+      context: "GPT-4o"
+    - name: "tokens_per_second"
+      value: 130
+      unit: "tokens/sec"
+      context: "GPT-4o, streaming output"
+    - name: "tokens_per_second_mini"
+      value: 220
+      unit: "tokens/sec"
+      context: "GPT-4o-mini, streaming output"
+    - name: "function_call_accuracy"
+      value: 0.94
+      unit: "accuracy"
+      context: "GPT-4o, Berkeley Function Calling Benchmark"
+
+relationships:
+  alternatives:
+    - slug: "claude"
+      note: "Anthropic's model with larger context window and stronger safety focus"
+    - slug: "gemini"
+      note: "Google's model with 2M context and native multimodal including video"
+    - slug: "llama"
+      note: "Open-source alternative for self-hosted and fine-tuned deployments"
+    - slug: "mistral"
+      note: "European model with strong multilingual performance and open-weight options"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with first-class OpenAI support"
+    - slug: "pinecone"
+      role: "Vector database for RAG pipelines feeding context to GPT-4"
+    - slug: "llamaindex"
+      role: "Data framework for connecting GPT-4 with knowledge sources"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation", "caching"]

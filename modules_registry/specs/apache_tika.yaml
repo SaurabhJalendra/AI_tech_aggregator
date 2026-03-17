@@ -1,0 +1,319 @@
+meta:
+  slug: "apache_tika"
+  name: "Apache Tika"
+  version: "1.0.0"
+  category: "data_ingestion"
+  subcategory: "document_parsing"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Content detection and extraction framework supporting over 1000 file formats"
+  description: |
+    Apache Tika is a mature, battle-tested toolkit for detecting and extracting metadata
+    and text content from a vast range of document formats. Originally developed as an
+    Apache Software Foundation project, Tika has been a cornerstone of content extraction
+    in enterprise search and data processing systems for over 15 years.
+
+    Tika supports over 1000 MIME types through its parser framework, which delegates to
+    specialized libraries like Apache POI (Office formats), PDFBox (PDF), and Boilerpipe
+    (HTML). It provides a unified API regardless of the underlying file format, making it
+    ideal for systems that must handle heterogeneous document collections.
+
+    Tika can run as an embedded Java library, a standalone command-line tool, or a REST
+    server (tika-server). The REST server mode is particularly useful for non-Java
+    applications and containerized deployments. While Tika excels at broad format coverage
+    and reliable text extraction, it lacks the AI-powered layout detection capabilities
+    of newer tools like Unstructured.io.
+  logo_url: "/assets/modules/apache_tika.svg"
+  website: "https://tika.apache.org"
+  documentation: "https://tika.apache.org/3.0.0/index.html"
+  github: "https://github.com/apache/tika"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Broad-format document text extraction"
+    - "MIME type detection"
+    - "Metadata extraction"
+    - "Enterprise search content processing"
+    - "Email and archive processing"
+  supported_operations:
+    - "detect"
+    - "parse"
+    - "extract_text"
+    - "extract_metadata"
+    - "translate"
+    - "language_detect"
+  integrations:
+    - slug: "elasticsearch"
+      type: "native"
+    - slug: "apache_solr"
+      type: "native"
+    - slug: "langchain"
+      type: "community"
+    - slug: "llamaindex"
+      type: "community"
+    - slug: "apache_nifi"
+      type: "native"
+
+technical_specs:
+  supported_format_count: 1000
+  supported_format_categories:
+    - "PDF"
+    - "Microsoft Office (doc, docx, ppt, pptx, xls, xlsx)"
+    - "OpenDocument (odt, ods, odp)"
+    - "HTML/XML"
+    - "Email (eml, msg, mbox)"
+    - "Archive (zip, tar, gzip, 7z, rar)"
+    - "Image (EXIF metadata, OCR via Tesseract)"
+    - "Audio/Video (metadata extraction)"
+    - "CAD files"
+    - "ePub"
+    - "RTF"
+    - "Plain text"
+  deployment_modes:
+    - "embedded_library"
+    - "cli"
+    - "rest_server"
+    - "docker"
+  languages:
+    - "java"
+  tika_server_port: 9998
+  ocr_support: true
+  ocr_engine: "tesseract"
+  max_file_size: "unlimited"
+  concurrent_parsing: true
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Fast for text extraction from standard formats. PDF parsing via PDFBox is reliable. OCR adds latency but is optional. JVM startup time is a consideration for CLI usage."
+  scalability:
+    score: 8
+    justification: "Tika server handles concurrent requests well. Can be horizontally scaled behind a load balancer. Proven in enterprise deployments processing millions of documents."
+  ease_of_use:
+    score: 6
+    justification: "Java-centric with JVM dependency. REST server simplifies use from other languages. Configuration can be complex for advanced parsing scenarios. Python wrappers exist but are community-maintained."
+  cost_efficiency:
+    score: 10
+    justification: "Fully open-source with no paid tier. No API costs. Runs on commodity hardware. The Apache Foundation ensures long-term project sustainability."
+  community:
+    score: 8
+    justification: "Large, established Apache community. Used in major enterprise systems including Elasticsearch, Solr, and content management platforms. Regular releases since 2007."
+  maturity:
+    score: 10
+    justification: "One of the most mature document extraction tools available. 17+ years of production use. Battle-tested in Fortune 500 companies and government agencies."
+  flexibility:
+    score: 7
+    justification: "Supports the broadest range of formats of any extraction tool. Custom parsers can be added. However, output is basic text/metadata without AI-enhanced structure."
+  data_privacy:
+    score: 10
+    justification: "Runs entirely on-premises with zero external calls. No telemetry, no cloud dependency. Full control over data processing."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        Apache Tika's architecture consists of four main components:
+
+        1. Detector: Identifies the MIME type of a file using magic bytes, file extension,
+        and content analysis. The composite detector chains multiple detection strategies.
+
+        2. Parser: Extracts text and metadata from detected file types. Tika delegates to
+        format-specific parsers (PDFBox for PDF, POI for Office, etc.) through a unified
+        Parser interface. The AutoDetectParser automatically selects the right parser.
+
+        3. Language Detector: Identifies the language of extracted text using statistical
+        models. Supports 70+ languages.
+
+        4. Translator: Optional machine translation of extracted text (requires external
+        translation service configuration).
+
+        The tika-server module wraps these components in a JAX-RS REST API, exposing
+        endpoints for /tika (text extraction), /meta (metadata), /detect (MIME type),
+        and /unpack (extract embedded files).
+      tags: ["architecture", "internals"]
+
+    - topic: "When to Choose Apache Tika"
+      content: |
+        Apache Tika is the right choice when:
+
+        1. You need the broadest possible format coverage. No other tool matches Tika's
+        1000+ format support. If your pipeline must handle obscure formats like CAD
+        files, legacy Office formats, or archive types, Tika is often the only option.
+
+        2. You need a zero-cost, fully on-premises solution. Tika has no paid tier, no
+        API limits, and no cloud dependency.
+
+        3. You're building on Java/JVM infrastructure. Tika integrates natively with the
+        Java ecosystem including Elasticsearch, Solr, and Hadoop.
+
+        4. Reliability and maturity matter more than AI-enhanced extraction. Tika's parsers
+        are thoroughly tested across millions of real-world documents.
+
+        Tika is NOT the right choice when: you need AI-powered layout detection for complex
+        PDFs (use Unstructured.io), you want structured elements rather than flat text
+        (use Unstructured.io or Docling), or you need a lightweight Python-native solution
+        without JVM dependency (use pdfplumber or PyMuPDF).
+      tags: ["decision", "comparison"]
+
+    - topic: "Using Tika Server with Docker"
+      content: |
+        The easiest way to use Tika from non-Java applications is via tika-server in Docker:
+
+        docker run -p 9998:9998 apache/tika:latest
+
+        This exposes REST endpoints at http://localhost:9998. Key endpoints:
+
+        PUT /tika - Extract text from a document (send file as request body)
+        PUT /meta - Extract metadata only
+        PUT /detect/stream - Detect MIME type
+        PUT /unpack/all - Extract embedded files from archives/emails
+        PUT /rmeta - Recursive metadata extraction (processes embedded documents)
+
+        The /rmeta endpoint is particularly useful for email processing, where it extracts
+        text and metadata from the email body and all attachments in a single call.
+
+        Headers control behavior: Accept (output format), Content-Type (input format hint),
+        X-Tika-OCRLanguage (OCR language), X-Tika-PDFOcrStrategy (when to OCR PDFs).
+      tags: ["deployment", "docker", "api"]
+
+    - topic: "PDF Processing Options"
+      content: |
+        Tika provides fine-grained control over PDF processing through PDFBox configuration:
+
+        1. Text extraction strategies: Tika can extract text from PDFs using the text layer
+        (fast, accurate for digital PDFs) or OCR (necessary for scanned documents).
+
+        2. The PDFOcrStrategy header controls OCR behavior:
+           - NO_OCR: Never use OCR (fastest, text layer only)
+           - OCR_ONLY: Always OCR every page (for scanned documents)
+           - OCR_AND_TEXT_EXTRACTION: Extract text layer and OCR, merge results
+           - AUTO: Use OCR only when text layer yields insufficient content
+
+        3. Table extraction is limited compared to modern tools. Tika extracts table text
+        but doesn't preserve structure. For structured table extraction, consider
+        complementing Tika with a specialized tool.
+
+        4. Image extraction: Tika can extract embedded images from PDFs. The /unpack
+        endpoint returns images as separate parts of the response.
+      tags: ["pdf", "ocr", "configuration"]
+
+code_examples:
+  - title: "Python Client with Tika Server"
+    language: "python"
+    code: |
+      import requests
+
+      TIKA_URL = "http://localhost:9998"
+
+      # Extract text from a PDF
+      with open("document.pdf", "rb") as f:
+          response = requests.put(
+              f"{TIKA_URL}/tika",
+              data=f.read(),
+              headers={"Accept": "text/plain"}
+          )
+      text = response.text
+
+      # Extract metadata
+      with open("document.pdf", "rb") as f:
+          response = requests.put(
+              f"{TIKA_URL}/meta",
+              data=f.read(),
+              headers={"Accept": "application/json"}
+          )
+      metadata = response.json()
+
+  - title: "Recursive Metadata for Emails"
+    language: "python"
+    code: |
+      import requests
+
+      TIKA_URL = "http://localhost:9998"
+
+      # Extract text and metadata from email + attachments
+      with open("message.eml", "rb") as f:
+          response = requests.put(
+              f"{TIKA_URL}/rmeta/text",
+              data=f.read(),
+              headers={"Accept": "application/json"}
+          )
+
+      documents = response.json()
+      # First element is the email body, rest are attachments
+      for doc in documents:
+          print(f"Type: {doc.get('Content-Type')}")
+          print(f"Content: {doc.get('X-TIKA:content', '')[:200]}")
+
+  - title: "LangChain Integration"
+    language: "python"
+    code: |
+      from langchain_community.document_loaders import (
+          UnstructuredFileLoader,
+      )
+
+      # Using Tika via tika-python wrapper
+      import tika
+      from tika import parser
+
+      tika.initVM()
+
+      parsed = parser.from_file("report.docx")
+      text = parsed["content"]
+      metadata = parsed["metadata"]
+
+      # Or use LangChain's built-in support
+      from langchain_community.document_loaders import TikaLoader
+
+      loader = TikaLoader(
+          "report.docx",
+          tika_server_url="http://localhost:9998"
+      )
+      documents = loader.load()
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "pdf_extraction_speed"
+      value: 0.15
+      unit: "sec/page"
+      context: "10-page text PDF, no OCR, tika-server"
+    - name: "docx_extraction_speed"
+      value: 0.08
+      unit: "sec/page"
+      context: "20-page Word document, tika-server"
+    - name: "ocr_pdf_speed"
+      value: 2.8
+      unit: "sec/page"
+      context: "Scanned 300dpi PDF, OCR_ONLY strategy"
+    - name: "mime_detection_accuracy"
+      value: 0.98
+      unit: "accuracy"
+      context: "1000-file corpus of mixed formats"
+    - name: "concurrent_throughput"
+      value: 120
+      unit: "docs/min"
+      context: "tika-server, 4 threads, mixed formats"
+
+relationships:
+  alternatives:
+    - slug: "unstructured_io"
+      note: "AI-powered document parsing with layout detection and element typing"
+    - slug: "docling"
+      note: "IBM's high-accuracy PDF converter with table structure preservation"
+    - slug: "llamaparse"
+      note: "Cloud-based LLM-enhanced document parsing"
+  complements:
+    - slug: "elasticsearch"
+      role: "Search engine that uses Tika for document ingestion"
+    - slug: "langchain"
+      role: "Orchestration framework with Tika document loader"
+    - slug: "tesseract"
+      role: "OCR engine used by Tika for scanned document processing"
+  typical_pipeline_position: "data_ingestion"
+  pipeline_predecessors: ["raw_documents"]
+  pipeline_successors: ["chunking", "embeddings"]

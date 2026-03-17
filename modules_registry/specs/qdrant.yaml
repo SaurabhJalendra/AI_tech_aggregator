@@ -1,0 +1,442 @@
+meta:
+  slug: "qdrant"
+  name: "Qdrant"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "self-hosted"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "High-performance open-source vector database built in Rust with advanced filtering"
+  description: |
+    Qdrant (pronounced "quadrant") is an open-source vector similarity search engine and
+    database written in Rust. It provides a production-ready service with a convenient API
+    for storing, searching, and managing vectors with extended payload filtering capabilities.
+
+    Qdrant's key differentiators are its performance (Rust-based engine with custom HNSW
+    implementation), rich payload filtering (arbitrary JSON payloads with indexed fields for
+    efficient filtered search), and flexible deployment options (embedded, single-node Docker,
+    or distributed cluster).
+
+    The engine supports advanced features including named vectors (multiple vectors per point),
+    quantization (scalar, product, and binary) for memory optimization, snapshot-based backups,
+    and distributed deployment with sharding and replication. Qdrant offers both REST and gRPC
+    APIs, with the gRPC interface providing significantly higher throughput for batch operations.
+
+    Qdrant Cloud provides a managed service, while the open-source version can be self-hosted
+    without feature restrictions. The project has rapidly grown in popularity, becoming one of
+    the most-starred vector database projects on GitHub.
+  logo_url: "/assets/modules/qdrant.svg"
+  website: "https://qdrant.tech"
+  documentation: "https://qdrant.tech/documentation"
+  github: "https://github.com/qdrant/qdrant"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Semantic search with complex filtering"
+    - "RAG knowledge retrieval"
+    - "Recommendation systems"
+    - "Anomaly detection"
+    - "Image and multi-modal search"
+    - "Deduplication and matching"
+  supported_operations:
+    - "upsert"
+    - "search"
+    - "search_batch"
+    - "recommend"
+    - "discover"
+    - "scroll"
+    - "delete"
+    - "update_payload"
+    - "set_payload"
+    - "count"
+    - "search_groups"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "compatible"
+    - slug: "cohere_embeddings"
+      type: "compatible"
+    - slug: "haystack"
+      type: "native"
+    - slug: "huggingface"
+      type: "compatible"
+
+technical_specs:
+  max_dimensions: 65536
+  max_vectors_per_collection: "billions (with sharding)"
+  supported_distance_metrics:
+    - "cosine"
+    - "euclidean"
+    - "dot"
+    - "manhattan"
+  supported_index_types:
+    - "hnsw"
+    - "flat (for small segments)"
+  named_vectors: true
+  metadata_filtering: true
+  hybrid_search: true
+  multi_tenancy: true
+  quantization:
+    - "scalar"
+    - "product"
+    - "binary"
+  payload_indexing: true
+  snapshot_backups: true
+  wal: true
+  rest_api: true
+  grpc_api: true
+  sharding: true
+  replication: true
+  sdk_languages:
+    - "python"
+    - "javascript"
+    - "rust"
+    - "go"
+    - "java"
+    - ".net"
+  deployment_options:
+    - "Docker"
+    - "Kubernetes"
+    - "Qdrant Cloud"
+    - "Embedded (Python)"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Rust-based engine delivers best-in-class query latency and throughput. Custom HNSW with quantization achieves excellent speed-recall tradeoffs. gRPC API provides high batch throughput."
+  scalability:
+    score: 8
+    justification: "Supports distributed deployment with sharding and replication. Quantization reduces memory footprint significantly. Handles billions of vectors across a cluster."
+  ease_of_use:
+    score: 8
+    justification: "Clean REST/gRPC API with excellent client libraries. Good documentation and quick-start guides. Payload filtering syntax is intuitive. Docker setup is straightforward."
+  cost_efficiency:
+    score: 9
+    justification: "Fully open-source with no feature gating. Quantization can reduce memory usage by 4-32x. Self-hostable on commodity hardware. Qdrant Cloud available for managed deployments."
+  community:
+    score: 8
+    justification: "19K+ GitHub stars, active Discord community. Rapid development pace with frequent releases. Growing ecosystem of integrations and tutorials."
+  maturity:
+    score: 7
+    justification: "Production-ready since 2022. Rapidly maturing with each release. Used by companies like Bayer, Flipkart, and Disney. Newer than some alternatives but very stable."
+  flexibility:
+    score: 9
+    justification: "Named vectors allow multiple vector representations per point. Rich payload filtering with indexing. Quantization options for memory-performance tradeoffs. Self-hosted or managed."
+  data_privacy:
+    score: 9
+    justification: "Fully self-hostable with no telemetry. Can run air-gapped. No data ever leaves your infrastructure. Fine-grained API key authentication."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        Qdrant is written in Rust using the Actix web framework for HTTP and Tonic for gRPC.
+        Its storage engine is built around the concept of collections, which contain points.
+        Each point has an ID, one or more vectors (named vectors), and an optional JSON payload.
+
+        The indexing layer uses a custom HNSW (Hierarchical Navigable Small World) graph
+        implementation optimized for filtered search. Unlike naive implementations that filter
+        after ANN search, Qdrant's HNSW traversal is aware of filters, using a technique
+        that adjusts the search based on filter selectivity.
+
+        Data is organized into segments within a collection. Segments are immutable once
+        optimized, following an LSM-tree-like pattern: new data goes into a mutable segment,
+        which is periodically merged and optimized into immutable segments. A Write-Ahead
+        Log (WAL) ensures durability.
+
+        For distributed deployments, collections can be sharded across nodes. Each shard
+        is a complete mini-collection with its own HNSW index. Replication provides fault
+        tolerance with configurable consistency levels (quorum, all, majority).
+      tags: ["architecture", "internals"]
+
+    - topic: "When to Choose Qdrant"
+      content: |
+        Qdrant is the right choice when:
+
+        1. Performance is critical. Qdrant's Rust engine consistently ranks among the fastest
+        in vector database benchmarks, especially for filtered queries.
+
+        2. You need rich payload filtering. Qdrant supports complex filter expressions on
+        JSON payloads with dedicated payload indexes for efficient filtered search.
+
+        3. You need named vectors. Qdrant allows storing multiple vector representations
+        per point (e.g., title embedding + content embedding + image embedding), each
+        searchable independently.
+
+        4. Memory efficiency matters. Quantization options (scalar, product, binary) can
+        reduce memory usage by 4-32x while maintaining good recall.
+
+        5. You want an open-source solution with no feature restrictions. The self-hosted
+        version has all features, including distributed mode.
+
+        Qdrant is NOT the right choice when: you need built-in vectorization like Weaviate,
+        you want zero operational overhead (consider Pinecone), you need a GraphQL API
+        (consider Weaviate), or you need built-in full-text search (Qdrant's sparse vectors
+        provide keyword matching but not full BM25).
+      tags: ["decision", "comparison"]
+
+    - topic: "Payload Filtering and Indexing"
+      content: |
+        Qdrant's payload filtering system is one of its strongest features. Each point can
+        carry an arbitrary JSON payload, and queries can include filter conditions on payload
+        fields.
+
+        Supported filter conditions include: match (exact), range (gt, gte, lt, lte), geo
+        (bounding box, radius), values_count, is_null, is_empty, has_id, and nested filters.
+        Conditions can be combined with must, should, and must_not boolean operators.
+
+        For efficient filtering, Qdrant supports payload indexes: keyword, integer, float,
+        geo, datetime, bool, text (full-text), and uuid index types. Creating an index on
+        a frequently filtered field dramatically improves query performance.
+
+        The HNSW index is filter-aware. When a filter matches a large portion of the data,
+        Qdrant uses the HNSW graph with filter checks during traversal. When the filter is
+        very selective (matches few points), Qdrant switches to a filterable-first strategy,
+        scanning only matching points. This adaptive behavior ensures consistent performance
+        regardless of filter selectivity.
+      tags: ["filtering", "payloads", "features"]
+
+    - topic: "Quantization for Memory Optimization"
+      content: |
+        Qdrant supports three quantization methods to reduce memory usage:
+
+        Scalar Quantization: Converts float32 vectors to int8, reducing memory by 4x with
+        minimal recall loss (typically < 1%). Best balance of compression and accuracy.
+
+        Product Quantization (PQ): Divides vectors into sub-vectors and quantizes each
+        independently. Can achieve 8-64x compression but with more recall loss. Best for
+        very large datasets where memory is the primary constraint.
+
+        Binary Quantization: Converts each dimension to a single bit. 32x compression.
+        Works best with high-dimensional vectors (1536+) from models like OpenAI's
+        text-embedding-3 where binary representations preserve relative distances well.
+        Oversampling and rescoring with original vectors restores most accuracy.
+
+        Quantization can be enabled per collection and combined with on-disk storage for
+        the original vectors. This allows quantized vectors in RAM for fast initial search,
+        with rescoring against full-precision vectors from disk for final ranking.
+      tags: ["quantization", "optimization", "memory"]
+
+    - topic: "Named Vectors and Multi-Modal Search"
+      content: |
+        Qdrant's named vectors feature allows storing multiple vector representations
+        per point. This is powerful for multi-modal and multi-representation use cases:
+
+        - Store both title and content embeddings for documents, allowing search against
+          either representation
+        - Combine text and image embeddings for multi-modal search
+        - Store embeddings from different models (e.g., a general-purpose model and a
+          domain-specific model) and search against the most appropriate one
+
+        Each named vector can have its own dimensionality and distance metric. When querying,
+        you specify which named vector to search against.
+
+        This eliminates the need for separate collections per embedding type and keeps
+        all representations of an object together, simplifying data management and enabling
+        cross-modal queries.
+      tags: ["named-vectors", "multi-modal", "features"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of Qdrant:
+
+        1. No built-in vectorization. Unlike Weaviate, you must generate embeddings externally
+        before upserting. This means managing an embedding pipeline separately.
+
+        2. No native GraphQL API. Only REST and gRPC. For teams accustomed to GraphQL,
+        Weaviate may be more appealing.
+
+        3. Distributed mode complexity. While supported, setting up and managing a distributed
+        Qdrant cluster requires operational expertise. Consensus and replication add latency.
+
+        4. HNSW memory requirements. Without quantization, HNSW indexes can consume
+        significant RAM. Plan memory capacity carefully for large datasets.
+
+        5. Newer ecosystem. While growing rapidly, the integration ecosystem is smaller
+        than more established databases. Some niche integrations may not exist yet.
+
+        6. No built-in access control beyond API keys in the open-source version. For
+        fine-grained RBAC, you need Qdrant Cloud or an external auth layer.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Collection and Search"
+    language: "python"
+    code: |
+      from qdrant_client import QdrantClient
+      from qdrant_client.models import (
+          VectorParams, Distance, PointStruct,
+          Filter, FieldCondition, MatchValue
+      )
+
+      client = QdrantClient(url="http://localhost:6333")
+
+      # Create collection
+      client.create_collection(
+          collection_name="documents",
+          vectors_config=VectorParams(
+              size=1536,
+              distance=Distance.COSINE
+          )
+      )
+
+      # Upsert points with payloads
+      client.upsert(
+          collection_name="documents",
+          points=[
+              PointStruct(
+                  id=1,
+                  vector=[0.1, 0.2, ...],  # 1536-dim embedding
+                  payload={
+                      "title": "RAG Architecture Guide",
+                      "category": "ai",
+                      "year": 2024
+                  }
+              )
+          ]
+      )
+
+      # Search with payload filter
+      results = client.query_points(
+          collection_name="documents",
+          query=[0.1, 0.2, ...],
+          query_filter=Filter(
+              must=[
+                  FieldCondition(
+                      key="category",
+                      match=MatchValue(value="ai")
+                  )
+              ]
+          ),
+          limit=5,
+          with_payload=True
+      )
+
+  - title: "Named Vectors for Multi-Representation"
+    language: "python"
+    code: |
+      from qdrant_client import QdrantClient
+      from qdrant_client.models import VectorParams, Distance, PointStruct
+
+      client = QdrantClient(url="http://localhost:6333")
+
+      # Collection with named vectors
+      client.create_collection(
+          collection_name="articles",
+          vectors_config={
+              "title": VectorParams(size=384, distance=Distance.COSINE),
+              "content": VectorParams(size=1536, distance=Distance.COSINE),
+          }
+      )
+
+      # Upsert with multiple vectors
+      client.upsert(
+          collection_name="articles",
+          points=[
+              PointStruct(
+                  id=1,
+                  vector={
+                      "title": title_embedding,    # 384-dim
+                      "content": content_embedding  # 1536-dim
+                  },
+                  payload={"title": "RAG Guide", "source": "blog"}
+              )
+          ]
+      )
+
+      # Search by title vector
+      results = client.query_points(
+          collection_name="articles",
+          query=query_embedding,
+          using="title",
+          limit=10
+      )
+
+  - title: "RAG Pipeline with LangChain"
+    language: "python"
+    code: |
+      from langchain_qdrant import QdrantVectorStore
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain_core.prompts import ChatPromptTemplate
+      from qdrant_client import QdrantClient
+
+      client = QdrantClient(url="http://localhost:6333")
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      vectorstore = QdrantVectorStore(
+          client=client,
+          collection_name="knowledge_base",
+          embedding=embeddings,
+      )
+
+      # Add documents
+      vectorstore.add_documents(documents)
+
+      # Create retriever with filtering
+      retriever = vectorstore.as_retriever(
+          search_type="mmr",
+          search_kwargs={"k": 5, "fetch_k": 20}
+      )
+
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on context:\n{context}\n\nQuestion: {question}"
+      )
+      llm = ChatOpenAI(model="gpt-4o")
+      chain = prompt | llm
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "insert_throughput"
+      value: 9000
+      unit: "vectors/sec"
+      context: "1536-dim, batch size 200, single node, gRPC"
+    - name: "query_latency_p50"
+      value: 5
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "query_latency_p99"
+      value: 22
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "query_latency_p99_10m"
+      value: 40
+      unit: "ms"
+      context: "1536-dim, top-k=10, 10M vectors, HNSW"
+    - name: "recall_at_10"
+      value: 0.97
+      unit: "ratio"
+      context: "1536-dim, 1M vectors, HNSW ef=256"
+    - name: "filtered_search_p50"
+      value: 8
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, 10% filter selectivity"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Fully managed alternative, simpler but proprietary and costlier at scale"
+    - slug: "weaviate"
+      note: "Open-source alternative with built-in vectorization and GraphQL API"
+    - slug: "chromadb"
+      note: "Simpler embedded alternative for prototyping and small datasets"
+    - slug: "milvus"
+      note: "Distributed alternative with GPU acceleration for massive scale"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Generates embeddings stored in Qdrant collections"
+    - slug: "langchain"
+      role: "Orchestration framework with native Qdrant integration"
+    - slug: "llamaindex"
+      role: "Data framework with Qdrant vector store integration"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

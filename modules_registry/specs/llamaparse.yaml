@@ -1,0 +1,296 @@
+meta:
+  slug: "llamaparse"
+  name: "LlamaParse"
+  version: "1.0.0"
+  category: "data_ingestion"
+  subcategory: "document_parsing"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "AI-powered document parser for complex PDFs, tables, and structured documents"
+  description: |
+    LlamaParse is a managed document parsing service by LlamaIndex that uses AI models to
+    extract structured content from complex documents including PDFs, PowerPoints, Word
+    documents, and more. Unlike traditional parsers that rely on rule-based extraction,
+    LlamaParse uses vision-language models to understand document layout, tables, charts,
+    and hierarchical structure.
+
+    The key advantage of LlamaParse is its ability to accurately parse complex tables,
+    multi-column layouts, embedded images with captions, and nested structures that defeat
+    traditional PDF extractors. It outputs clean markdown with preserved structure, making
+    it ideal for downstream chunking and RAG pipelines.
+
+    LlamaParse is offered as a cloud API with a free tier (1000 pages/day) and paid plans
+    for higher volume. It integrates natively with LlamaIndex but can be used standalone
+    with any RAG framework.
+  logo_url: "/assets/modules/llamaparse.svg"
+  website: "https://cloud.llamaindex.ai"
+  documentation: "https://docs.cloud.llamaindex.ai/llamaparse/getting_started"
+  github: "https://github.com/run-llama/llama_parse"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Complex PDF parsing with tables and charts"
+    - "Financial report extraction"
+    - "Scientific paper parsing"
+    - "Legal document processing"
+    - "Slide deck content extraction"
+    - "Structured document-to-markdown conversion"
+  supported_operations:
+    - "pdf_parsing"
+    - "docx_parsing"
+    - "pptx_parsing"
+    - "xlsx_parsing"
+    - "image_extraction"
+    - "table_extraction"
+    - "markdown_output"
+    - "json_output"
+  integrations:
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  supported_formats:
+    - "PDF"
+    - "DOCX"
+    - "PPTX"
+    - "XLSX"
+    - "HTML"
+    - "EPUB"
+    - "TXT"
+    - "RTF"
+    - "images (PNG, JPG)"
+  output_formats:
+    - "markdown"
+    - "text"
+    - "json"
+  max_file_size_mb: 100
+  free_tier_pages_per_day: 1000
+  parsing_modes:
+    - name: "fast"
+      description: "Quick extraction with basic layout understanding"
+    - name: "accurate"
+      description: "AI-powered parsing with full layout and table understanding"
+    - name: "premium"
+      description: "Highest quality using advanced vision models"
+  api_type: "async"
+  average_parse_time_per_page_sec: 2
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Best-in-class table and complex layout extraction. AI-powered parsing significantly outperforms rule-based alternatives on complex documents."
+  scalability:
+    score: 7
+    justification: "Cloud-based with async processing. Free tier limited to 1000 pages/day. Paid tiers scale higher but add cost."
+  ease_of_use:
+    score: 9
+    justification: "Simple API with minimal configuration. Upload document, get markdown. Native LlamaIndex integration."
+  cost_efficiency:
+    score: 6
+    justification: "Free tier adequate for development. Production costs can add up for high-volume document processing. More expensive than open-source alternatives."
+  community:
+    score: 7
+    justification: "Part of the LlamaIndex ecosystem. Growing adoption for document-heavy RAG applications."
+  maturity:
+    score: 7
+    justification: "Relatively new service but rapidly improving. Backed by LlamaIndex team with strong AI expertise."
+  flexibility:
+    score: 7
+    justification: "Multiple output formats and parsing modes. Custom parsing instructions supported. Limited to cloud API."
+  data_privacy:
+    score: 5
+    justification: "Documents are uploaded to LlamaIndex cloud for processing. Not suitable for highly sensitive documents without enterprise agreement."
+
+knowledge:
+  entries:
+    - topic: "When to Use LlamaParse vs Traditional Parsers"
+      content: |
+        LlamaParse excels where traditional parsers fail:
+
+        Use LlamaParse when:
+        - Documents contain complex tables (multi-row headers, merged cells, nested tables)
+        - PDFs have multi-column layouts that confuse text extractors
+        - Documents contain charts or diagrams with important data
+        - Scanned PDFs need OCR with layout understanding
+        - Financial reports, scientific papers, or legal documents with complex formatting
+
+        Use traditional parsers (PyPDF, pdfplumber, Unstructured) when:
+        - Documents are simple text-heavy PDFs without complex formatting
+        - Cost is a primary concern and volume is high
+        - Documents cannot leave your infrastructure
+        - Real-time parsing is required (LlamaParse is async with ~2s/page latency)
+        - You need offline processing capability
+
+        LlamaParse is approximately 5-10x more expensive per page than traditional parsers but
+        produces 2-3x better quality output on complex documents. The ROI depends on how much
+        document complexity affects your downstream retrieval quality.
+      tags: ["comparison", "decision", "traditional-parsers"]
+
+    - topic: "Parsing Modes and Quality Levels"
+      content: |
+        LlamaParse offers three parsing modes with different quality/speed/cost trade-offs:
+
+        Fast mode: Uses rule-based extraction with basic AI enhancement. Fastest processing
+        (~0.5s/page) and cheapest. Adequate for simple text documents. Does not handle
+        complex tables well.
+
+        Accurate mode: Uses vision-language models for layout understanding. Handles tables,
+        multi-column layouts, and structured content well. ~2s/page. The default recommended
+        mode for most applications.
+
+        Premium mode: Uses the most advanced vision models for the highest quality extraction.
+        Best for financial tables, scientific figures, and complex nested structures. ~5s/page.
+        Higher cost per page.
+
+        Custom instructions: All modes support a parsing_instruction parameter where you can
+        guide the parser (e.g., "Extract all tables as markdown tables", "Ignore headers and
+        footers", "Focus on the financial data sections"). This significantly improves output
+        quality for domain-specific documents.
+      tags: ["modes", "quality", "configuration"]
+
+    - topic: "Integration with RAG Pipelines"
+      content: |
+        LlamaParse produces clean markdown output that integrates seamlessly with downstream
+        RAG pipeline components:
+
+        With LlamaIndex: Use LlamaParse as a document reader, then pass to node parsers for
+        chunking. The MarkdownNodeParser works particularly well with LlamaParse output since
+        it preserves heading structure.
+
+        With LangChain: Use the LlamaParse Python client directly, then pass the markdown
+        output to LangChain text splitters. MarkdownHeaderTextSplitter is the natural choice.
+
+        Pipeline pattern: LlamaParse (document -> markdown) -> MarkdownSplitter (markdown ->
+        chunks) -> EmbeddingModel (chunks -> vectors) -> VectorStore (vectors -> index)
+
+        Table handling: LlamaParse outputs tables as markdown tables. For RAG, consider
+        embedding tables as separate chunks with metadata indicating they are tabular data.
+        Some retrieval strategies benefit from creating a natural language summary of each
+        table alongside the raw table.
+      tags: ["rag", "pipeline", "integration"]
+
+    - topic: "Limitations and Considerations"
+      content: |
+        Key limitations of LlamaParse:
+
+        1. Cloud-only. Documents must be uploaded to LlamaIndex servers. No on-premises or
+        self-hosted option. Evaluate data sensitivity before using.
+
+        2. Async processing. Parsing is not instant. Average 2 seconds per page means a
+        100-page document takes ~3-4 minutes. Not suitable for real-time user-facing parsing.
+
+        3. Free tier limits. 1000 pages/day on the free tier. Production applications with
+        high volume need paid plans.
+
+        4. File size limit. 100MB max per file. Very large documents may need to be split
+        before uploading.
+
+        5. Non-deterministic output. AI-based parsing may produce slightly different output
+        on repeated runs of the same document. This is usually cosmetic but can affect
+        reproducibility.
+
+        6. Limited image understanding. While it can extract images and captions, it does not
+        perform deep analysis of chart data or diagram content.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Document Parsing"
+    language: "python"
+    code: |
+      from llama_parse import LlamaParse
+
+      parser = LlamaParse(
+          api_key="your-api-key",
+          result_type="markdown",
+          parsing_instruction="Extract all tables as markdown tables"
+      )
+
+      # Parse a PDF
+      documents = parser.load_data("financial_report.pdf")
+
+      for doc in documents:
+          print(doc.text[:500])
+
+  - title: "Integration with LlamaIndex Pipeline"
+    language: "python"
+    code: |
+      from llama_parse import LlamaParse
+      from llama_index.core.node_parser import MarkdownNodeParser
+      from llama_index.core import VectorStoreIndex
+
+      # Parse complex PDF
+      parser = LlamaParse(
+          api_key="your-api-key",
+          result_type="markdown"
+      )
+      documents = parser.load_data("research_paper.pdf")
+
+      # Chunk using markdown structure
+      node_parser = MarkdownNodeParser()
+      nodes = node_parser.get_nodes_from_documents(documents)
+
+      # Build index
+      index = VectorStoreIndex(nodes)
+      query_engine = index.as_query_engine()
+
+  - title: "Batch Processing Multiple Files"
+    language: "python"
+    code: |
+      from llama_parse import LlamaParse
+      import asyncio
+
+      parser = LlamaParse(
+          api_key="your-api-key",
+          result_type="markdown",
+          num_workers=4
+      )
+
+      # Parse multiple files concurrently
+      files = ["report1.pdf", "report2.pdf", "slides.pptx"]
+      documents = parser.load_data(files)
+
+      print(f"Parsed {len(documents)} documents from {len(files)} files")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "table_extraction_accuracy"
+      value: 94.2
+      unit: "percent"
+      context: "Complex financial tables, accurate mode"
+    - name: "parse_speed_accurate"
+      value: 2.1
+      unit: "sec/page"
+      context: "Accurate mode, typical PDF"
+    - name: "parse_speed_fast"
+      value: 0.5
+      unit: "sec/page"
+      context: "Fast mode, typical PDF"
+    - name: "layout_preservation"
+      value: 91.0
+      unit: "percent"
+      context: "Multi-column layout accuracy, accurate mode"
+
+relationships:
+  alternatives:
+    - slug: "unstructured_io"
+      note: "Open-source alternative with self-hosting option but lower quality on complex documents"
+    - slug: "apache_tika"
+      note: "Java-based open-source parser, good for basic extraction but lacks AI-powered layout understanding"
+  complements:
+    - slug: "llamaindex"
+      role: "Parent framework for building RAG pipelines with LlamaParse output"
+    - slug: "llamaindex_node_parsers"
+      role: "Downstream chunking of LlamaParse markdown output"
+    - slug: "langchain_text_splitters"
+      role: "Alternative chunking of LlamaParse output using LangChain"
+  typical_pipeline_position: "data_ingestion"
+  pipeline_predecessors: []
+  pipeline_successors: ["chunking", "embeddings"]

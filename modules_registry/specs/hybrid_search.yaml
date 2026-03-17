@@ -1,0 +1,341 @@
+meta:
+  slug: "hybrid_search"
+  name: "Hybrid Search"
+  version: "1.0.0"
+  category: "retrieval"
+  subcategory: "search_strategies"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Combining dense vector and sparse keyword retrieval for superior search quality"
+  description: |
+    Hybrid search is a retrieval strategy that combines dense vector search (semantic similarity)
+    with sparse keyword search (BM25, TF-IDF, or SPLADE) to leverage the strengths of both
+    approaches. Dense retrieval excels at understanding meaning and intent, while sparse
+    retrieval excels at exact keyword matching and handling rare terms.
+
+    In practice, hybrid search addresses the weaknesses of pure vector search: missing exact
+    keyword matches (e.g., product codes, error numbers, proper nouns) and struggling with
+    out-of-distribution queries. By combining both signals, hybrid search provides more robust
+    retrieval across a wider range of query types.
+
+    Major vector databases including Pinecone, Weaviate, Qdrant, and Milvus now support
+    hybrid search natively. The approach has become a best practice for production RAG systems,
+    particularly in enterprise search where queries often mix natural language with specific
+    identifiers, codes, or technical terms.
+
+    The fusion of results from dense and sparse retrievers can be done via linear combination
+    (weighted scoring), Reciprocal Rank Fusion (RRF), or learned fusion models. The optimal
+    weighting depends on the domain and query distribution.
+  logo_url: "/assets/modules/hybrid_search.svg"
+  website: "https://weaviate.io/blog/hybrid-search-explained"
+  documentation: "https://docs.pinecone.io/guides/data/understanding-hybrid-search"
+  license: "N/A (technique)"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Enterprise search combining semantic and keyword matching"
+    - "RAG retrieval with mixed query types"
+    - "E-commerce product search"
+    - "Technical documentation search"
+    - "Legal and compliance document retrieval"
+  supported_operations:
+    - "dense_retrieval"
+    - "sparse_retrieval"
+    - "score_fusion"
+    - "reciprocal_rank_fusion"
+    - "weighted_combination"
+  integrations:
+    - slug: "pinecone"
+      type: "native"
+    - slug: "weaviate"
+      type: "native"
+    - slug: "qdrant"
+      type: "native"
+    - slug: "milvus"
+      type: "native"
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+
+technical_specs:
+  fusion_methods:
+    - name: "Linear Combination"
+      description: "Weighted sum of dense and sparse scores: alpha * dense + (1-alpha) * sparse"
+      typical_alpha: "0.5-0.7 (favoring dense)"
+    - name: "Reciprocal Rank Fusion (RRF)"
+      description: "Combines ranked lists using 1/(k+rank) scoring. Parameter-free and robust."
+      default_k: 60
+    - name: "SPLADE Sparse Encoding"
+      description: "Learned sparse representations that outperform BM25 for sparse component."
+  sparse_encoders:
+    - "BM25"
+    - "TF-IDF"
+    - "SPLADE"
+    - "SPLADE++"
+    - "Pinecone Sparse Encoder"
+  dense_encoders:
+    - "OpenAI text-embedding-3-small/large"
+    - "Cohere embed-v3"
+    - "BGE embeddings"
+    - "Jina embeddings"
+  native_database_support:
+    - database: "Pinecone"
+      method: "sparse_values field in upsert/query"
+    - database: "Weaviate"
+      method: "Built-in hybrid search with alpha parameter"
+    - database: "Qdrant"
+      method: "Sparse vectors with named vector spaces"
+    - database: "Milvus"
+      method: "Multi-vector search with RRF fusion"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Consistently outperforms pure dense or pure sparse retrieval across benchmarks. Particularly strong on queries mixing natural language with specific terms."
+  scalability:
+    score: 7
+    justification: "Requires maintaining both dense and sparse indexes, roughly doubling storage. Query latency is slightly higher than single-method search."
+  ease_of_use:
+    score: 7
+    justification: "Native support in major vector databases simplifies implementation. Tuning the fusion weight (alpha) requires experimentation for optimal results."
+  cost_efficiency:
+    score: 7
+    justification: "Additional storage for sparse indexes and slightly higher compute per query. Offset by reduced need for reranking in some scenarios."
+  community:
+    score: 8
+    justification: "Widely adopted as a best practice for production RAG. Strong support from database vendors and framework maintainers."
+  maturity:
+    score: 8
+    justification: "Hybrid retrieval has roots in classical IR research. Modern implementations in vector databases are production-proven since 2023."
+  flexibility:
+    score: 8
+    justification: "Multiple fusion methods, tunable weights, works with any embedding model and sparse encoder combination."
+  data_privacy:
+    score: 8
+    justification: "Can be fully self-hosted with open-source databases and local sparse/dense encoders. No data leaves the infrastructure."
+
+knowledge:
+  entries:
+    - topic: "Why Hybrid Search Matters"
+      content: |
+        Pure dense vector search has a well-known failure mode: it struggles with exact keyword
+        matches, especially for rare terms, proper nouns, product codes, and domain-specific
+        jargon that may not be well-represented in embedding model training data.
+
+        For example, searching for "error code KB-4032" in a knowledge base using only dense
+        vectors might return documents about general error handling rather than the specific
+        error code. The sparse (BM25) component directly matches the "KB-4032" token, ensuring
+        the right document surfaces.
+
+        Conversely, pure keyword search misses semantic relationships. A query for "how to
+        reduce cloud costs" should match documents about "infrastructure optimization" and
+        "FinOps practices" even if those exact words don't appear in the query.
+
+        Hybrid search combines both signals, providing robust retrieval across the full
+        spectrum of query types. Empirical studies consistently show 5-15% improvement in
+        recall@10 and nDCG@10 compared to either method alone.
+      tags: ["motivation", "comparison"]
+
+    - topic: "Fusion Methods Explained"
+      content: |
+        The core challenge in hybrid search is combining scores from two fundamentally different
+        scoring systems (dense cosine similarity and sparse BM25 scores).
+
+        Linear Combination: The simplest approach multiplies each score by a weight and sums
+        them. The alpha parameter controls the balance: score = alpha * dense_score +
+        (1 - alpha) * sparse_score. An alpha of 0.7 gives 70% weight to dense retrieval.
+        This requires normalizing both scores to the same scale, which can be tricky.
+
+        Reciprocal Rank Fusion (RRF): Instead of combining scores, RRF combines rank positions.
+        For each document appearing in either result list, RRF_score = sum(1 / (k + rank_i))
+        where k is a constant (typically 60) and rank_i is the document's position in each list.
+        RRF is robust, parameter-free (besides k), and doesn't require score normalization.
+
+        Learned Fusion: Some systems train a lightweight model to combine dense and sparse
+        signals. This can capture non-linear relationships but requires training data and
+        adds complexity.
+
+        For most applications, RRF is recommended as a starting point due to its robustness
+        and simplicity. Linear combination with alpha=0.6-0.7 is a good alternative when
+        the database supports it natively (e.g., Weaviate).
+      tags: ["fusion", "rrf", "techniques"]
+
+    - topic: "Implementation Approaches"
+      content: |
+        There are three main implementation approaches for hybrid search:
+
+        1. Native database support: Databases like Weaviate, Pinecone, and Qdrant support
+        hybrid search natively. You upsert both dense and sparse vectors alongside documents,
+        and the database handles fusion at query time. This is the simplest and most performant
+        approach.
+
+        2. Multi-retriever fusion: Use separate dense and sparse retrievers (e.g., vector
+        store + Elasticsearch), retrieve from both, and fuse results in application code.
+        LangChain's EnsembleRetriever and LlamaIndex's QueryFusionRetriever support this
+        pattern. More flexible but adds latency from parallel retrieval calls.
+
+        3. SPLADE-based: Use SPLADE or SPLADE++ to generate learned sparse representations
+        that outperform BM25. These are stored as sparse vectors in databases that support
+        them (Pinecone, Qdrant). This combines the benefits of learned representations with
+        the efficiency of sparse retrieval.
+
+        For new projects, native database support is recommended. For existing systems with
+        separate search infrastructure, multi-retriever fusion allows incremental adoption.
+      tags: ["implementation", "architecture"]
+
+    - topic: "Tuning and Optimization"
+      content: |
+        Optimizing hybrid search involves several key decisions:
+
+        1. Alpha/weight tuning: Start with alpha=0.7 (70% dense, 30% sparse) and adjust
+        based on evaluation. Domains with many specific identifiers (legal, medical, technical)
+        often benefit from higher sparse weight (alpha=0.5-0.6).
+
+        2. Sparse encoder selection: BM25 is the baseline. SPLADE provides significantly
+        better sparse representations but requires GPU for encoding. For most applications,
+        BM25 is sufficient and much simpler.
+
+        3. Candidate set size: Retrieve more candidates from each method (e.g., top-50 each)
+        and let the fusion produce the final top-k. This improves recall at the cost of
+        slightly higher latency.
+
+        4. Evaluation: Always evaluate hybrid search against pure dense and pure sparse
+        baselines on your specific dataset. Use metrics like nDCG@10, recall@10, and MRR.
+        Some domains may not benefit significantly from hybrid search.
+
+        5. Query classification: Advanced systems classify queries as keyword-heavy or
+        semantic-heavy and adjust weights dynamically. A query like "KB-4032 fix" gets
+        higher sparse weight, while "how to improve system reliability" gets higher dense weight.
+      tags: ["tuning", "optimization", "evaluation"]
+
+code_examples:
+  - title: "Weaviate Native Hybrid Search"
+    language: "python"
+    code: |
+      import weaviate
+
+      client = weaviate.connect_to_local()
+
+      collection = client.collections.get("Documents")
+
+      # Hybrid search with alpha parameter
+      # alpha=1.0 is pure vector, alpha=0.0 is pure keyword
+      results = collection.query.hybrid(
+          query="kubernetes deployment error handling",
+          alpha=0.7,
+          limit=10,
+          return_metadata=weaviate.classes.query.MetadataQuery(score=True)
+      )
+
+      for obj in results.objects:
+          print(f"Score: {obj.metadata.score:.4f}")
+          print(f"Content: {obj.properties['content'][:200]}")
+
+  - title: "LangChain Ensemble Retriever"
+    language: "python"
+    code: |
+      from langchain.retrievers import EnsembleRetriever, BM25Retriever
+      from langchain_pinecone import PineconeVectorStore
+
+      # Dense retriever
+      vectorstore = PineconeVectorStore(
+          index_name="my-index",
+          embedding=embeddings
+      )
+      dense_retriever = vectorstore.as_retriever(search_kwargs={"k": 50})
+
+      # Sparse retriever (BM25)
+      bm25_retriever = BM25Retriever.from_documents(documents, k=50)
+
+      # Ensemble with RRF fusion
+      hybrid_retriever = EnsembleRetriever(
+          retrievers=[dense_retriever, bm25_retriever],
+          weights=[0.7, 0.3]  # 70% dense, 30% sparse
+      )
+
+      results = hybrid_retriever.invoke("error code KB-4032 troubleshooting")
+
+  - title: "Pinecone Hybrid Search with SPLADE"
+    language: "python"
+    code: |
+      from pinecone import Pinecone
+      from pinecone_text.sparse import SpladeEncoder
+
+      pc = Pinecone(api_key="your-key")
+      index = pc.Index("hybrid-index")
+
+      # Initialize SPLADE encoder for sparse vectors
+      splade = SpladeEncoder()
+
+      # Upsert with both dense and sparse vectors
+      for doc in documents:
+          dense_vec = embed_model.encode(doc["text"])
+          sparse_vec = splade.encode_documents(doc["text"])
+          index.upsert(vectors=[{
+              "id": doc["id"],
+              "values": dense_vec,
+              "sparse_values": sparse_vec,
+              "metadata": {"text": doc["text"][:1000]}
+          }])
+
+      # Query with hybrid search
+      query = "kubernetes pod crash loop"
+      q_dense = embed_model.encode(query)
+      q_sparse = splade.encode_queries(query)
+
+      results = index.query(
+          vector=q_dense,
+          sparse_vector=q_sparse,
+          top_k=10,
+          include_metadata=True
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "ndcg_at_10_hybrid"
+      value: 0.68
+      unit: "ratio"
+      context: "Hybrid search on BEIR benchmark average (alpha=0.7)"
+    - name: "ndcg_at_10_dense_only"
+      value: 0.59
+      unit: "ratio"
+      context: "Dense-only search on BEIR benchmark average for comparison"
+    - name: "ndcg_at_10_sparse_only"
+      value: 0.52
+      unit: "ratio"
+      context: "BM25-only search on BEIR benchmark average for comparison"
+    - name: "recall_at_10_hybrid"
+      value: 0.82
+      unit: "ratio"
+      context: "Hybrid search recall, 1M document corpus"
+    - name: "query_latency_native"
+      value: 25
+      unit: "ms"
+      context: "Native hybrid in Weaviate, 1M documents, top-10"
+    - name: "query_latency_ensemble"
+      value: 85
+      unit: "ms"
+      context: "Two-retriever ensemble with RRF fusion, 1M documents"
+
+relationships:
+  alternatives:
+    - slug: "embedding_models"
+      note: "Pure dense retrieval for simpler pipelines"
+  complements:
+    - slug: "reranking_models"
+      role: "Second-stage reranking after hybrid retrieval for further quality improvement"
+    - slug: "pinecone"
+      role: "Vector database with native hybrid search support"
+    - slug: "weaviate"
+      role: "Vector database with built-in BM25 + vector hybrid search"
+    - slug: "langchain"
+      role: "Orchestration with EnsembleRetriever for multi-retriever fusion"
+  typical_pipeline_position: "retrieval"
+  pipeline_predecessors: ["embeddings", "vector_store"]
+  pipeline_successors: ["reranking", "llm_generation"]

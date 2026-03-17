@@ -1,0 +1,230 @@
+meta:
+  slug: "docling"
+  name: "Docling"
+  version: "1.0.0"
+  category: "data_ingestion"
+  subcategory: "document_parsing"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "IBM's open-source document parsing library for AI pipelines"
+  description: |
+    Docling is an open-source document parsing library developed by IBM Research
+    that converts PDFs, DOCX, PPTX, HTML, and other document formats into
+    structured representations suitable for AI applications. It uses advanced
+    layout analysis and OCR to understand document structure including tables,
+    figures, headers, and reading order.
+
+    Docling's key differentiator is its deep understanding of document layout.
+    It uses a combination of ML models for page layout analysis, table structure
+    recognition, and OCR to produce accurate structured output. The result is a
+    rich document representation that preserves semantic structure, making it
+    ideal for downstream RAG chunking and retrieval.
+
+    The library integrates with LangChain and LlamaIndex through document loaders,
+    and can export to multiple formats including markdown, JSON, and Docling's
+    native document format.
+  logo_url: "/assets/modules/docling.svg"
+  website: "https://ds4sd.github.io/docling/"
+  documentation: "https://ds4sd.github.io/docling/"
+  github: "https://github.com/DS4SD/docling"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "PDF parsing for RAG pipelines"
+    - "Document structure extraction"
+    - "Table extraction from documents"
+    - "Multi-format document conversion"
+    - "OCR for scanned documents"
+  supported_operations:
+    - "parse"
+    - "convert"
+    - "export_markdown"
+    - "export_json"
+    - "table_extraction"
+    - "ocr"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+
+technical_specs:
+  supported_formats:
+    - "PDF"
+    - "DOCX"
+    - "PPTX"
+    - "HTML"
+    - "images"
+    - "AsciiDoc"
+  layout_analysis_model: "DocLayNet"
+  table_recognition: true
+  ocr_support: true
+  gpu_acceleration: true
+  export_formats:
+    - "markdown"
+    - "json"
+    - "text"
+    - "docling_document"
+  batch_processing: true
+  languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Good parsing speed with GPU acceleration. CPU-only mode is slower but functional for moderate workloads."
+  scalability:
+    score: 6
+    justification: "Single-machine library. Batch processing supported but no built-in distributed processing."
+  ease_of_use:
+    score: 8
+    justification: "Clean Python API with sensible defaults. LangChain and LlamaIndex integrations simplify pipeline building."
+  cost_efficiency:
+    score: 9
+    justification: "Fully open-source and free. No API costs or usage limits."
+  community:
+    score: 7
+    justification: "Backed by IBM Research with active development. Growing community adoption since open-sourcing."
+  maturity:
+    score: 6
+    justification: "Open-sourced in 2024. Based on years of IBM research but the open-source version is still maturing."
+  flexibility:
+    score: 8
+    justification: "Supports multiple input and output formats. Configurable pipeline with optional OCR and table extraction."
+  data_privacy:
+    score: 10
+    justification: "Fully local processing. No data leaves your infrastructure. Ideal for sensitive documents."
+
+knowledge:
+  entries:
+    - topic: "Docling vs Unstructured.io"
+      content: |
+        Docling and Unstructured.io both handle document parsing for AI applications
+        but take different approaches:
+
+        Docling focuses on deep layout understanding using ML models (DocLayNet for
+        layout, TableFormer for tables). It excels at preserving document structure
+        and produces high-quality output from complex documents with tables, figures,
+        and multi-column layouts. It is fully open-source with no cloud dependency.
+
+        Unstructured.io offers broader format support and a managed cloud API. It
+        has a larger ecosystem of integrations and can handle more document types
+        out of the box. However, its open-source version has more limited capabilities
+        compared to the paid API.
+
+        Choose Docling when: document quality matters most, you need accurate table
+        extraction, you want fully local processing, or you're working with complex
+        PDF layouts. Choose Unstructured when: you need the broadest format support,
+        want a managed service, or need enterprise features like data connectors.
+      tags: ["comparison", "unstructured"]
+
+    - topic: "Table Extraction"
+      content: |
+        Docling's table extraction is one of its strongest features. It uses the
+        TableFormer model to recognize table structures in documents, identifying
+        rows, columns, merged cells, and headers.
+
+        The extracted tables are represented as structured data with cell content,
+        row/column spans, and header indicators. This is far more accurate than
+        naive approaches that try to parse tables from raw text extraction.
+
+        For RAG applications, properly extracted tables are crucial because tables
+        contain dense information that is often lost or garbled by simpler parsing
+        methods. Docling preserves table structure in its markdown output using
+        markdown table syntax, making it directly usable as LLM context.
+      tags: ["tables", "extraction", "feature"]
+
+code_examples:
+  - title: "Basic Document Parsing"
+    language: "python"
+    code: |
+      from docling.document_converter import DocumentConverter
+
+      converter = DocumentConverter()
+
+      # Convert a PDF to structured document
+      result = converter.convert("path/to/document.pdf")
+
+      # Export as markdown
+      markdown = result.document.export_to_markdown()
+      print(markdown)
+
+      # Access structured elements
+      for table in result.document.tables:
+          print(f"Table: {table.export_to_dataframe()}")
+
+  - title: "LangChain Integration"
+    language: "python"
+    code: |
+      from langchain_community.document_loaders import DoclingLoader
+      from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+      # Load and parse documents
+      loader = DoclingLoader(file_path="path/to/document.pdf")
+      docs = loader.load()
+
+      # Split for RAG
+      splitter = RecursiveCharacterTextSplitter(
+          chunk_size=1000,
+          chunk_overlap=200
+      )
+      chunks = splitter.split_documents(docs)
+
+      print(f"Parsed {len(docs)} pages into {len(chunks)} chunks")
+
+  - title: "Batch Processing"
+    language: "python"
+    code: |
+      from docling.document_converter import DocumentConverter
+      from pathlib import Path
+
+      converter = DocumentConverter()
+
+      # Process multiple documents
+      pdf_files = list(Path("docs_folder").glob("*.pdf"))
+      results = converter.convert_all(pdf_files)
+
+      for result in results:
+          md = result.document.export_to_markdown()
+          output_path = Path(result.input.file).with_suffix(".md")
+          output_path.write_text(md)
+
+benchmarks:
+  last_run: "2026-02-12"
+  results:
+    - name: "pdf_parse_speed"
+      value: 2.1
+      unit: "pages/second"
+      context: "CPU-only, standard text PDFs"
+    - name: "pdf_parse_speed_gpu"
+      value: 8.5
+      unit: "pages/second"
+      context: "GPU-accelerated, standard text PDFs"
+    - name: "table_extraction_accuracy"
+      value: 0.89
+      unit: "ratio"
+      context: "F1 score on PubTabNet benchmark"
+
+relationships:
+  alternatives:
+    - slug: "unstructured_io"
+      note: "Broader format support with managed cloud API option"
+    - slug: "llama_parse"
+      note: "LlamaIndex's managed document parsing service"
+    - slug: "apache_tika"
+      note: "Java-based document parsing, broader format support but less AI-focused"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with DoclingLoader integration"
+    - slug: "llamaindex"
+      role: "Data framework with Docling reader support"
+    - slug: "pinecone"
+      role: "Vector store for parsed and embedded document content"
+  typical_pipeline_position: "data_source"
+  pipeline_predecessors: ["raw_documents"]
+  pipeline_successors: ["chunking", "embeddings"]

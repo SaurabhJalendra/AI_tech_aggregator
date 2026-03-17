@@ -1,0 +1,361 @@
+meta:
+  slug: "code_generation"
+  name: "Code Generation"
+  version: "1.0.0"
+  category: "specialized_applications"
+  subcategory: "developer_tools"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "AI-powered code generation techniques and tools for automated software development"
+  description: |
+    Code generation encompasses the set of AI techniques, models, and tools that automatically
+    produce source code from natural language descriptions, partial code context, or formal
+    specifications. This has become one of the most impactful applications of large language
+    models, fundamentally changing how software is written.
+
+    Modern code generation spans a wide spectrum: from inline code completion (GitHub Copilot,
+    Cursor) to full-program synthesis from natural language (Claude, GPT-4), to specialized
+    code models optimized for programming tasks (CodeLlama, DeepSeek Coder, StarCoder). The
+    field also includes code translation between languages, test generation, bug fixing,
+    documentation generation, and code review.
+
+    The architecture of code generation systems typically involves a large language model
+    (either general-purpose or code-specialized) augmented with context retrieval (codebase
+    search, documentation lookup, API references) and output validation (syntax checking,
+    type checking, test execution). Agent-based systems like Claude Code, Devin, and SWE-Agent
+    take this further by autonomously planning, executing, and iterating on code changes.
+  logo_url: "/assets/modules/code_generation.svg"
+  website: "https://github.com/features/copilot"
+  documentation: "https://docs.github.com/en/copilot"
+  license: "Various"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Inline code completion and suggestion"
+    - "Natural language to code generation"
+    - "Code refactoring and optimization"
+    - "Test generation"
+    - "Bug detection and fixing"
+    - "Code translation between languages"
+    - "Documentation generation"
+    - "Code review and explanation"
+  supported_operations:
+    - "completion"
+    - "generation"
+    - "refactoring"
+    - "translation"
+    - "explanation"
+    - "test_generation"
+    - "bug_fixing"
+    - "code_review"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "ollama"
+      type: "compatible"
+
+technical_specs:
+  leading_models:
+    general_purpose:
+      - "Claude 3.5 Sonnet / Claude Opus"
+      - "GPT-4o"
+      - "Gemini 1.5 Pro"
+    code_specialized:
+      - "DeepSeek Coder V2"
+      - "CodeLlama 70B"
+      - "StarCoder2 15B"
+      - "Codestral"
+    open_source:
+      - "DeepSeek Coder V2 (open weights)"
+      - "CodeLlama (open weights)"
+      - "StarCoder2 (open weights)"
+  ide_integrations:
+    - "VS Code (Copilot, Cursor, Continue)"
+    - "JetBrains IDEs (Copilot, AI Assistant)"
+    - "Neovim (Copilot, various plugins)"
+    - "Emacs (Copilot, gptel)"
+  agent_tools:
+    - "Claude Code"
+    - "GitHub Copilot Workspace"
+    - "Cursor Composer"
+    - "Devin"
+    - "SWE-Agent"
+  supported_languages: "100+ programming languages"
+  context_window_importance: "critical for codebase-aware generation"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Top models achieve 80%+ pass rates on HumanEval. Real-world productivity gains of 30-55% reported in studies. Quality varies by language and task complexity."
+  scalability:
+    score: 8
+    justification: "Cloud-based tools scale transparently. Self-hosted models require GPU infrastructure. Agent systems handle increasingly complex multi-file changes."
+  ease_of_use:
+    score: 9
+    justification: "IDE integrations provide seamless inline suggestions. Natural language interfaces lower the barrier. Agent tools handle complex tasks with minimal guidance."
+  cost_efficiency:
+    score: 7
+    justification: "Copilot at $19/month provides exceptional ROI for individual developers. API-based generation costs scale with usage. Open-source models eliminate per-query costs."
+  community:
+    score: 9
+    justification: "Massive community across all models and tools. Active benchmarking, research papers, and open-source projects. Rapidly evolving best practices."
+  maturity:
+    score: 7
+    justification: "GitHub Copilot launched 2021, rapidly maturing. Agent-based tools still evolving. Best practices for enterprise adoption still forming."
+  flexibility:
+    score: 8
+    justification: "Wide range of models from lightweight to frontier. Supports all major languages. Can be customized with fine-tuning or RAG over codebases."
+  data_privacy:
+    score: 6
+    justification: "Cloud tools send code to external servers. Enterprise plans offer data retention controls. Self-hosted open-source models provide full privacy. Code sensitivity varies by organization."
+
+knowledge:
+  entries:
+    - topic: "Code Generation Architecture Patterns"
+      content: |
+        Modern code generation systems use several architectural patterns:
+
+        1. Direct Generation: Send a prompt to an LLM and receive code. Simple but limited
+        by context window and lacks awareness of the broader codebase. Works well for
+        standalone functions and scripts.
+
+        2. Retrieval-Augmented Generation (RAG): Index the codebase and retrieve relevant
+        files, functions, and documentation as context for the LLM. This enables codebase-aware
+        generation that follows existing patterns and conventions. Tools like Cursor and
+        Continue use this approach.
+
+        3. Agent-Based Generation: An LLM agent that can read files, write code, run tests,
+        and iterate based on results. Claude Code, Devin, and SWE-Agent represent this
+        pattern. The agent plans changes across multiple files, executes them, validates
+        through testing, and self-corrects.
+
+        4. Fine-Tuned Models: Models trained or fine-tuned specifically on code (CodeLlama,
+        StarCoder, DeepSeek Coder). These are more efficient for pure code tasks but less
+        capable at reasoning about complex requirements compared to frontier general models.
+
+        The trend is toward agent-based systems that combine all these patterns: retrieve
+        context from the codebase, generate code using a powerful LLM, validate through
+        execution, and iterate until the task is complete.
+      tags: ["architecture", "patterns", "agents"]
+
+    - topic: "Choosing the Right Code Generation Approach"
+      content: |
+        The choice of code generation approach depends on the task complexity and requirements:
+
+        Inline Completion (Copilot, Cursor Tab): Best for routine code, boilerplate, and
+        pattern completion. Provides 2-5x speed improvement for common coding tasks. Low
+        risk since the developer reviews each suggestion in real-time.
+
+        Chat-Based Generation (Claude, GPT-4, Cursor Chat): Best for generating complete
+        functions, explaining code, debugging, and design discussions. Works well when you
+        can describe what you want in natural language.
+
+        Agent-Based Generation (Claude Code, Copilot Workspace): Best for multi-file changes,
+        feature implementation, and refactoring. The agent handles planning and execution
+        across the codebase. Requires clear task specification and review of results.
+
+        Specialized Models (DeepSeek Coder, CodeLlama): Best when self-hosting is required
+        for privacy, cost optimization at scale, or when you need to fine-tune on proprietary
+        code patterns. Performance gap with frontier models is narrowing.
+
+        For enterprise adoption, start with inline completion (lowest risk, highest ROI),
+        then expand to chat-based generation, and finally agent-based tools as teams develop
+        effective review practices for AI-generated code.
+      tags: ["decision", "comparison", "enterprise"]
+
+    - topic: "Code Generation Best Practices"
+      content: |
+        Key best practices for effective code generation:
+
+        1. Provide clear context: Include relevant type definitions, function signatures,
+        and examples in the prompt. The more context the model has about your codebase
+        conventions, the better the output.
+
+        2. Specify constraints explicitly: Language version, framework, coding style, error
+        handling approach, and performance requirements should be stated upfront.
+
+        3. Use iterative refinement: Generate an initial version, then refine through
+        follow-up prompts. Complex code rarely comes out perfect on the first generation.
+
+        4. Always review and test: AI-generated code can contain subtle bugs, security
+        vulnerabilities, or logic errors. Treat generated code the same as a junior
+        developer's pull request.
+
+        5. Leverage test-driven generation: Write tests first (or describe expected behavior),
+        then generate implementation. This gives the model clear success criteria and makes
+        validation straightforward.
+
+        6. Be aware of training data cutoffs: Models may generate code using deprecated APIs
+        or outdated patterns. Provide documentation for newer APIs in the context.
+
+        7. Separate generation from sensitive data: Avoid including API keys, credentials,
+        or PII in prompts to code generation tools, especially cloud-based ones.
+      tags: ["best-practices", "tips"]
+
+    - topic: "Evaluation and Benchmarks"
+      content: |
+        Code generation quality is measured through several benchmarks:
+
+        HumanEval: 164 Python programming problems testing function-level generation.
+        Top models achieve 90%+ pass@1. Widely used but limited to simple, self-contained
+        problems.
+
+        MBPP (Mostly Basic Programming Problems): 974 crowd-sourced Python problems.
+        Broader coverage than HumanEval but still focused on isolated functions.
+
+        SWE-bench: Real GitHub issues requiring multi-file changes in real repositories.
+        Much more representative of actual software engineering. Top agents solve 40-50%
+        of issues (as of early 2026), compared to 15-20% a year ago.
+
+        LiveCodeBench: Continuously updated benchmark using new competitive programming
+        problems, avoiding contamination from training data.
+
+        Key metrics: pass@1 (first attempt success), pass@k (success in k attempts),
+        and for agents: resolution rate (percentage of tasks completed correctly).
+
+        In practice, benchmark scores don't fully predict real-world utility. Factors like
+        context utilization, instruction following, and codebase awareness matter more than
+        performance on isolated problems.
+      tags: ["evaluation", "benchmarks", "metrics"]
+
+code_examples:
+  - title: "Code Generation with Claude API"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=4096,
+          system="You are an expert software engineer. Generate clean, well-documented code.",
+          messages=[
+              {
+                  "role": "user",
+                  "content": """
+                  Create a Python FastAPI endpoint that:
+                  1. Accepts a JSON body with 'query' and optional 'filters' fields
+                  2. Performs vector search against a Pinecone index
+                  3. Returns ranked results with metadata
+                  4. Includes proper error handling and input validation
+                  """
+              }
+          ]
+      )
+
+      print(response.content[0].text)
+
+  - title: "Test-Driven Code Generation"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      # Provide tests first, then ask for implementation
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=4096,
+          messages=[
+              {
+                  "role": "user",
+                  "content": """
+                  Here are the tests. Write the implementation that passes all of them:
+
+                  ```python
+                  def test_chunk_text_basic():
+                      result = chunk_text("Hello world. This is a test.", chunk_size=20, overlap=5)
+                      assert len(result) >= 2
+                      assert all(len(c) <= 20 for c in result)
+
+                  def test_chunk_text_overlap():
+                      text = "ABCDEFGHIJ" * 5
+                      chunks = chunk_text(text, chunk_size=15, overlap=5)
+                      for i in range(len(chunks) - 1):
+                          assert chunks[i][-5:] == chunks[i+1][:5]
+
+                  def test_chunk_text_empty():
+                      assert chunk_text("", chunk_size=10, overlap=2) == []
+                  ```
+                  """
+              }
+          ]
+      )
+
+  - title: "RAG-Enhanced Code Generation"
+    language: "python"
+    code: |
+      from langchain_anthropic import ChatAnthropic
+      from langchain_core.prompts import ChatPromptTemplate
+
+      # Retrieve relevant code context from codebase
+      def get_code_context(query: str, codebase_retriever) -> str:
+          """Retrieve relevant files and functions from the codebase."""
+          docs = codebase_retriever.invoke(query)
+          return "\n\n".join([
+              f"# File: {doc.metadata['file_path']}\n{doc.page_content}"
+              for doc in docs
+          ])
+
+      llm = ChatAnthropic(model="claude-sonnet-4-20250514")
+
+      prompt = ChatPromptTemplate.from_template("""
+      You are generating code for an existing codebase. Follow the patterns
+      and conventions shown in the context below.
+
+      Relevant codebase context:
+      {context}
+
+      Task: {task}
+
+      Generate code that integrates naturally with the existing codebase.
+      """)
+
+      chain = prompt | llm
+
+      result = chain.invoke({
+          "context": get_code_context("user authentication", retriever),
+          "task": "Add a password reset endpoint following existing auth patterns"
+      })
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "humaneval_claude_opus"
+      value: 92.1
+      unit: "percent_pass_at_1"
+      context: "Claude Opus, HumanEval benchmark, zero-shot"
+    - name: "humaneval_gpt4o"
+      value: 90.2
+      unit: "percent_pass_at_1"
+      context: "GPT-4o, HumanEval benchmark, zero-shot"
+    - name: "swebench_verified_claude"
+      value: 49.0
+      unit: "percent_resolved"
+      context: "Claude + agent scaffold, SWE-bench Verified"
+    - name: "developer_productivity_gain"
+      value: 40
+      unit: "percent"
+      context: "Average across multiple studies, inline completion usage"
+
+relationships:
+  alternatives: []
+  complements:
+    - slug: "openai"
+      role: "Provides GPT models for code generation"
+    - slug: "anthropic_claude"
+      role: "Provides Claude models for code generation and agentic coding"
+    - slug: "ollama"
+      role: "Local hosting of open-source code models like CodeLlama and DeepSeek Coder"
+  typical_pipeline_position: "application_layer"
+  pipeline_predecessors: ["llm_layer", "retrieval"]
+  pipeline_successors: ["testing", "deployment"]

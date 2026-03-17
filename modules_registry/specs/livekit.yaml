@@ -1,0 +1,336 @@
+meta:
+  slug: "livekit"
+  name: "LiveKit"
+  version: "1.0.0"
+  category: "voice_conversational"
+  subcategory: "real_time_communication"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source real-time communication platform for building voice and video AI applications"
+  description: |
+    LiveKit is an open-source WebRTC-based platform for building real-time audio and video
+    applications. It provides a scalable Selective Forwarding Unit (SFU) server, client SDKs
+    for every major platform, and a growing suite of AI integrations that make it the backbone
+    of modern voice AI agent architectures.
+
+    The LiveKit Agents framework is purpose-built for creating AI-powered voice and multimodal
+    agents. It handles the complexities of real-time audio streaming, voice activity detection,
+    speech-to-text, LLM processing, and text-to-speech in a unified pipeline. Developers can
+    compose agents from pluggable components including Whisper, Deepgram, ElevenLabs, OpenAI,
+    and Anthropic.
+
+    LiveKit can be self-hosted or used via LiveKit Cloud, their managed offering. The platform
+    handles the hard problems of real-time communication including NAT traversal, adaptive
+    bitrate, echo cancellation, and global edge networking, letting developers focus on
+    building application logic rather than infrastructure.
+  logo_url: "/assets/modules/livekit.svg"
+  website: "https://livekit.io"
+  documentation: "https://docs.livekit.io"
+  github: "https://github.com/livekit/livekit"
+  license: "Apache-2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Voice AI agents and assistants"
+    - "Real-time audio/video communication"
+    - "Conversational AI with voice interface"
+    - "Live transcription and translation"
+    - "Multimodal AI applications"
+    - "Telephony integration (SIP)"
+  supported_operations:
+    - "room_management"
+    - "audio_streaming"
+    - "video_streaming"
+    - "screen_sharing"
+    - "data_channels"
+    - "sip_trunking"
+    - "agent_dispatch"
+    - "track_subscription"
+    - "recording"
+    - "egress"
+  integrations:
+    - slug: "whisper"
+      type: "native"
+    - slug: "elevenlabs"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "native"
+
+technical_specs:
+  protocol: "WebRTC"
+  server_architecture: "SFU (Selective Forwarding Unit)"
+  server_language: "Go"
+  max_participants_per_room: 1000
+  supported_codecs:
+    audio:
+      - "Opus"
+      - "Red (redundancy)"
+    video:
+      - "VP8"
+      - "VP9"
+      - "H.264"
+      - "AV1"
+  client_sdks:
+    - "JavaScript/TypeScript"
+    - "React"
+    - "Swift (iOS)"
+    - "Kotlin (Android)"
+    - "Flutter"
+    - "Unity"
+    - "Rust"
+    - "Python"
+    - "Go"
+  agent_framework_language: "Python"
+  end_to_end_encryption: true
+  simulcast_support: true
+  sip_support: true
+  cloud_regions: 12
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Sub-100ms audio latency globally. Go-based SFU is highly optimized for concurrent connections and low CPU usage per participant."
+  scalability:
+    score: 9
+    justification: "Horizontally scalable SFU architecture. LiveKit Cloud operates global edge network. Supports 1000+ participants per room."
+  ease_of_use:
+    score: 8
+    justification: "Well-designed SDKs for all platforms. Agent framework simplifies voice AI development. Self-hosting requires WebRTC infrastructure knowledge."
+  cost_efficiency:
+    score: 8
+    justification: "Open-source server with Apache-2.0 license for self-hosting. Cloud pricing is competitive. Agent framework eliminates need to build real-time infrastructure."
+  community:
+    score: 8
+    justification: "Active open-source community. Growing ecosystem of plugins and integrations. Strong adoption in the voice AI agent space."
+  maturity:
+    score: 7
+    justification: "Production-proven SFU since 2021. Agent framework is newer but rapidly maturing with strong backing and adoption."
+  flexibility:
+    score: 9
+    justification: "Self-hostable or cloud-managed. Pluggable STT/TTS/LLM components. Supports audio, video, data channels, and telephony in one platform."
+  data_privacy:
+    score: 9
+    justification: "Self-hostable with end-to-end encryption support. No data passes through LiveKit servers when self-hosted. HIPAA-eligible cloud offering."
+
+knowledge:
+  entries:
+    - topic: "Agent Framework Architecture"
+      content: |
+        The LiveKit Agents framework provides a structured way to build voice AI agents. The
+        core abstraction is the VoicePipelineAgent, which orchestrates:
+
+        1. Voice Activity Detection (VAD): Silero VAD detects when the user starts and stops
+        speaking, enabling natural turn-taking.
+
+        2. Speech-to-Text (STT): Converts user speech to text using configurable providers
+        (Whisper, Deepgram, Google, Azure).
+
+        3. LLM Processing: Routes transcribed text to an LLM (OpenAI, Anthropic, or any
+        OpenAI-compatible API) for generating a response.
+
+        4. Text-to-Speech (TTS): Converts the LLM response back to speech using providers
+        like ElevenLabs, OpenAI TTS, or Cartesia.
+
+        The pipeline handles interruption (barge-in), where the user can interrupt the agent
+        mid-sentence. It manages audio buffering, cancellation of in-progress TTS, and
+        seamless resumption of the conversation.
+
+        Agents are deployed as worker processes that connect to a LiveKit server. When a user
+        joins a room, the agent is automatically dispatched. Multiple agents can serve
+        different rooms concurrently.
+      tags: ["agents", "architecture", "voice-pipeline"]
+
+    - topic: "When to Choose LiveKit"
+      content: |
+        LiveKit is the right choice when:
+
+        1. You're building a voice AI agent that needs real-time, low-latency communication.
+        LiveKit handles the hardest part (real-time audio transport) so you can focus on
+        the AI logic.
+
+        2. You need cross-platform support. LiveKit's SDKs cover web, iOS, Android, Flutter,
+        Unity, and more, all connecting to the same server.
+
+        3. You want to self-host for data privacy. The Apache-2.0 licensed server runs
+        anywhere and gives you complete control over data flow.
+
+        4. You need telephony integration. LiveKit's SIP support lets AI agents answer
+        phone calls, enabling automated customer service and outbound calling.
+
+        5. You're building multimodal AI (voice + video + data). LiveKit handles all three
+        in a single platform with consistent APIs.
+
+        LiveKit may NOT be the right choice when: you only need simple audio file
+        transcription (use Whisper directly), you need a simple chatbot without voice
+        (use a standard chat API), or you're building a traditional video conferencing
+        product where established solutions like Twilio may be more appropriate.
+      tags: ["decision", "comparison"]
+
+    - topic: "SIP and Telephony Integration"
+      content: |
+        LiveKit's SIP integration enables AI agents to participate in phone calls. This
+        is critical for enterprise use cases like automated customer service, appointment
+        scheduling, and outbound sales calls.
+
+        The SIP bridge connects traditional phone networks (PSTN) to LiveKit rooms. When
+        a phone call arrives via a SIP trunk, LiveKit creates a room and dispatches an AI
+        agent. The agent processes audio through the standard voice pipeline (STT -> LLM ->
+        TTS) while the caller experiences a natural phone conversation.
+
+        Setup requires: a SIP trunk provider (Twilio, Telnyx, Vonage), configuration of
+        inbound/outbound SIP rules in LiveKit, and an agent worker to handle calls.
+
+        Key telephony considerations: PSTN audio is narrowband (8kHz), which affects STT
+        accuracy. Use STT models optimized for telephony audio. Also handle DTMF tones for
+        cases where callers need to press buttons. LiveKit provides DTMF event handling
+        through data channels.
+      tags: ["sip", "telephony", "enterprise"]
+
+    - topic: "Deployment and Scaling"
+      content: |
+        LiveKit server can be deployed in several configurations:
+
+        Single Node: Suitable for development and small deployments. Run the livekit-server
+        binary directly or via Docker. Handles hundreds of concurrent participants.
+
+        Multi-Node with Redis: For horizontal scaling, multiple LiveKit servers share state
+        via Redis. Rooms are distributed across servers, and participants in the same room
+        are routed to the same node. This scales to thousands of concurrent rooms.
+
+        LiveKit Cloud: Managed offering with global edge network across 12+ regions.
+        Automatic scaling, monitoring, and SLA guarantees. Recommended for production
+        workloads unless self-hosting is required.
+
+        Agent workers are deployed separately from the SFU. They connect to the LiveKit
+        server as clients and can be scaled independently based on the number of concurrent
+        agent conversations. Each agent worker typically handles one conversation at a time
+        (though this depends on GPU resources for local STT/TTS).
+
+        For GPU-intensive workloads (running Whisper locally), deploy agent workers on
+        GPU instances. For API-based STT/TTS (Deepgram, ElevenLabs), CPU instances suffice.
+      tags: ["deployment", "scaling", "infrastructure"]
+
+code_examples:
+  - title: "Voice AI Agent"
+    language: "python"
+    code: |
+      from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli
+      from livekit.agents.voice_assistant import VoiceAssistant
+      from livekit.plugins import openai, silero, elevenlabs
+
+      async def entrypoint(ctx: JobContext):
+          await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+
+          assistant = VoiceAssistant(
+              vad=silero.VAD.load(),
+              stt=openai.STT(model="whisper-1"),
+              llm=openai.LLM(model="gpt-4o"),
+              tts=elevenlabs.TTS(voice_id="JBFqnCBsd6RMkjVDRZzb"),
+          )
+
+          assistant.start(ctx.room)
+          await assistant.say("Hello! How can I help you today?")
+
+      if __name__ == "__main__":
+          cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+
+  - title: "Room Management"
+    language: "python"
+    code: |
+      from livekit import api
+
+      # Create LiveKit API client
+      lk_api = api.LiveKitAPI(
+          url="https://my-livekit-server.com",
+          api_key="your-api-key",
+          api_secret="your-api-secret"
+      )
+
+      # Create a room
+      room = await lk_api.room.create_room(
+          api.CreateRoomRequest(name="my-room", empty_timeout=600)
+      )
+
+      # Generate access token for a participant
+      token = api.AccessToken(api_key="key", api_secret="secret")
+      token.with_identity("user-123")
+      token.with_name("John")
+      token.with_grants(api.VideoGrants(room_join=True, room="my-room"))
+
+      jwt = token.to_jwt()
+
+  - title: "SIP Inbound Call Handler"
+    language: "python"
+    code: |
+      from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli
+      from livekit.agents.voice_assistant import VoiceAssistant
+      from livekit.plugins import deepgram, openai, cartesia, silero
+
+      async def entrypoint(ctx: JobContext):
+          await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+
+          # Configure for telephony audio quality
+          assistant = VoiceAssistant(
+              vad=silero.VAD.load(),
+              stt=deepgram.STT(model="nova-2-phonecall"),
+              llm=openai.LLM(
+                  model="gpt-4o",
+                  system_prompt="You are a helpful customer service agent."
+              ),
+              tts=cartesia.TTS(voice_id="telephony-optimized"),
+          )
+
+          assistant.start(ctx.room)
+          await assistant.say(
+              "Thank you for calling. How may I assist you?"
+          )
+
+      if __name__ == "__main__":
+          cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "audio_latency_p50"
+      value: 45
+      unit: "ms"
+      context: "Same-region, Opus codec, LiveKit Cloud"
+    - name: "audio_latency_p99"
+      value: 95
+      unit: "ms"
+      context: "Same-region, Opus codec, LiveKit Cloud"
+    - name: "agent_round_trip_p50"
+      value: 1200
+      unit: "ms"
+      context: "Full voice pipeline: VAD + STT (Deepgram) + LLM (GPT-4o) + TTS (ElevenLabs)"
+    - name: "max_participants_tested"
+      value: 1000
+      unit: "participants"
+      context: "Single room, audio-only, multi-node deployment"
+    - name: "cpu_per_participant"
+      value: 0.02
+      unit: "vCPU"
+      context: "Audio-only SFU forwarding, no transcoding"
+
+relationships:
+  alternatives:
+    - slug: "elevenlabs"
+      note: "ElevenLabs Conversational AI offers a higher-level voice agent solution"
+  complements:
+    - slug: "whisper"
+      role: "Speech-to-text engine for agent voice pipeline"
+    - slug: "elevenlabs"
+      role: "Text-to-speech engine for agent voice output"
+    - slug: "openai"
+      role: "LLM backend for agent conversation logic"
+    - slug: "anthropic_claude"
+      role: "LLM backend for agent conversation logic"
+  typical_pipeline_position: "transport_layer"
+  pipeline_predecessors: ["audio_capture"]
+  pipeline_successors: ["speech_to_text", "llm_generation", "text_to_speech"]

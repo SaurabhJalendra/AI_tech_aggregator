@@ -1,0 +1,418 @@
+meta:
+  slug: "fine_tuning_strategies"
+  name: "Fine-Tuning Strategies"
+  version: "1.0.0"
+  category: "fine_tuning"
+  subcategory: "overview"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Comprehensive guide to fine-tuning approaches for adapting LLMs to domain-specific tasks"
+  description: |
+    Fine-tuning is the process of further training a pre-trained language model on
+    task-specific or domain-specific data to improve its performance on targeted
+    applications. This module covers the strategic landscape of fine-tuning: when to
+    fine-tune vs. use prompting or RAG, which approach to select, how to prepare data,
+    and how to evaluate results.
+
+    The fine-tuning landscape has evolved significantly. Full fine-tuning (updating all
+    model parameters) remains the gold standard for maximum customization but requires
+    substantial compute. Parameter-efficient fine-tuning (PEFT) methods like LoRA and
+    QLoRA have democratized fine-tuning by reducing GPU requirements by 10-100x while
+    retaining 90-95% of full fine-tuning quality.
+
+    Beyond supervised fine-tuning (SFT), alignment techniques like RLHF and DPO enable
+    training models to follow preferences and policies, adjusting not just what the
+    model knows but how it behaves. These techniques are essential for safety alignment,
+    brand voice consistency, and output style control.
+
+    The key decision framework is: use prompting for quick experiments and simple
+    customization, use RAG for adding knowledge, and use fine-tuning for changing
+    behavior, output format, or deep domain expertise. These approaches are
+    complementary and are often combined in production systems.
+  logo_url: "/assets/modules/fine_tuning_strategies.svg"
+  website: "https://huggingface.co/docs/transformers/training"
+  documentation: "https://huggingface.co/docs/trl"
+  github: "https://github.com/huggingface/trl"
+  license: "N/A (methodology)"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Domain-specific model customization"
+    - "Output format and style consistency"
+    - "Instruction following improvement"
+    - "Safety and alignment training"
+    - "Cost reduction through prompt compression"
+    - "Task-specific performance optimization"
+  supported_operations:
+    - "supervised_fine_tuning"
+    - "parameter_efficient_fine_tuning"
+    - "reinforcement_learning_from_human_feedback"
+    - "direct_preference_optimization"
+    - "continued_pretraining"
+    - "distillation"
+  integrations:
+    - slug: "llama"
+      type: "native"
+    - slug: "mistral"
+      type: "native"
+    - slug: "gpt4"
+      type: "compatible"
+    - slug: "gemini"
+      type: "compatible"
+    - slug: "vllm"
+      type: "compatible"
+
+technical_specs:
+  fine_tuning_methods:
+    - name: "Full Fine-Tuning"
+      parameter_efficiency: "0% (updates all parameters)"
+      quality: "highest"
+      compute_cost: "very high"
+    - name: "LoRA"
+      parameter_efficiency: "0.1-1% of parameters"
+      quality: "90-95% of full"
+      compute_cost: "moderate"
+    - name: "QLoRA"
+      parameter_efficiency: "0.1-1% of parameters with 4-bit base"
+      quality: "85-95% of full"
+      compute_cost: "low"
+    - name: "Prefix Tuning"
+      parameter_efficiency: "0.01-0.1% of parameters"
+      quality: "80-90% of full"
+      compute_cost: "very low"
+    - name: "Adapter Layers"
+      parameter_efficiency: "1-5% of parameters"
+      quality: "90-95% of full"
+      compute_cost: "moderate"
+  recommended_tools:
+    - "Hugging Face TRL"
+    - "Axolotl"
+    - "torchtune"
+    - "LitGPT"
+    - "Unsloth"
+  data_format: "JSONL with messages array (chat format) or instruction/input/output"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Fine-tuning consistently improves task-specific performance beyond what prompting alone achieves. Well-executed fine-tuning can match or exceed larger base models on targeted tasks."
+  scalability:
+    score: 7
+    justification: "Training requires GPU infrastructure. PEFT methods scale well to larger models. Serving fine-tuned models has the same infrastructure requirements as base models."
+  ease_of_use:
+    score: 5
+    justification: "Requires ML engineering expertise: data preparation, hyperparameter tuning, evaluation design, and avoiding overfitting. Tools like Axolotl and Unsloth simplify the process."
+  cost_efficiency:
+    score: 7
+    justification: "Training has upfront GPU cost. ROI depends on prompt compression savings and quality improvements. PEFT methods have reduced training costs by 10-100x."
+  community:
+    score: 9
+    justification: "Extremely active research area. Thousands of fine-tuned models on Hugging Face. Extensive tutorials, papers, and community guides."
+  maturity:
+    score: 8
+    justification: "Fine-tuning has been practiced since GPT-2 era. PEFT methods are well-established since 2023. Production best practices are well-documented."
+  flexibility:
+    score: 9
+    justification: "Multiple methods available for different constraints. Can be applied to any open-weight model and several proprietary models. Combinable with RAG and prompting."
+  data_privacy:
+    score: 9
+    justification: "Training data stays on your infrastructure when using open-weight models. Fine-tuning through proprietary APIs (OpenAI, Google) means data is uploaded to provider."
+
+knowledge:
+  entries:
+    - topic: "When to Fine-Tune vs. Prompt vs. RAG"
+      content: |
+        The decision between fine-tuning, prompt engineering, and RAG depends on what
+        you're trying to change about the model's behavior:
+
+        Prompt engineering: Best for simple customization, quick iteration, and tasks
+        where a few examples or clear instructions suffice. Advantages: no training
+        cost, instant iteration, works with any model. Limitations: uses context
+        window budget, may not be sufficient for complex behavioral changes.
+
+        RAG (Retrieval-Augmented Generation): Best for adding domain knowledge that
+        the model doesn't have. The model's behavior stays the same, but it gets
+        access to relevant information at query time. Advantages: no training needed,
+        knowledge is always up-to-date, scales to large knowledge bases. Limitations:
+        retrieval errors, doesn't change model behavior or output style.
+
+        Fine-tuning: Best for changing model behavior, output format, domain expertise,
+        or style. Examples: consistent JSON output schemas, medical terminology
+        understanding, brand voice adoption, specialized reasoning patterns.
+        Advantages: permanent behavioral change, shorter prompts needed, better
+        at nuanced tasks. Limitations: training cost, data requirements, risk of
+        catastrophic forgetting.
+
+        The optimal approach is often a combination: fine-tune for behavior and format,
+        use RAG for knowledge, and prompt for task-specific instructions. A fine-tuned
+        model with RAG and a short prompt often outperforms a base model with a long
+        prompt and the same RAG system.
+      tags: ["decision-framework", "prompting", "rag", "comparison"]
+
+    - topic: "Data Preparation Best Practices"
+      content: |
+        Training data quality is the single most important factor in fine-tuning success.
+        Guidelines for preparing effective training data:
+
+        Quality over quantity: 500-2000 high-quality examples typically outperform
+        10,000+ lower-quality ones. Each example should be reviewed by a domain expert
+        and represent the ideal model output.
+
+        Diversity: Cover the full range of inputs your model will encounter in
+        production. Include edge cases, error handling, ambiguous inputs, and
+        multilingual examples if applicable.
+
+        Format consistency: All examples should follow the same output format. If
+        you want JSON output, every training example should produce valid JSON with
+        the same schema.
+
+        Negative examples: Include examples of inputs the model should refuse or
+        handle differently. This teaches boundaries and prevents overgeneralization.
+
+        Data format: Use the chat format (messages array with system, user, assistant
+        roles) for instruction-tuned models. For continued pretraining, use plain
+        text in the domain's natural format.
+
+        Validation split: Hold out 10-20% of data for evaluation. Monitor validation
+        loss to detect overfitting. If validation loss increases while training loss
+        decreases, you're overfitting.
+
+        Augmentation: For small datasets, consider using a stronger model (GPT-4,
+        Claude) to generate synthetic training examples, then have humans verify and
+        correct them.
+      tags: ["data", "preparation", "best-practices"]
+
+    - topic: "Full Fine-Tuning vs PEFT Methods"
+      content: |
+        Full fine-tuning updates all model parameters and provides the highest quality
+        customization, but at significant computational cost:
+
+        Full fine-tuning requirements: For a 70B model, you need 8+ A100 80GB GPUs
+        using DeepSpeed ZeRO-3 or FSDP. Training takes 4-12 hours depending on
+        dataset size. Memory requirement is roughly 3x model size (model + gradients
+        + optimizer states).
+
+        PEFT methods (LoRA, QLoRA, adapters) update only a small fraction of parameters:
+
+        LoRA: Adds small rank-decomposition matrices to attention layers. Typically
+        updates 0.1-1% of parameters. Requires loading the full model in memory but
+        only computes gradients for LoRA weights. A 70B model can be LoRA fine-tuned
+        on 2x A100 80GB.
+
+        QLoRA: Combines LoRA with 4-bit quantization of the base model. Enables
+        fine-tuning 70B models on a single A100 80GB or even a single 48GB GPU.
+        Quality is slightly lower than full LoRA but the efficiency gain is dramatic.
+
+        When full fine-tuning is worth it: When you have abundant compute and data,
+        need maximum quality, or are training for significantly different domains
+        (e.g., continued pretraining on medical literature). For most task-specific
+        customization, LoRA/QLoRA is sufficient and preferred.
+      tags: ["peft", "lora", "qlora", "full-fine-tuning"]
+
+    - topic: "Evaluation and Avoiding Overfitting"
+      content: |
+        Evaluating fine-tuned models requires both automated metrics and human review:
+
+        Automated evaluation: Track training and validation loss curves. A widening
+        gap indicates overfitting. Use task-specific metrics (F1 for classification,
+        BLEU/ROUGE for generation, exact match for extraction) on a held-out test set.
+
+        Baseline comparison: Always compare against (1) the base model with optimized
+        prompting, (2) the base model with few-shot examples, and (3) a larger model
+        without fine-tuning. If your fine-tuned 8B doesn't beat a well-prompted 70B,
+        the fine-tuning may not be justified.
+
+        Regression testing: Fine-tuning can cause catastrophic forgetting, where the
+        model loses general capabilities while gaining task-specific ones. Test
+        fine-tuned models on a diverse benchmark suite to ensure general capability
+        is preserved.
+
+        Human evaluation: For generative tasks, automated metrics only tell part of
+        the story. Have domain experts evaluate a random sample of outputs for
+        accuracy, fluency, completeness, and adherence to guidelines.
+
+        Common overfitting symptoms: Model outputs look like copy-pastes of training
+        data, model performance is excellent on training-like examples but poor on
+        novel inputs, model generates repetitive or template-like responses.
+
+        Prevention: Use early stopping based on validation loss, apply dropout in
+        LoRA layers, limit training epochs (typically 1-3 for SFT), and ensure
+        training data diversity.
+      tags: ["evaluation", "overfitting", "quality"]
+
+    - topic: "Production Deployment of Fine-Tuned Models"
+      content: |
+        Deploying fine-tuned models has specific considerations beyond base model
+        serving:
+
+        LoRA adapter serving: Modern serving engines (vLLM, TGI) support loading
+        multiple LoRA adapters on a single base model. This enables serving many
+        fine-tuned variants without duplicating the base model in memory. Requests
+        specify which adapter to use, enabling per-customer or per-task customization.
+
+        Merging adapters: For simpler deployment, LoRA weights can be merged into
+        the base model weights. This produces a standard model file that deploys
+        like any other model, at the cost of losing the ability to swap adapters.
+
+        Version management: Track model versions, training data versions, and
+        hyperparameters together. Use experiment tracking tools (MLflow, W&B) to
+        maintain reproducibility. Store evaluation results alongside each version.
+
+        A/B testing: Deploy fine-tuned models alongside the previous version and
+        compare on production traffic. Route a percentage of requests to the new
+        model and measure quality metrics before full rollout.
+
+        Rollback plan: Always maintain the ability to roll back to the previous
+        model version. Fine-tuned models can exhibit unexpected behaviors on
+        production data that wasn't represented in the training set.
+      tags: ["deployment", "production", "operations"]
+
+code_examples:
+  - title: "Preparing Training Data"
+    language: "python"
+    code: |
+      import json
+
+      # Chat format training data (JSONL)
+      training_examples = [
+          {
+              "messages": [
+                  {"role": "system", "content": "You are a medical coding assistant."},
+                  {"role": "user", "content": "Patient presents with acute bronchitis."},
+                  {"role": "assistant", "content": json.dumps({
+                      "icd10_code": "J20.9",
+                      "description": "Acute bronchitis, unspecified",
+                      "confidence": 0.95
+                  })}
+              ]
+          },
+          # ... more examples
+      ]
+
+      # Write JSONL file
+      with open("training_data.jsonl", "w") as f:
+          for example in training_examples:
+              f.write(json.dumps(example) + "\n")
+
+      # Validate format
+      with open("training_data.jsonl") as f:
+          for i, line in enumerate(f):
+              data = json.loads(line)
+              assert "messages" in data, f"Line {i}: missing messages"
+              assert len(data["messages"]) >= 2, f"Line {i}: need at least user + assistant"
+
+  - title: "SFT with Hugging Face TRL"
+    language: "python"
+    code: |
+      from trl import SFTTrainer, SFTConfig
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+      from datasets import load_dataset
+
+      model_name = "meta-llama/Llama-3.1-8B-Instruct"
+      model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
+      tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+      dataset = load_dataset("json", data_files="training_data.jsonl", split="train")
+
+      training_config = SFTConfig(
+          output_dir="./sft-output",
+          num_train_epochs=3,
+          per_device_train_batch_size=4,
+          gradient_accumulation_steps=4,
+          learning_rate=2e-5,
+          warmup_steps=100,
+          logging_steps=10,
+          eval_strategy="steps",
+          eval_steps=50,
+          save_strategy="steps",
+          save_steps=100,
+          bf16=True,
+      )
+
+      trainer = SFTTrainer(
+          model=model,
+          args=training_config,
+          train_dataset=dataset,
+          tokenizer=tokenizer,
+      )
+      trainer.train()
+
+  - title: "Evaluation Pipeline"
+    language: "python"
+    code: |
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+      import json
+
+      # Load fine-tuned and base models
+      ft_model = AutoModelForCausalLM.from_pretrained("./sft-output/checkpoint-best")
+      base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+      tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+
+      # Evaluate on test set
+      test_data = [json.loads(l) for l in open("test_data.jsonl")]
+      results = {"fine_tuned": [], "base": []}
+
+      for example in test_data:
+          prompt = tokenizer.apply_chat_template(
+              example["messages"][:-1], tokenize=False, add_generation_prompt=True
+          )
+          expected = example["messages"][-1]["content"]
+
+          for name, model in [("fine_tuned", ft_model), ("base", base_model)]:
+              inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+              output = model.generate(**inputs, max_new_tokens=512)
+              generated = tokenizer.decode(output[0][inputs.input_ids.shape[1]:])
+              results[name].append({"expected": expected, "generated": generated})
+
+      # Compare metrics
+      for name in results:
+          exact_match = sum(1 for r in results[name]
+                          if r["expected"].strip() == r["generated"].strip())
+          print(f"{name}: {exact_match}/{len(results[name])} exact matches")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "lora_vs_full_quality"
+      value: 0.94
+      unit: "relative_performance"
+      context: "LoRA (r=16) vs full fine-tuning on Llama 3.1 8B, average across 5 tasks"
+    - name: "qlora_vs_full_quality"
+      value: 0.91
+      unit: "relative_performance"
+      context: "QLoRA (r=16, 4-bit) vs full fine-tuning on Llama 3.1 8B"
+    - name: "training_time_lora_8b"
+      value: 45
+      unit: "minutes"
+      context: "LoRA fine-tuning Llama 3.1 8B on 2000 examples, 1x A100"
+    - name: "training_time_full_8b"
+      value: 180
+      unit: "minutes"
+      context: "Full fine-tuning Llama 3.1 8B on 2000 examples, 4x A100"
+    - name: "min_examples_for_improvement"
+      value: 200
+      unit: "examples"
+      context: "Minimum high-quality examples to see measurable improvement on classification tasks"
+
+relationships:
+  alternatives:
+    - slug: "rag_architectures"
+      note: "Knowledge augmentation without model modification"
+  complements:
+    - slug: "lora_qlora"
+      role: "Parameter-efficient fine-tuning implementations"
+    - slug: "rlhf_dpo"
+      role: "Alignment techniques applied after SFT"
+    - slug: "llama"
+      role: "Primary open-weight model target for fine-tuning"
+    - slug: "mistral"
+      role: "Alternative open-weight model for fine-tuning"
+    - slug: "ragas"
+      role: "Evaluation framework for fine-tuned RAG pipelines"
+  typical_pipeline_position: "model_customization"
+  pipeline_predecessors: ["data_collection", "data_preparation"]
+  pipeline_successors: ["evaluation", "deployment", "serving"]

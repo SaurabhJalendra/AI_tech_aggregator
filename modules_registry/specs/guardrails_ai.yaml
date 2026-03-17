@@ -1,0 +1,362 @@
+meta:
+  slug: "guardrails_ai"
+  name: "Guardrails AI"
+  version: "1.0.0"
+  category: "security_compliance"
+  subcategory: "output_validation"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source framework for adding structural, type, and quality validation to LLM outputs"
+  description: |
+    Guardrails AI is an open-source Python framework that validates, structures, and
+    controls the outputs of large language models. It wraps LLM API calls and applies
+    validators to ensure outputs meet specified quality, safety, and format requirements
+    before they reach end users.
+
+    The framework uses a Guard object that sits between your application and the LLM.
+    Guards apply validators -- reusable checks that verify specific properties of the
+    output. Validators range from simple structural checks (is the output valid JSON?)
+    to AI-powered quality checks (is the output free of PII, toxicity, or hallucination?).
+    When validation fails, Guardrails can re-prompt the LLM, apply fixes, or return
+    an error.
+
+    The Guardrails Hub is a community registry of pre-built validators covering common
+    needs like PII detection, profanity filtering, SQL injection prevention, competitor
+    mention blocking, and factual accuracy checking. Custom validators can be created
+    in a few lines of Python. The framework supports both synchronous and streaming
+    LLM responses.
+  logo_url: "/assets/modules/guardrails_ai.svg"
+  website: "https://www.guardrailsai.com"
+  documentation: "https://docs.guardrailsai.com"
+  github: "https://github.com/guardrails-ai/guardrails"
+  license: "Apache-2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "LLM output validation and structuring"
+    - "PII detection and redaction"
+    - "Toxicity and profanity filtering"
+    - "JSON schema enforcement for LLM outputs"
+    - "Hallucination prevention"
+    - "SQL injection prevention in text-to-SQL"
+  supported_operations:
+    - "validate"
+    - "guard"
+    - "re_ask"
+    - "fix"
+    - "filter"
+    - "refrain"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "native"
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "compatible"
+    - slug: "litellm"
+      type: "compatible"
+
+technical_specs:
+  guard_actions_on_fail:
+    - "reask"
+    - "fix"
+    - "filter"
+    - "refrain"
+    - "noop"
+    - "exception"
+    - "fix_reask"
+  hub_validators_count: 60
+  popular_validators:
+    - "detect_pii"
+    - "toxic_language"
+    - "profanity_free"
+    - "valid_json"
+    - "valid_sql"
+    - "competitor_check"
+    - "reading_level"
+    - "provenance_llm"
+    - "regex_match"
+    - "similar_to_document"
+    - "nsfw_text"
+    - "mentions_drugs"
+    - "restricts_to_topic"
+  structured_output: true
+  streaming_support: true
+  async_support: true
+  server_mode: true
+  custom_validators: true
+  pydantic_support: true
+  sdk_languages:
+    - "python"
+    - "javascript"
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Simple validators (regex, JSON) add <10ms overhead. AI-powered validators (PII, toxicity) add 200-500ms per validation call. Re-asking on failure doubles latency."
+  scalability:
+    score: 7
+    justification: "Guardrails Server mode handles concurrent validation. Async support for high-throughput pipelines. Bottleneck is typically the validator LLM calls, not the framework."
+  ease_of_use:
+    score: 8
+    justification: "Simple Guard() wrapper around existing LLM calls. Hub provides pre-built validators. Pydantic integration for structured outputs is elegant. Good documentation."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source core is free. AI-powered validators incur LLM API costs. Re-ask strategy doubles LLM costs on validation failures. Hub validators are free."
+  community:
+    score: 7
+    justification: "4k+ GitHub stars. Active Hub with community-contributed validators. Growing adoption but smaller community than evaluation frameworks like RAGAS or DeepEval."
+  maturity:
+    score: 6
+    justification: "Released in 2023. API has stabilized but still evolving. Hub ecosystem is growing. Some validators are more battle-tested than others."
+  flexibility:
+    score: 9
+    justification: "Custom validators in a few lines of Python. Composable guards with multiple validators. Works with any LLM provider. Supports structured and unstructured output validation."
+  data_privacy:
+    score: 7
+    justification: "Open-source runs locally. Some validators (PII detection, toxicity) may call external APIs. Local-only validators available for sensitive environments. Server mode keeps validation in your infrastructure."
+
+knowledge:
+  entries:
+    - topic: "Guard Architecture"
+      content: |
+        A Guard in Guardrails AI is a wrapper around an LLM call that applies validators
+        to the output. The architecture follows this flow:
+
+        1. Your application calls guard(messages=...) instead of the LLM directly.
+        2. The Guard forwards the call to the LLM (OpenAI, Anthropic, etc.).
+        3. The LLM response is intercepted and passed through validators.
+        4. If validation passes, the validated output is returned.
+        5. If validation fails, the on_fail action is triggered:
+           - "reask": Sends the LLM a new prompt including the validation error, asking
+             it to correct the output. This can repeat up to num_reasks times.
+           - "fix": Applies a programmatic fix (e.g., removing PII, truncating to length).
+           - "filter": Removes the failing field from structured output.
+           - "refrain": Returns None instead of the failing output.
+           - "exception": Raises a ValidationError.
+
+        Guards support both structured outputs (via Pydantic models or JSON schema) and
+        unstructured text validation. For structured outputs, validators can be applied
+        to individual fields.
+      tags: ["architecture", "guard", "validation"]
+
+    - topic: "When to Choose Guardrails AI"
+      content: |
+        Guardrails AI is the right choice when:
+
+        1. You need to enforce structured output from LLMs. The Pydantic integration
+        ensures LLM responses conform to your data models, with automatic re-asking
+        on schema violations.
+
+        2. You need runtime safety checks. PII detection, toxicity filtering, and
+        content policy enforcement at the output layer catch issues before they reach users.
+
+        3. You want a composable validation pipeline. Multiple validators can be stacked,
+        and different validators can apply to different output fields.
+
+        4. You need a self-correcting system. The reask strategy lets the LLM fix its
+        own output errors, achieving higher success rates than single-shot generation.
+
+        Guardrails AI is NOT the right choice when: you only need evaluation metrics (use
+        RAGAS or DeepEval), you need input-side prompt injection detection (use dedicated
+        prompt injection classifiers), or you need enterprise-grade content moderation
+        (use specialized moderation APIs like Lakera Guard or Azure Content Safety).
+      tags: ["decision", "comparison"]
+
+    - topic: "Hub Validators"
+      content: |
+        The Guardrails Hub is a registry of pre-built validators that can be installed
+        and used immediately. Key categories:
+
+        Safety validators:
+        - detect_pii: Identifies and optionally redacts PII (names, emails, SSNs, etc.)
+        - toxic_language: Detects toxic, hateful, or harmful content
+        - profanity_free: Checks for profanity and obscenity
+        - nsfw_text: Detects sexually explicit content
+        - mentions_drugs: Flags drug references
+
+        Quality validators:
+        - reading_level: Ensures output matches target reading level
+        - similar_to_document: Checks answer is grounded in source documents
+        - provenance_llm: Verifies claims can be attributed to sources
+        - competitor_check: Blocks mentions of competitor products/companies
+
+        Structural validators:
+        - valid_json: Ensures output is valid JSON
+        - valid_sql: Validates SQL syntax
+        - regex_match: Checks output against regex patterns
+        - restricts_to_topic: Ensures output stays on-topic
+
+        Validators are installed via guardrails hub install <name> and can be composed
+        in any combination within a Guard.
+      tags: ["hub", "validators", "safety"]
+
+    - topic: "Guardrails Server for Production"
+      content: |
+        Guardrails Server is a standalone service that runs validation logic as an API,
+        decoupling validation from your application code. Benefits:
+
+        1. Language-agnostic: Any application (Python, Node, Java) can call the validation
+        API over HTTP. Guards are defined server-side and referenced by name.
+
+        2. Centralized management: Guards can be updated without redeploying application
+        code. Useful for policy changes that need to take effect immediately.
+
+        3. Performance isolation: Validation runs in its own process/container, preventing
+        heavy validators from blocking application threads.
+
+        4. Audit logging: The server logs all validation requests and results, providing
+        an audit trail of what was filtered, modified, or rejected.
+
+        Start the server with: guardrails start --config guards.yaml
+        Then call from any language: POST /guards/{guard_name}/validate
+
+        For Kubernetes deployments, the server can be run as a sidecar or separate
+        service with horizontal scaling based on validation throughput needs.
+      tags: ["server", "production", "deployment"]
+
+code_examples:
+  - title: "Structured Output with Pydantic"
+    language: "python"
+    code: |
+      from pydantic import BaseModel, Field
+      from guardrails import Guard
+      from guardrails.hub import DetectPII, ToxicLanguage
+
+      class CustomerResponse(BaseModel):
+          answer: str = Field(
+              description="The response to the customer query",
+              validators=[
+                  DetectPII(pii_entities=["EMAIL", "PHONE", "SSN"], on_fail="fix"),
+                  ToxicLanguage(threshold=0.8, on_fail="refrain"),
+              ]
+          )
+          confidence: float = Field(
+              description="Confidence score between 0 and 1",
+              ge=0.0, le=1.0
+          )
+
+      guard = Guard.from_pydantic(CustomerResponse)
+
+      result = guard(
+          model="gpt-4o",
+          messages=[
+              {"role": "user", "content": "How do I reset my password?"}
+          ],
+          num_reasks=2,
+      )
+
+      print(result.validated_output)  # CustomerResponse with PII redacted
+
+  - title: "Text Validation Guard"
+    language: "python"
+    code: |
+      from guardrails import Guard
+      from guardrails.hub import (
+          CompetitorCheck,
+          ReadingLevel,
+          RestrictsToTopic,
+      )
+
+      guard = Guard().use_many(
+          CompetitorCheck(
+              competitors=["CompetitorA", "CompetitorB"],
+              on_fail="fix"
+          ),
+          ReadingLevel(
+              level="8th grade",
+              on_fail="reask"
+          ),
+          RestrictsToTopic(
+              valid_topics=["product features", "pricing", "support"],
+              invalid_topics=["politics", "religion"],
+              on_fail="refrain"
+          ),
+      )
+
+      result = guard(
+          model="gpt-4o",
+          messages=[
+              {"role": "system", "content": "You are a product support agent."},
+              {"role": "user", "content": "Compare your product to CompetitorA."}
+          ],
+      )
+
+      if result.validated_output:
+          print(result.validated_output)
+      else:
+          print("Response was blocked by guardrails")
+
+  - title: "Custom Validator"
+    language: "python"
+    code: |
+      from guardrails.validators import Validator, register_validator
+      from guardrails import Guard
+
+      @register_validator(name="no_code_blocks", data_type="string")
+      class NoCodeBlocks(Validator):
+          """Ensures LLM output does not contain code blocks."""
+
+          def validate(self, value, metadata=None):
+              if "```" in value:
+                  return self.fail(
+                      error_message="Response contains code blocks. Please provide a plain text explanation.",
+                      fix_value=value.replace("```", "").strip()
+                  )
+              return self.pass_result()
+
+      guard = Guard().use(NoCodeBlocks, on_fail="fix")
+
+      result = guard(
+          model="gpt-4o",
+          messages=[{"role": "user", "content": "Explain how to sort a list"}],
+      )
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "json_validation_overhead"
+      value: 3
+      unit: "ms"
+      context: "Pydantic schema validation, no AI validators"
+    - name: "pii_detection_latency"
+      value: 280
+      unit: "ms"
+      context: "DetectPII validator on 500-token response"
+    - name: "toxicity_detection_latency"
+      value: 350
+      unit: "ms"
+      context: "ToxicLanguage validator on 500-token response"
+    - name: "reask_success_rate"
+      value: 0.92
+      unit: "ratio"
+      context: "JSON schema compliance after 1 reask, GPT-4o"
+    - name: "pii_detection_recall"
+      value: 0.94
+      unit: "ratio"
+      context: "DetectPII on benchmark dataset, all entity types"
+
+relationships:
+  alternatives:
+    - slug: "nemo_guardrails"
+      note: "NVIDIA's dialogue guardrails with topical rails and jailbreak detection"
+    - slug: "lakera_guard"
+      note: "Managed API for prompt injection and content safety"
+    - slug: "llm_guard"
+      note: "Open-source input/output scanner for LLM interactions"
+  complements:
+    - slug: "openai"
+      role: "LLM provider whose outputs are validated by guards"
+    - slug: "langchain"
+      role: "Orchestration framework that integrates Guardrails as output parsers"
+    - slug: "deepeval"
+      role: "Evaluation framework that validates guardrail effectiveness through testing"
+  typical_pipeline_position: "output_validation"
+  pipeline_predecessors: ["llm_generation"]
+  pipeline_successors: ["response_delivery", "logging"]

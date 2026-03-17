@@ -1,0 +1,317 @@
+meta:
+  slug: "unstructured_io"
+  name: "Unstructured.io"
+  version: "1.0.0"
+  category: "data_ingestion"
+  subcategory: "document_parsing"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source toolkit for ingesting and pre-processing unstructured data for AI pipelines"
+  description: |
+    Unstructured.io provides a comprehensive set of tools for extracting and transforming
+    content from a wide variety of document formats including PDFs, Word documents, HTML,
+    emails, images, and more. It is designed to bridge the gap between raw unstructured
+    data and the structured inputs required by LLM and RAG pipelines.
+
+    The library uses a combination of rule-based parsing, OCR (via Tesseract), and
+    layout-detection models (via detectron2 and YOLOX) to accurately extract text,
+    tables, and images from complex documents. It produces structured Element objects
+    that include text content, element type (Title, NarrativeText, Table, etc.), and
+    metadata such as page number and coordinates.
+
+    Unstructured offers both an open-source Python library and a hosted Serverless API
+    for production workloads. The API provides higher-accuracy models, automatic
+    scaling, and a simple REST interface. For enterprise needs, there is also a
+    self-hosted platform deployment option.
+  logo_url: "/assets/modules/unstructured_io.svg"
+  website: "https://unstructured.io"
+  documentation: "https://docs.unstructured.io"
+  github: "https://github.com/Unstructured-IO/unstructured"
+  license: "Apache-2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Document parsing for RAG pipelines"
+    - "PDF text and table extraction"
+    - "Multi-format data ingestion"
+    - "OCR-based text extraction from images and scanned documents"
+    - "Email and attachment processing"
+  supported_operations:
+    - "partition"
+    - "chunk"
+    - "embed"
+    - "stage"
+    - "clean"
+    - "extract"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "weaviate"
+      type: "compatible"
+    - slug: "chromadb"
+      type: "compatible"
+
+technical_specs:
+  supported_file_types:
+    - "pdf"
+    - "docx"
+    - "pptx"
+    - "xlsx"
+    - "html"
+    - "md"
+    - "rst"
+    - "txt"
+    - "csv"
+    - "tsv"
+    - "eml"
+    - "msg"
+    - "epub"
+    - "odt"
+    - "rtf"
+    - "png"
+    - "jpg"
+    - "tiff"
+  partitioning_strategies:
+    - "auto"
+    - "hi_res"
+    - "fast"
+    - "ocr_only"
+  element_types:
+    - "Title"
+    - "NarrativeText"
+    - "ListItem"
+    - "Table"
+    - "Image"
+    - "Header"
+    - "Footer"
+    - "FigureCaption"
+    - "Address"
+    - "EmailAddress"
+    - "PageBreak"
+  ocr_engines:
+    - "tesseract"
+    - "paddle"
+  layout_models:
+    - "detectron2"
+    - "yolox"
+  sdk_languages:
+    - "python"
+  api_available: true
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "hi_res strategy with layout detection is accurate but slow (~2-5 sec/page). Fast strategy is much quicker but less accurate on complex layouts."
+  scalability:
+    score: 7
+    justification: "Serverless API scales horizontally. Open-source library is single-process by default but can be parallelized. Large batch jobs benefit from the API."
+  ease_of_use:
+    score: 8
+    justification: "Simple partition() function interface. Auto strategy handles most formats without configuration. Good documentation with format-specific guides."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source core is free. Serverless API has a free tier (1000 pages/month). Production pricing is competitive for document processing workloads."
+  community:
+    score: 8
+    justification: "Active open-source community with 10k+ GitHub stars. Regular releases and responsive maintainers. Growing ecosystem of connectors."
+  maturity:
+    score: 7
+    justification: "Established since 2022. Widely adopted in RAG pipelines. API stability has improved significantly but breaking changes still occur between major versions."
+  flexibility:
+    score: 9
+    justification: "Supports 20+ file formats, multiple partitioning strategies, pluggable OCR engines, and custom post-processing. Can run locally or via API."
+  data_privacy:
+    score: 8
+    justification: "Open-source library runs fully locally with no data leaving your infrastructure. Self-hosted platform option available for enterprises with strict compliance needs."
+
+knowledge:
+  entries:
+    - topic: "Partitioning Strategies"
+      content: |
+        Unstructured offers four partitioning strategies that trade off speed vs accuracy:
+
+        1. "auto" (default): Automatically selects the best strategy based on document type.
+        For PDFs, it uses hi_res if layout detection models are available, otherwise falls
+        back to fast. For simple formats like .txt and .html, it uses fast parsing.
+
+        2. "hi_res": Uses layout detection models (detectron2 or YOLOX) to identify document
+        structure including tables, figures, headers, and text blocks. Most accurate but
+        slowest. Recommended for PDFs with complex layouts, multi-column text, or embedded
+        tables.
+
+        3. "fast": Uses basic heuristics and text extraction without layout detection. Much
+        faster but may miss table structure or misidentify elements in complex documents.
+        Good for simple, text-heavy documents.
+
+        4. "ocr_only": Forces OCR on the entire document, treating every page as an image.
+        Necessary for scanned documents or image-only PDFs. Slowest strategy but handles
+        documents where text extraction is impossible.
+      tags: ["partitioning", "strategy", "configuration"]
+
+    - topic: "When to Choose Unstructured.io"
+      content: |
+        Unstructured.io is the right choice when:
+
+        1. You need to process diverse document formats. No other single library handles
+        PDFs, Word docs, emails, and images with the same unified interface.
+
+        2. Your RAG pipeline ingests real-world enterprise documents with complex layouts,
+        tables, headers, and footers. The hi_res strategy with layout detection produces
+        superior results compared to simple text extraction.
+
+        3. You want to run document processing locally for data privacy. The open-source
+        library requires no external API calls.
+
+        4. You need structured elements, not just raw text. Unstructured identifies element
+        types (Title, Table, NarrativeText) which enables smarter chunking strategies.
+
+        Alternatives to consider: Apache Tika for simpler Java-based document extraction,
+        PyMuPDF or pdfplumber for PDF-only workloads, docling by IBM for high-accuracy
+        PDF table extraction, or LlamaParse for cloud-based document parsing with LLM
+        enhancement.
+      tags: ["decision", "comparison"]
+
+    - topic: "Chunking with Unstructured"
+      content: |
+        Unstructured provides built-in chunking that respects document structure. Unlike
+        naive text splitters that chunk by character count, Unstructured's chunking
+        preserves element boundaries.
+
+        The chunk_by_title strategy groups consecutive elements under the same section
+        heading, keeping semantically related content together. Parameters include
+        max_characters (hard limit), new_after_n_chars (soft limit that triggers a new
+        chunk), and combine_text_under_n_chars (minimum chunk size before combining).
+
+        This structure-aware chunking typically produces 15-25% better retrieval accuracy
+        in RAG benchmarks compared to naive character-based splitting, because chunks
+        maintain topical coherence.
+
+        For tables, Unstructured can output them as HTML or plain text. The HTML format
+        preserves structure for downstream LLM processing, while plain text is simpler
+        but loses column/row relationships.
+      tags: ["chunking", "rag", "best-practices"]
+
+    - topic: "Connectors for Source and Destination"
+      content: |
+        Unstructured provides source and destination connectors for building end-to-end
+        ingestion pipelines. Source connectors pull documents from storage systems, and
+        destination connectors push processed elements to vector stores or databases.
+
+        Source connectors include: S3, Azure Blob Storage, GCS, Google Drive, OneDrive,
+        SharePoint, Dropbox, Box, Salesforce, Slack, Discord, Wikipedia, and local
+        filesystem.
+
+        Destination connectors include: Pinecone, Weaviate, ChromaDB, Qdrant, Milvus,
+        Elasticsearch, MongoDB, PostgreSQL, Databricks, and Delta Lake.
+
+        The pipeline runner handles batching, retries, and progress tracking. For large
+        ingestion jobs, the Serverless API provides automatic scaling and higher throughput
+        than local processing.
+      tags: ["connectors", "pipeline", "integration"]
+
+code_examples:
+  - title: "Basic Document Partitioning"
+    language: "python"
+    code: |
+      from unstructured.partition.auto import partition
+
+      # Auto-detect format and extract elements
+      elements = partition(filename="report.pdf", strategy="hi_res")
+
+      for element in elements:
+          print(f"[{element.category}] {element.text[:100]}")
+          print(f"  Metadata: page={element.metadata.page_number}")
+
+  - title: "Chunking for RAG"
+    language: "python"
+    code: |
+      from unstructured.partition.auto import partition
+      from unstructured.chunking.title import chunk_by_title
+
+      elements = partition(filename="report.pdf", strategy="hi_res")
+
+      chunks = chunk_by_title(
+          elements,
+          max_characters=1500,
+          new_after_n_chars=1000,
+          combine_text_under_n_chars=200
+      )
+
+      for chunk in chunks:
+          print(f"Chunk ({len(chunk.text)} chars): {chunk.text[:80]}...")
+
+  - title: "Using the Serverless API"
+    language: "python"
+    code: |
+      from unstructured_client import UnstructuredClient
+      from unstructured_client.models import operations, shared
+
+      client = UnstructuredClient(api_key_auth="YOUR_API_KEY")
+
+      with open("contract.pdf", "rb") as f:
+          resp = client.general.partition(
+              request=operations.PartitionRequest(
+                  partition_parameters=shared.PartitionParameters(
+                      files=shared.Files(
+                          content=f.read(),
+                          file_name="contract.pdf"
+                      ),
+                      strategy=shared.Strategy.HI_RES,
+                      languages=["eng"]
+                  )
+              )
+          )
+
+      for element in resp.elements:
+          print(element)
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "pdf_partition_fast"
+      value: 0.3
+      unit: "sec/page"
+      context: "10-page text-heavy PDF, fast strategy, local"
+    - name: "pdf_partition_hi_res"
+      value: 3.2
+      unit: "sec/page"
+      context: "10-page PDF with tables, hi_res strategy, local"
+    - name: "table_extraction_accuracy"
+      value: 0.89
+      unit: "f1"
+      context: "hi_res strategy on financial tables dataset"
+    - name: "ocr_accuracy"
+      value: 0.94
+      unit: "character_accuracy"
+      context: "Scanned 300dpi documents, tesseract engine"
+    - name: "api_throughput"
+      value: 50
+      unit: "pages/min"
+      context: "Serverless API, hi_res strategy, concurrent requests"
+
+relationships:
+  alternatives:
+    - slug: "apache_tika"
+      note: "Java-based document extraction, simpler but less AI-focused"
+    - slug: "llamaparse"
+      note: "Cloud-based LLM-enhanced document parsing by LlamaIndex"
+    - slug: "docling"
+      note: "IBM's high-accuracy PDF and document converter"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework that uses Unstructured as a document loader"
+    - slug: "pinecone"
+      role: "Vector store destination for processed document chunks"
+    - slug: "openai_embeddings"
+      role: "Generates embeddings from extracted text elements"
+  typical_pipeline_position: "data_ingestion"
+  pipeline_predecessors: ["raw_documents"]
+  pipeline_successors: ["chunking", "embeddings"]

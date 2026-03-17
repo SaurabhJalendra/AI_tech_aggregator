@@ -1,0 +1,179 @@
+meta:
+  slug: "vespa"
+  name: "Vespa"
+  version: "1.0.0"
+  category: "search_discovery"
+  subcategory: "big_data_search"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source big data serving engine for search, recommendation, and AI applications"
+  description: |
+    Vespa is an open-source big data serving engine developed by Yahoo (now
+    part of Verizon). It combines full-text search, vector search, structured
+    data filtering, and machine-learned ranking in a single platform designed
+    to serve at massive scale.
+
+    Vespa is battle-tested at Yahoo-scale workloads (billions of documents,
+    tens of thousands of queries per second). It supports real-time indexing,
+    distributed computing, and sophisticated ranking with custom ML models.
+    For AI applications, Vespa provides native vector search (ANN), hybrid
+    search, and the ability to run inference within the serving layer.
+
+    While more complex to set up than purpose-built vector databases, Vespa
+    is unmatched for applications that need the combination of full-text search,
+    vector search, and ML ranking at enterprise scale.
+  logo_url: "/assets/modules/vespa.svg"
+  website: "https://vespa.ai"
+  documentation: "https://docs.vespa.ai"
+  github: "https://github.com/vespa-engine/vespa"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Enterprise-scale search"
+    - "Hybrid text + vector search"
+    - "Real-time recommendation systems"
+    - "ML-ranked search results"
+    - "Large-scale RAG retrieval"
+  supported_operations:
+    - "feed"
+    - "search"
+    - "visit"
+    - "update"
+    - "delete"
+    - "rank"
+  integrations:
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  search_types:
+    - "full_text_search"
+    - "vector_search_ann"
+    - "hybrid_search"
+    - "structured_filtering"
+  vector_index: "HNSW"
+  ranking:
+    - "BM25"
+    - "vector similarity"
+    - "custom ML models (ONNX)"
+    - "cross-encoder reranking"
+  real_time_indexing: true
+  distributed: true
+  auto_scaling: true
+  managed_cloud: "Vespa Cloud"
+  sdk_languages:
+    - "python"
+    - "java"
+    - "rest"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Designed for Yahoo-scale serving. Handles billions of documents with sub-100ms latency."
+  scalability:
+    score: 10
+    justification: "Battle-tested at billions of documents and tens of thousands of QPS. Distributed by design."
+  ease_of_use:
+    score: 4
+    justification: "Steep learning curve. Schema definition, ranking profiles, and cluster configuration require significant effort."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source with no license costs. Requires operational expertise. Vespa Cloud simplifies operations."
+  community:
+    score: 6
+    justification: "Strong but smaller community than Elasticsearch. Excellent documentation and blog posts."
+  maturity:
+    score: 9
+    justification: "Developed at Yahoo since 2003. One of the most battle-tested search platforms in existence."
+  flexibility:
+    score: 9
+    justification: "Combines full-text, vector, and ML-ranked search. Custom ONNX model deployment. Highly configurable."
+  data_privacy:
+    score: 9
+    justification: "Self-hosted with full data control. Vespa Cloud available for managed deployment."
+
+knowledge:
+  entries:
+    - topic: "Vespa for Advanced RAG"
+      content: |
+        Vespa enables RAG architectures that go beyond simple vector search:
+
+        1. Hybrid retrieval: Combine BM25 text search with vector ANN search
+        in a single query, with configurable fusion weights.
+
+        2. ML-ranked results: Apply cross-encoder reranking or custom ONNX
+        models directly in the serving layer, eliminating a separate reranking
+        service.
+
+        3. Multi-phase ranking: First phase uses cheap features (BM25 + vector),
+        second phase applies expensive ML models only to top candidates.
+
+        4. Real-time updates: Documents are searchable immediately after indexing,
+        important for knowledge bases that need to stay current.
+
+        This makes Vespa ideal for production RAG systems where retrieval quality
+        is critical and simple vector search is insufficient.
+      tags: ["rag", "hybrid", "ranking"]
+
+code_examples:
+  - title: "Hybrid Search Query"
+    language: "python"
+    code: |
+      from vespa.application import Vespa
+
+      app = Vespa(url="http://localhost:8080")
+
+      response = app.query(
+          yql="select * from documents where "
+              "userQuery() or "
+              "({targetHits: 100}nearestNeighbor(embedding, query_embedding))",
+          query="vector database comparison",
+          ranking="hybrid_rank",
+          body={
+              "input.query(query_embedding)": query_vector,
+              "hits": 10
+          }
+      )
+
+      for hit in response.hits:
+          print(f"{hit['fields']['title']}: {hit['relevance']:.4f}")
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "query_latency_p99"
+      value: 50
+      unit: "ms"
+      context: "Hybrid search, 100M documents, 8-node cluster"
+    - name: "throughput"
+      value: 10000
+      unit: "queries/second"
+      context: "8-node cluster, hybrid ranking"
+    - name: "indexing_throughput"
+      value: 50000
+      unit: "documents/second"
+      context: "Real-time indexing with embeddings"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Simpler managed vector DB, less powerful for hybrid search"
+    - slug: "weaviate"
+      note: "More accessible vector DB with some hybrid capabilities"
+    - slug: "marqo"
+      note: "Simpler tensor search with built-in embedding"
+  complements:
+    - slug: "sentence_transformers"
+      role: "Generate embeddings for Vespa vector fields"
+    - slug: "langchain"
+      role: "Orchestration framework with Vespa retriever integration"
+  typical_pipeline_position: "retrieval"
+  pipeline_predecessors: ["embeddings", "data_ingestion"]
+  pipeline_successors: ["reranking", "llm_generation"]

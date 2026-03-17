@@ -1,0 +1,413 @@
+meta:
+  slug: "chromadb"
+  name: "ChromaDB"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "embedded"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source embedding database designed for developer productivity and AI-native workflows"
+  description: |
+    Chroma is an open-source embedding database (vector database) built with developer
+    experience as the top priority. It provides the simplest possible API for storing,
+    querying, and retrieving embeddings, making it the go-to choice for prototyping AI
+    applications and building RAG pipelines quickly.
+
+    Chroma runs in-process as an embedded database (like SQLite for vectors), as a
+    standalone server, or as a managed cloud service. The embedded mode requires zero
+    configuration — just pip install chromadb and start adding documents. Chroma can
+    automatically generate embeddings using built-in support for sentence-transformers,
+    OpenAI, Cohere, and other embedding providers.
+
+    While Chroma excels at developer experience and rapid prototyping, it has evolved
+    significantly toward production readiness. Chroma Cloud provides a managed service
+    with authentication, multi-tenancy, and persistent storage. The open-source server
+    mode supports client-server deployments with persistent storage via ClickHouse or
+    SQLite backends.
+
+    Chroma's philosophy emphasizes simplicity over configuration: sensible defaults,
+    minimal boilerplate, and a "just works" experience that lets developers focus on
+    their AI application rather than database operations.
+  logo_url: "/assets/modules/chromadb.svg"
+  website: "https://www.trychroma.com"
+  documentation: "https://docs.trychroma.com"
+  github: "https://github.com/chroma-core/chroma"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Rapid AI application prototyping"
+    - "RAG knowledge retrieval"
+    - "Local development and testing"
+    - "Notebook-based experimentation"
+    - "Small to medium-scale semantic search"
+    - "Document Q&A systems"
+  supported_operations:
+    - "add"
+    - "query"
+    - "get"
+    - "update"
+    - "upsert"
+    - "delete"
+    - "peek"
+    - "count"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "native"
+    - slug: "cohere_embeddings"
+      type: "native"
+    - slug: "haystack"
+      type: "community"
+    - slug: "huggingface"
+      type: "native"
+
+technical_specs:
+  max_dimensions: 65536
+  max_vectors_per_collection: "millions (single node)"
+  supported_distance_metrics:
+    - "cosine"
+    - "l2"
+    - "ip"
+  supported_index_types:
+    - "hnsw"
+  auto_embedding: true
+  metadata_filtering: true
+  hybrid_search: false
+  multi_tenancy: true
+  document_storage: true
+  persistent_storage: true
+  sdk_languages:
+    - "python"
+    - "javascript"
+  deployment_options:
+    - "In-process (embedded)"
+    - "Client-server (Docker)"
+    - "Chroma Cloud (managed)"
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Adequate for small to medium datasets (up to low millions of vectors). HNSW index provides good query latency at this scale. Not optimized for high-throughput production workloads."
+  scalability:
+    score: 4
+    justification: "Single-node architecture limits scalability. No built-in sharding or distributed mode. Chroma Cloud provides managed scaling but with limitations compared to purpose-built distributed databases."
+  ease_of_use:
+    score: 10
+    justification: "Best-in-class developer experience. Zero-config embedded mode. Automatic embedding generation. Minimal API surface. Excellent for prototyping and learning. pip install and go."
+  cost_efficiency:
+    score: 9
+    justification: "Free and open-source. Runs locally with minimal resources. No external dependencies for embedded mode. Perfect for development and small production workloads."
+  community:
+    score: 8
+    justification: "15K+ GitHub stars, rapidly growing community. Strong presence in AI/ML tutorials and courses. Active Discord. Widely used in educational content and prototypes."
+  maturity:
+    score: 6
+    justification: "Relatively young project (2022). API has stabilized but breaking changes occurred in past major versions. Production use cases are primarily small to medium scale."
+  flexibility:
+    score: 6
+    justification: "Limited index types (HNSW only), fewer distance metrics, no hybrid search. Strength is simplicity rather than configuration options. Limited deployment topologies."
+  data_privacy:
+    score: 8
+    justification: "Runs fully locally in embedded mode with no external calls (unless using cloud embedding providers). Self-hostable server mode. No telemetry."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        Chroma is designed around a simple architecture with three modes:
+
+        Embedded Mode (EphemeralClient/PersistentClient): Chroma runs in-process within
+        your Python or JavaScript application. Data is stored in memory (ephemeral) or
+        on disk (persistent) using SQLite for metadata and a local HNSW index. No server
+        process needed.
+
+        Client-Server Mode (HttpClient): Chroma runs as a separate server process (via
+        Docker or direct execution), and your application connects via HTTP. This enables
+        multiple applications to share the same Chroma instance.
+
+        Cloud Mode: Chroma Cloud provides a managed service with persistent storage,
+        authentication, and automatic scaling.
+
+        Internally, Chroma uses SQLite3 for metadata storage and a custom HNSW implementation
+        for vector indexing. Collections are the primary organizational unit — each collection
+        has its own HNSW index and metadata store.
+
+        Chroma stores three things per entry: the embedding vector, the original document
+        (optional), and metadata (key-value pairs). This document storage means you don't
+        need a separate database for the original text, simplifying the architecture for
+        many RAG applications.
+      tags: ["architecture", "internals"]
+
+    - topic: "When to Choose ChromaDB"
+      content: |
+        ChromaDB is the right choice when:
+
+        1. You're prototyping an AI application and want to go from idea to working demo
+        in minutes, not hours. Chroma's zero-config setup is unmatched.
+
+        2. You're building a small to medium-scale RAG application (up to a few million
+        documents) where operational simplicity matters more than maximum performance.
+
+        3. You're working in Jupyter notebooks or educational settings where embedding
+        a database in-process is valuable.
+
+        4. You want automatic embedding generation without managing a separate embedding
+        pipeline. Chroma's built-in embedding functions handle this.
+
+        5. Your application runs on a single machine and doesn't need distributed scaling.
+
+        ChromaDB is NOT the right choice when: you need to handle billions of vectors
+        (use Milvus), you need maximum query performance and throughput (use Qdrant),
+        you need advanced features like hybrid search, named vectors, or GPU indexes
+        (use Qdrant or Milvus), or you need enterprise features like RBAC and replication
+        (use Weaviate or Pinecone).
+      tags: ["decision", "comparison"]
+
+    - topic: "Automatic Embedding Generation"
+      content: |
+        One of Chroma's most developer-friendly features is automatic embedding generation.
+        Instead of generating embeddings externally, you can pass raw documents to Chroma
+        and it will handle embedding generation using a configured embedding function.
+
+        Built-in embedding functions include:
+        - DefaultEmbeddingFunction: Uses all-MiniLM-L6-v2 from sentence-transformers (no API key needed)
+        - OpenAIEmbeddingFunction: Uses OpenAI's embedding API
+        - CohereEmbeddingFunction: Uses Cohere's embedding API
+        - HuggingFaceEmbeddingFunction: Uses Hugging Face models
+        - GoogleGenerativeAiEmbeddingFunction: Uses Google's embedding API
+
+        The default embedding function (sentence-transformers) runs locally with no API
+        key required, making it perfect for quick prototyping. For production, switch to
+        a higher-quality embedding model.
+
+        You can also provide pre-computed embeddings directly, bypassing the automatic
+        generation. This gives flexibility to use any embedding model while still
+        benefiting from Chroma's simple storage and retrieval API.
+      tags: ["embeddings", "auto-embedding", "features"]
+
+    - topic: "Metadata Filtering"
+      content: |
+        Chroma supports filtering query results based on metadata using a where clause
+        with a simple but effective filter syntax.
+
+        Supported operators: $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin for scalar values.
+        Boolean operators $and and $or combine multiple conditions.
+
+        Document content filtering is also supported via where_document with $contains
+        and $not_contains operators, enabling keyword-based filtering alongside vector search.
+
+        Metadata fields are schemaless — any key-value pair can be attached to a document.
+        Supported value types are strings, integers, floats, and booleans.
+
+        While Chroma's filtering is simpler than Qdrant's payload filtering or Weaviate's
+        structured schema, it covers the most common use cases: filtering by category,
+        date ranges, source, and other categorical or numeric attributes.
+      tags: ["filtering", "metadata", "features"]
+
+    - topic: "Migration Path to Production Databases"
+      content: |
+        A common pattern is to prototype with ChromaDB and migrate to a more scalable
+        database for production. Here's how to plan the migration:
+
+        ChromaDB to Pinecone: Export embeddings and metadata from Chroma collections,
+        create a Pinecone index with matching dimensions, batch upsert. The main code
+        change is swapping the Chroma client for the Pinecone client.
+
+        ChromaDB to Qdrant: Similar export process. Qdrant's payload system maps well
+        to Chroma's metadata. Qdrant's Python client has a similar feel to Chroma's.
+
+        ChromaDB to Weaviate: Requires defining a schema (class) in Weaviate. If using
+        Weaviate's built-in vectorizers, you can re-import documents without embeddings.
+
+        ChromaDB to Milvus: Define a collection schema in Milvus, export and re-import
+        data. Milvus Lite provides a middle ground — more production-ready than Chroma
+        but still embedded.
+
+        With LangChain or LlamaIndex, the migration is simplified: swap the vector store
+        class and connection parameters while keeping the rest of the pipeline identical.
+      tags: ["migration", "production", "scaling"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of ChromaDB:
+
+        1. Single-node only. No built-in sharding or distributed mode. This fundamentally
+        limits scalability to what one machine can handle (typically low millions of vectors).
+
+        2. No hybrid search. Unlike Weaviate, Qdrant, and Milvus, Chroma doesn't support
+        combining vector search with BM25/sparse vector search.
+
+        3. Limited index types. Only HNSW is supported. No IVF, DiskANN, or GPU indexes
+        for tuning performance-memory tradeoffs.
+
+        4. No replication or high availability in the open-source version. A server crash
+        means downtime until restart.
+
+        5. Limited SDK support. Only Python and JavaScript clients. No Go, Java, or Rust SDKs.
+
+        6. No built-in authentication or RBAC in the open-source version. For multi-user
+        access control, you need Chroma Cloud or an external auth layer.
+
+        7. Performance degrades with large metadata payloads and complex filters due to
+        the SQLite-based metadata store.
+
+        8. Breaking API changes between major versions have occurred, requiring code updates
+        during upgrades.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Quick Start with Automatic Embeddings"
+    language: "python"
+    code: |
+      import chromadb
+
+      # In-memory (ephemeral) or persistent
+      client = chromadb.PersistentClient(path="./chroma_data")
+
+      # Create collection with default embedding function
+      collection = client.get_or_create_collection(
+          name="documents",
+          metadata={"hnsw:space": "cosine"}
+      )
+
+      # Add documents — embeddings generated automatically
+      collection.add(
+          documents=[
+              "RAG combines retrieval with generation for accurate AI responses",
+              "Vector databases store high-dimensional embeddings for similarity search",
+              "HNSW is a graph-based algorithm for approximate nearest neighbor search",
+          ],
+          metadatas=[
+              {"category": "ai", "year": 2024},
+              {"category": "databases", "year": 2024},
+              {"category": "algorithms", "year": 2023},
+          ],
+          ids=["doc1", "doc2", "doc3"]
+      )
+
+      # Query with natural language
+      results = collection.query(
+          query_texts=["how does retrieval augmented generation work"],
+          n_results=3,
+          where={"year": {"$gte": 2024}}
+      )
+
+  - title: "Using OpenAI Embeddings"
+    language: "python"
+    code: |
+      import chromadb
+      from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+
+      client = chromadb.PersistentClient(path="./chroma_data")
+
+      openai_ef = OpenAIEmbeddingFunction(
+          api_key="your-api-key",
+          model_name="text-embedding-3-small"
+      )
+
+      collection = client.get_or_create_collection(
+          name="knowledge_base",
+          embedding_function=openai_ef,
+          metadata={"hnsw:space": "cosine"}
+      )
+
+      # Add documents with metadata
+      collection.add(
+          documents=["document text here..."],
+          metadatas=[{"source": "wiki", "topic": "ai"}],
+          ids=["doc1"]
+      )
+
+      # Query with metadata and document content filtering
+      results = collection.query(
+          query_texts=["semantic search techniques"],
+          n_results=5,
+          where={"source": "wiki"},
+          where_document={"$contains": "embedding"}
+      )
+
+  - title: "RAG Pipeline with LangChain"
+    language: "python"
+    code: |
+      from langchain_chroma import Chroma
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain_core.prompts import ChatPromptTemplate
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      # Create or load persistent vector store
+      vectorstore = Chroma.from_documents(
+          documents,
+          embeddings,
+          collection_name="knowledge_base",
+          persist_directory="./chroma_data"
+      )
+
+      # Create retriever
+      retriever = vectorstore.as_retriever(
+          search_type="mmr",
+          search_kwargs={"k": 5, "fetch_k": 20}
+      )
+
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on context:\n{context}\n\nQuestion: {question}"
+      )
+      llm = ChatOpenAI(model="gpt-4o")
+      chain = prompt | llm
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "insert_throughput"
+      value: 3000
+      unit: "vectors/sec"
+      context: "1536-dim, batch size 100, persistent mode, pre-computed vectors"
+    - name: "query_latency_p50"
+      value: 15
+      unit: "ms"
+      context: "1536-dim, top-k=10, 100K vectors, HNSW"
+    - name: "query_latency_p99"
+      value: 50
+      unit: "ms"
+      context: "1536-dim, top-k=10, 100K vectors, HNSW"
+    - name: "query_latency_p99_1m"
+      value: 85
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "recall_at_10"
+      value: 0.95
+      unit: "ratio"
+      context: "1536-dim, 100K vectors, HNSW default settings"
+    - name: "auto_embed_latency_p50"
+      value: 45
+      unit: "ms"
+      context: "Query with auto-embedding via sentence-transformers, 100K vectors"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Managed production-ready alternative with higher scalability"
+    - slug: "weaviate"
+      note: "Feature-rich alternative with hybrid search and built-in vectorization"
+    - slug: "qdrant"
+      note: "High-performance alternative for production workloads"
+    - slug: "milvus"
+      note: "Distributed alternative for billion-scale deployments"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Provides high-quality embeddings via Chroma's embedding function interface"
+    - slug: "langchain"
+      role: "Orchestration framework with native Chroma integration"
+    - slug: "llamaindex"
+      role: "Data framework with Chroma vector store integration"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

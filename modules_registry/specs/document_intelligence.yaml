@@ -1,0 +1,375 @@
+meta:
+  slug: "document_intelligence"
+  name: "Document Intelligence"
+  version: "1.0.0"
+  category: "specialized_applications"
+  subcategory: "document_processing"
+  status: "emerging"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "AI-powered document understanding, extraction, and processing for enterprise workflows"
+  description: |
+    Document Intelligence encompasses the AI technologies and platforms that automatically
+    understand, extract, classify, and process information from documents of all types:
+    PDFs, images, scanned documents, forms, invoices, contracts, and more. This field
+    combines computer vision (OCR, layout analysis), natural language processing (entity
+    extraction, classification), and large language models (reasoning, summarization) into
+    end-to-end document processing pipelines.
+
+    The landscape includes cloud platforms (Azure AI Document Intelligence, Google Document AI,
+    AWS Textract), open-source tools (Docling, Surya, PaddleOCR, DocTR), and LLM-based
+    approaches that leverage vision-language models (GPT-4V, Claude Vision, Gemini) to
+    understand documents directly from images without traditional OCR pipelines.
+
+    Document Intelligence is critical for enterprise AI adoption because most organizational
+    knowledge lives in unstructured documents. Converting these documents into structured,
+    searchable, and actionable data is a prerequisite for RAG systems, knowledge management,
+    compliance automation, and business process automation.
+  logo_url: "/assets/modules/document_intelligence.svg"
+  website: "https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence"
+  documentation: "https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/"
+  license: "Various"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Document OCR and text extraction"
+    - "Form and table extraction"
+    - "Invoice and receipt processing"
+    - "Contract analysis and extraction"
+    - "Document classification"
+    - "Layout analysis and structure detection"
+    - "Handwriting recognition"
+    - "Document summarization"
+  supported_operations:
+    - "ocr"
+    - "layout_analysis"
+    - "table_extraction"
+    - "key_value_extraction"
+    - "entity_extraction"
+    - "classification"
+    - "summarization"
+    - "question_answering"
+    - "document_comparison"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "unstructured_io"
+      type: "compatible"
+
+technical_specs:
+  cloud_platforms:
+    - name: "Azure AI Document Intelligence"
+      features: ["prebuilt models", "custom models", "layout analysis", "add-on capabilities"]
+    - name: "Google Document AI"
+      features: ["OCR", "form parsing", "entity extraction", "custom models"]
+    - name: "AWS Textract"
+      features: ["OCR", "table extraction", "form extraction", "query-based extraction"]
+  open_source_tools:
+    - name: "Docling (IBM)"
+      description: "Document parsing with layout analysis and table extraction"
+    - name: "Surya"
+      description: "Multilingual OCR, layout analysis, and reading order detection"
+    - name: "PaddleOCR"
+      description: "Multilingual OCR toolkit with text detection and recognition"
+    - name: "DocTR"
+      description: "Deep learning OCR library by Mindee"
+    - name: "Marker"
+      description: "PDF to markdown conversion with layout preservation"
+  vlm_approaches:
+    - "GPT-4V / GPT-4o (vision input)"
+    - "Claude Vision (native document understanding)"
+    - "Gemini 1.5 Pro (long-context document processing)"
+  supported_input_formats:
+    - "PDF"
+    - "TIFF"
+    - "JPEG"
+    - "PNG"
+    - "BMP"
+    - "DOCX"
+    - "XLSX"
+    - "PPTX"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Cloud platforms achieve 95%+ accuracy on structured documents. VLM approaches handle complex layouts well but are slower. Open-source OCR quality varies by language and document type."
+  scalability:
+    score: 8
+    justification: "Cloud platforms scale transparently. Self-hosted solutions require GPU infrastructure. Batch processing pipelines can handle millions of documents."
+  ease_of_use:
+    score: 7
+    justification: "Cloud APIs are straightforward for standard document types. Custom model training requires labeled data. VLM approaches need prompt engineering for consistent extraction."
+  cost_efficiency:
+    score: 6
+    justification: "Cloud APIs charge per page/document. VLM approaches are expensive for high volumes. Open-source tools eliminate per-page costs but require infrastructure."
+  community:
+    score: 7
+    justification: "Active open-source community around OCR and document parsing. Growing ecosystem of tools specifically for document-to-RAG pipelines."
+  maturity:
+    score: 7
+    justification: "OCR technology is decades old. AI-powered document intelligence is newer and rapidly evolving, especially VLM-based approaches. Enterprise adoption is growing fast."
+  flexibility:
+    score: 8
+    justification: "Wide range of approaches from simple OCR to sophisticated VLM reasoning. Can be deployed as cloud services, self-hosted, or hybrid. Customizable for domain-specific documents."
+  data_privacy:
+    score: 7
+    justification: "Open-source tools enable fully private processing. Cloud platforms offer enterprise data handling. Documents often contain sensitive data requiring careful handling."
+
+knowledge:
+  entries:
+    - topic: "Document Processing Architecture"
+      content: |
+        A modern document intelligence pipeline typically follows these stages:
+
+        1. Ingestion: Accept documents in various formats (PDF, images, scans). Handle
+        multi-page documents, detect orientation, and perform deskewing if needed.
+
+        2. OCR / Text Extraction: For scanned documents or images, apply OCR to extract
+        raw text. For native PDFs, extract text directly from the PDF structure. Tools
+        like Surya and PaddleOCR handle the OCR step.
+
+        3. Layout Analysis: Detect the document structure including headings, paragraphs,
+        tables, figures, headers, footers, and reading order. This is crucial for preserving
+        the semantic structure of the document.
+
+        4. Content Extraction: Extract structured data from specific regions: tables into
+        rows/columns, forms into key-value pairs, entities from text. This step uses
+        either specialized models or VLMs.
+
+        5. Post-Processing: Clean extracted text, resolve references, merge multi-page
+        tables, validate extracted data against schemas, and convert to the target format
+        (markdown, JSON, structured records).
+
+        6. Indexing: Feed processed documents into a search index or vector database for
+        retrieval. This is where document intelligence connects to RAG pipelines.
+
+        The VLM approach (GPT-4V, Claude Vision) can collapse steps 2-4 into a single model
+        call, but at higher latency and cost per page.
+      tags: ["architecture", "pipeline"]
+
+    - topic: "Choosing the Right Approach"
+      content: |
+        The document intelligence landscape offers three main approaches:
+
+        Cloud Platform APIs (Azure Document Intelligence, Google Document AI, AWS Textract):
+        Best for organizations wanting managed services with prebuilt models for common
+        document types (invoices, receipts, IDs). Fast to implement, predictable per-page
+        pricing, but limited customization and data leaves your infrastructure.
+
+        Open-Source Pipelines (Docling, Surya, PaddleOCR + custom extraction):
+        Best for organizations needing data privacy, cost control at high volumes, or
+        specialized document types. Requires ML engineering capacity. More flexible but
+        more work to build and maintain.
+
+        Vision-Language Models (GPT-4V, Claude Vision, Gemini):
+        Best for complex, varied documents where traditional extraction rules are insufficient.
+        The model can reason about document content, handle unexpected layouts, and answer
+        questions about documents. Expensive per page but highly flexible.
+
+        Hybrid approaches are increasingly common: use traditional OCR for text extraction,
+        then VLMs for understanding and extraction of complex elements. This balances cost
+        and capability.
+      tags: ["decision", "comparison"]
+
+    - topic: "Document Intelligence for RAG"
+      content: |
+        Document Intelligence is a critical upstream component of RAG systems. The quality
+        of document processing directly impacts retrieval quality and ultimately LLM response
+        accuracy. Key considerations:
+
+        1. Chunk-aware extraction: Document structure (headings, sections, paragraphs) should
+        inform chunking strategy. Tools like Docling and Unstructured.io preserve structural
+        metadata that enables semantic chunking rather than naive character-count splitting.
+
+        2. Table handling: Tables are a major challenge. Options include converting tables
+        to markdown or HTML within text chunks, extracting tables as separate structured
+        objects, or generating natural language descriptions of table contents.
+
+        3. Figure and chart processing: Use VLMs to generate descriptions of figures and
+        charts that can be included in the text index alongside the surrounding context.
+
+        4. Metadata preservation: Retain document metadata (title, author, date, page number,
+        section) for filtering during retrieval. This enables queries like "find information
+        about X in documents from 2024."
+
+        5. Quality validation: Implement checks for OCR quality (confidence scores), completeness
+        (expected page count), and extraction accuracy (schema validation for structured fields).
+      tags: ["rag", "integration", "chunking"]
+
+    - topic: "Emerging Trends"
+      content: |
+        Key trends in document intelligence as of 2026:
+
+        1. VLM-first pipelines: Vision-language models are increasingly used as the primary
+        document understanding tool, with traditional OCR as a fallback. Models like Claude
+        and GPT-4o can process document images directly with strong accuracy.
+
+        2. Multimodal RAG: Systems that index not just text but also visual elements (charts,
+        diagrams, layouts) from documents, enabling queries about visual content.
+
+        3. Agentic document processing: AI agents that can navigate complex documents,
+        cross-reference information across pages, and handle multi-document tasks like
+        contract comparison or regulatory compliance checking.
+
+        4. Specialized document models: Foundation models fine-tuned specifically for document
+        understanding (LayoutLM, Donut, Pix2Struct) that combine OCR and understanding
+        in a single model.
+
+        5. Zero-shot extraction: Using LLMs to extract structured data from documents
+        without training custom models. Define the schema in the prompt and let the model
+        extract matching fields. This dramatically reduces time-to-deployment for new
+        document types.
+      tags: ["trends", "emerging", "future"]
+
+code_examples:
+  - title: "Azure Document Intelligence"
+    language: "python"
+    code: |
+      from azure.ai.documentintelligence import DocumentIntelligenceClient
+      from azure.core.credentials import AzureKeyCredential
+
+      client = DocumentIntelligenceClient(
+          endpoint="https://your-resource.cognitiveservices.azure.com/",
+          credential=AzureKeyCredential("your-key")
+      )
+
+      # Analyze a document with the prebuilt layout model
+      with open("document.pdf", "rb") as f:
+          poller = client.begin_analyze_document(
+              "prebuilt-layout",
+              body=f,
+              content_type="application/pdf"
+          )
+
+      result = poller.result()
+
+      # Extract tables
+      for table in result.tables:
+          print(f"Table: {table.row_count} rows x {table.column_count} cols")
+          for cell in table.cells:
+              print(f"  [{cell.row_index},{cell.column_index}]: {cell.content}")
+
+      # Extract paragraphs with structure
+      for paragraph in result.paragraphs:
+          print(f"[{paragraph.role}] {paragraph.content}")
+
+  - title: "VLM-Based Document Extraction with Claude"
+    language: "python"
+    code: |
+      import anthropic
+      import base64
+
+      client = anthropic.Anthropic()
+
+      # Read document image
+      with open("invoice.png", "rb") as f:
+          image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=4096,
+          messages=[
+              {
+                  "role": "user",
+                  "content": [
+                      {
+                          "type": "image",
+                          "source": {
+                              "type": "base64",
+                              "media_type": "image/png",
+                              "data": image_data
+                          }
+                      },
+                      {
+                          "type": "text",
+                          "text": """Extract the following fields from this invoice as JSON:
+                          - vendor_name
+                          - invoice_number
+                          - date
+                          - line_items (array of {description, quantity, unit_price, total})
+                          - subtotal
+                          - tax
+                          - total"""
+                      }
+                  ]
+              }
+          ]
+      )
+
+      print(response.content[0].text)
+
+  - title: "Open-Source Pipeline with Docling"
+    language: "python"
+    code: |
+      from docling.document_converter import DocumentConverter
+      from docling.datamodel.pipeline_options import PdfPipelineOptions
+
+      # Configure pipeline
+      pipeline_options = PdfPipelineOptions()
+      pipeline_options.do_ocr = True
+      pipeline_options.do_table_structure = True
+
+      converter = DocumentConverter(pipeline_options=pipeline_options)
+
+      # Convert PDF to structured document
+      result = converter.convert("document.pdf")
+
+      # Export as markdown (preserves structure)
+      markdown = result.document.export_to_markdown()
+
+      # Access structured elements
+      for table in result.document.tables:
+          print(f"Table on page {table.page_no}:")
+          print(table.export_to_dataframe())
+
+      # Access text with metadata for chunking
+      for element in result.document.iterate_items():
+          print(f"[{element.label}] {element.text[:100]}...")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "ocr_accuracy_printed"
+      value: 98.5
+      unit: "percent"
+      context: "Clean printed documents, Azure Document Intelligence"
+    - name: "ocr_accuracy_handwritten"
+      value: 89.0
+      unit: "percent"
+      context: "Handwritten English, Azure Document Intelligence"
+    - name: "table_extraction_f1"
+      value: 92.0
+      unit: "percent"
+      context: "Complex tables with merged cells, Docling"
+    - name: "vlm_invoice_extraction_accuracy"
+      value: 95.0
+      unit: "percent"
+      context: "Field-level accuracy, Claude Vision, diverse invoice layouts"
+    - name: "processing_speed_cloud"
+      value: 3
+      unit: "pages/sec"
+      context: "Azure Document Intelligence, standard tier"
+
+relationships:
+  alternatives: []
+  complements:
+    - slug: "unstructured_io"
+      role: "Document ingestion and preprocessing pipeline"
+    - slug: "anthropic_claude"
+      role: "VLM-based document understanding and extraction"
+    - slug: "openai"
+      role: "GPT-4V for document understanding tasks"
+    - slug: "langchain"
+      role: "Orchestration of document processing to RAG pipelines"
+    - slug: "pinecone"
+      role: "Vector storage for processed document embeddings"
+    - slug: "elasticsearch_vector"
+      role: "Hybrid search over processed documents"
+  typical_pipeline_position: "data_ingestion"
+  pipeline_predecessors: ["document_capture", "file_storage"]
+  pipeline_successors: ["chunking", "embeddings", "indexing"]

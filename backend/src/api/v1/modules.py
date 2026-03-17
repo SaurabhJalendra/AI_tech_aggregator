@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.redis import cache_get, cache_set
 from src.db.session import get_db
 from src.services.module_service import ModuleService
 
@@ -17,16 +18,23 @@ async def list_modules(
     status: str | None = Query(None),
     search: str | None = Query(None),
     page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=100),
+    per_page: int = Query(20, ge=1, le=100, alias="per_page"),
+    page_size: int | None = Query(None, ge=1, le=100),
     service: ModuleService = Depends(get_module_service),
 ):
     """List all modules with optional filtering."""
+    effective_per_page = page_size if page_size is not None else per_page
+    cache_key = f"modules:list:{category}:{status}:{search}:{page}:{effective_per_page}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     modules, total = await service.list_modules(
-        category=category, status=status, search=search, page=page, per_page=per_page
+        category=category, status=status, search=search, page=page, per_page=effective_per_page
     )
 
-    return {
-        "items": [
+    result = {
+        "modules": [
             {
                 "slug": m.slug,
                 "name": m.name,
@@ -41,15 +49,24 @@ async def list_modules(
         ],
         "total": total,
         "page": page,
-        "per_page": per_page,
-        "pages": (total + per_page - 1) // per_page if per_page > 0 else 0,
+        "per_page": effective_per_page,
+        "pages": (total + effective_per_page - 1) // effective_per_page if effective_per_page > 0 else 0,
     }
+    await cache_set(cache_key, result, ttl=300)
+    return result
 
 
 @router.get("/categories")
 async def list_categories(service: ModuleService = Depends(get_module_service)):
     """List all module categories with counts."""
-    return await service.list_categories()
+    cache_key = "modules:categories"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    result = await service.list_categories()
+    await cache_set(cache_key, result, ttl=3600)
+    return result
 
 
 @router.get("/{slug}")
@@ -58,11 +75,16 @@ async def get_module(
     service: ModuleService = Depends(get_module_service),
 ):
     """Get detailed info about a single module."""
+    cache_key = f"modules:detail:{slug}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     module = await service.get_by_slug(slug)
     if not module:
         raise HTTPException(status_code=404, detail=f"Module '{slug}' not found")
 
-    return {
+    result = {
         "slug": module.slug,
         "name": module.name,
         "category": module.category.slug if module.category else None,
@@ -103,6 +125,8 @@ async def get_module(
             for b in module.benchmarks
         ],
     }
+    await cache_set(cache_key, result, ttl=600)
+    return result
 
 
 @router.get("/{slug}/knowledge")

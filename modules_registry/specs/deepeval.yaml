@@ -1,0 +1,350 @@
+meta:
+  slug: "deepeval"
+  name: "DeepEval"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "llm_testing"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source LLM evaluation framework with unit-test style interface and 14+ metrics"
+  description: |
+    DeepEval is an open-source evaluation framework for LLM applications that brings
+    software engineering testing practices to AI development. It provides a pytest-like
+    interface for writing LLM evaluation tests, with 14+ research-backed metrics covering
+    RAG quality, conversational AI, tool use, and general LLM output quality.
+
+    The framework supports both reference-free evaluation (using LLMs as judges) and
+    reference-based evaluation (comparing against ground truth). Its GEval metric allows
+    custom evaluation criteria defined in natural language, making it adaptable to any
+    domain or use case.
+
+    DeepEval integrates with CI/CD pipelines through its pytest plugin, enabling automated
+    quality gates. The optional Confident AI platform provides a web dashboard for tracking
+    metrics over time, managing evaluation datasets, and collaborating on evaluation results.
+    The framework works with any LLM provider and supports both synchronous and asynchronous
+    evaluation.
+  logo_url: "/assets/modules/deepeval.svg"
+  website: "https://deepeval.com"
+  documentation: "https://docs.confident-ai.com"
+  github: "https://github.com/confident-ai/deepeval"
+  license: "Apache-2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "LLM application unit testing"
+    - "RAG pipeline evaluation"
+    - "Conversational AI quality assessment"
+    - "CI/CD quality gates for LLM apps"
+    - "Red-teaming and safety evaluation"
+  supported_operations:
+    - "assert_test"
+    - "evaluate"
+    - "benchmark"
+    - "synthesize"
+    - "red_team"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai"
+      type: "compatible"
+    - slug: "anthropic"
+      type: "compatible"
+    - slug: "pytest"
+      type: "native"
+
+technical_specs:
+  metrics:
+    - "G-Eval (custom criteria)"
+    - "Faithfulness"
+    - "Answer Relevancy"
+    - "Contextual Precision"
+    - "Contextual Recall"
+    - "Contextual Relevancy"
+    - "Hallucination"
+    - "Toxicity"
+    - "Bias"
+    - "Summarization"
+    - "Tool Correctness"
+    - "Knowledge Retention"
+    - "Conversation Relevancy"
+    - "Conversation Completeness"
+  red_teaming_attacks:
+    - "prompt_injection"
+    - "jailbreaking"
+    - "pii_leakage"
+    - "bias_probing"
+    - "toxicity_probing"
+    - "hallucination_probing"
+  supported_llm_judges:
+    - "OpenAI"
+    - "Anthropic"
+    - "Azure OpenAI"
+    - "Local models"
+  pytest_plugin: true
+  async_evaluation: true
+  dashboard: "Confident AI (optional)"
+  sdk_languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Evaluation speed is LLM-bound. Supports async evaluation for throughput. GEval metric is slower due to multi-step LLM reasoning but more accurate."
+  scalability:
+    score: 7
+    justification: "Async batch evaluation with configurable concurrency. Scales with LLM API capacity. Confident AI platform handles metric storage and visualization at scale."
+  ease_of_use:
+    score: 9
+    justification: "Pytest-style interface is immediately familiar to developers. assert_test pattern makes writing evaluation tests intuitive. Excellent documentation with metric-specific guides."
+  cost_efficiency:
+    score: 8
+    justification: "Open-source core is free. LLM judge costs are the main expense. GEval with GPT-4o-mini is cost-effective. Confident AI platform is free for small teams."
+  community:
+    score: 8
+    justification: "6k+ GitHub stars, fast-growing community. Active Discord server. Regular releases with new metrics and features."
+  maturity:
+    score: 6
+    justification: "Released in 2023. Rapidly evolving with frequent API changes. Metrics are research-backed but the framework is younger than alternatives like RAGAS."
+  flexibility:
+    score: 9
+    justification: "GEval enables arbitrary custom metrics. Supports RAG, conversational, agent, and general LLM evaluation. Red-teaming built in. Works with any LLM provider."
+  data_privacy:
+    score: 7
+    justification: "Evaluation data sent to LLM providers for judging. Confident AI platform is optional. Can use local LLMs for fully private evaluation."
+
+knowledge:
+  entries:
+    - topic: "GEval Custom Metrics"
+      content: |
+        GEval is DeepEval's most powerful metric. It allows you to define custom evaluation
+        criteria in natural language, and the framework automatically generates a multi-step
+        evaluation plan that an LLM judge follows.
+
+        Unlike simple LLM-as-judge prompting that asks "rate this on a scale of 1-10", GEval
+        breaks evaluation into chain-of-thought steps: first analyze specific aspects of the
+        output, then reason about quality, then assign a score. This produces more reliable
+        and consistent scores.
+
+        Example: A "technical accuracy" GEval metric would: (1) identify all technical claims
+        in the answer, (2) verify each claim against known facts and the provided context,
+        (3) assess whether technical terminology is used correctly, (4) assign a score.
+
+        GEval metrics can evaluate on a continuous 0-1 scale or binary pass/fail. The threshold
+        parameter sets the minimum score for a test to pass. For CI/CD integration, binary
+        mode with appropriate thresholds is recommended.
+      tags: ["geval", "custom-metrics", "evaluation"]
+
+    - topic: "When to Choose DeepEval"
+      content: |
+        DeepEval is the right choice when:
+
+        1. You want a developer-friendly testing framework. The pytest integration means
+        LLM evaluation tests live alongside unit tests and run in the same CI pipeline.
+
+        2. You need to evaluate more than just RAG. DeepEval covers conversational AI,
+        tool use, summarization, safety, and custom criteria -- not just retrieval quality.
+
+        3. You want built-in red-teaming. DeepEval's red_team module generates adversarial
+        inputs to test for prompt injection, PII leakage, bias, and toxicity.
+
+        4. You need custom evaluation criteria. GEval lets you define metrics in natural
+        language without writing complex evaluation code.
+
+        5. You want an optional dashboard. Confident AI provides metric tracking, dataset
+        management, and team collaboration without mandating it.
+
+        Consider RAGAS instead if: your focus is purely RAG evaluation and you want the
+        most established RAG-specific metrics. Consider custom LLM-as-judge prompts if:
+        you have very specific evaluation needs and want full control over the judging logic.
+      tags: ["decision", "comparison"]
+
+    - topic: "Red-Teaming with DeepEval"
+      content: |
+        DeepEval includes a red-teaming module that automatically generates adversarial
+        inputs to probe your LLM application for safety vulnerabilities.
+
+        The red_team function generates attack prompts across categories:
+        - Prompt injection: attempts to override system instructions
+        - Jailbreaking: attempts to bypass safety guardrails
+        - PII leakage: attempts to extract personal information from training/context
+        - Bias probing: tests for discriminatory outputs
+        - Toxicity probing: attempts to elicit harmful content
+        - Hallucination probing: tests for confident fabrication
+
+        For each attack category, DeepEval generates multiple attack variants and evaluates
+        the model's responses using corresponding safety metrics. The results identify
+        specific vulnerability categories and provide example attack/response pairs.
+
+        Best practice: Run red-teaming as part of your release checklist, not just in CI.
+        Attack methods evolve and new vulnerability categories emerge regularly. Update
+        DeepEval frequently to get the latest attack templates.
+      tags: ["red-teaming", "safety", "security"]
+
+    - topic: "Pytest Integration Pattern"
+      content: |
+        DeepEval's pytest plugin enables writing LLM evaluations as standard test functions.
+        This integrates naturally with existing development workflows.
+
+        Test files follow the pattern test_*.py and use the assert_test function or
+        @pytest.mark.parametrize for data-driven tests. Each test creates a LLMTestCase
+        with inputs, actual outputs, and optionally expected outputs and retrieved contexts.
+
+        The --deepeval flag enables the DeepEval pytest plugin, which provides enhanced
+        reporting and optional Confident AI integration. Without the flag, tests still run
+        but use standard pytest assertions.
+
+        For CI/CD, the recommended pattern is:
+        1. Store evaluation datasets as fixtures or in JSON/CSV files
+        2. Parametrize tests over the dataset
+        3. Set metric thresholds that reflect your quality requirements
+        4. Fail the pipeline if any metric drops below threshold
+        5. Use --deepeval-cache to cache LLM judge responses and reduce API costs
+      tags: ["pytest", "testing", "ci-cd"]
+
+code_examples:
+  - title: "Basic LLM Test with Pytest"
+    language: "python"
+    code: |
+      import pytest
+      from deepeval import assert_test
+      from deepeval.test_case import LLMTestCase
+      from deepeval.metrics import (
+          FaithfulnessMetric,
+          AnswerRelevancyMetric,
+          GEval,
+      )
+
+      def test_rag_response():
+          faithfulness = FaithfulnessMetric(threshold=0.8)
+          relevancy = AnswerRelevancyMetric(threshold=0.7)
+
+          test_case = LLMTestCase(
+              input="What is vLLM?",
+              actual_output="vLLM is an inference engine using PagedAttention...",
+              retrieval_context=[
+                  "vLLM is a high-throughput LLM serving library..."
+              ]
+          )
+
+          assert_test(test_case, [faithfulness, relevancy])
+
+      def test_custom_metric():
+          technical_accuracy = GEval(
+              name="Technical Accuracy",
+              criteria="Does the answer use correct technical terminology and make factually accurate claims about the technology?",
+              threshold=0.7,
+          )
+
+          test_case = LLMTestCase(
+              input="Explain PagedAttention",
+              actual_output="PagedAttention manages KV cache in pages..."
+          )
+
+          assert_test(test_case, [technical_accuracy])
+
+  - title: "Batch Evaluation"
+    language: "python"
+    code: |
+      from deepeval import evaluate
+      from deepeval.test_case import LLMTestCase
+      from deepeval.metrics import FaithfulnessMetric, HallucinationMetric
+
+      # Create test cases from your evaluation dataset
+      test_cases = []
+      for sample in eval_dataset:
+          test_cases.append(LLMTestCase(
+              input=sample["question"],
+              actual_output=sample["answer"],
+              retrieval_context=sample["contexts"],
+              expected_output=sample.get("ground_truth"),
+          ))
+
+      # Evaluate all at once
+      results = evaluate(
+          test_cases=test_cases,
+          metrics=[
+              FaithfulnessMetric(threshold=0.8),
+              HallucinationMetric(threshold=0.5),
+          ],
+      )
+
+      print(f"Overall pass rate: {results.pass_rate}")
+      for result in results.test_results:
+          print(f"  {result.input[:50]}... => {'PASS' if result.success else 'FAIL'}")
+
+  - title: "Red-Teaming"
+    language: "python"
+    code: |
+      from deepeval.red_teaming import RedTeamer
+
+      red_teamer = RedTeamer(
+          target_model="your-model",
+          target_purpose="Customer support chatbot for a SaaS product",
+          target_system_prompt="You are a helpful customer support agent..."
+      )
+
+      results = red_teamer.scan(
+          attacks=[
+              "prompt_injection",
+              "jailbreaking",
+              "pii_leakage",
+              "bias",
+          ],
+          attacks_per_category=5,
+      )
+
+      print(f"Vulnerability score: {results.vulnerability_score}")
+      for category, attacks in results.by_category.items():
+          print(f"\n{category}:")
+          for attack in attacks:
+              print(f"  Attack: {attack.input[:80]}...")
+              print(f"  Vulnerable: {attack.is_vulnerable}")
+
+benchmarks:
+  last_run: "2026-02-18"
+  results:
+    - name: "faithfulness_correlation_human"
+      value: 0.80
+      unit: "spearman_rho"
+      context: "Correlation with human judgments, GPT-4o judge"
+    - name: "geval_correlation_human"
+      value: 0.85
+      unit: "spearman_rho"
+      context: "Custom GEval criteria, GPT-4o judge, technical domain"
+    - name: "eval_latency_per_sample"
+      value: 3.8
+      unit: "sec"
+      context: "Faithfulness + Relevancy metrics, GPT-4o-mini judge"
+    - name: "eval_cost_per_100_samples"
+      value: 1.80
+      unit: "usd"
+      context: "Faithfulness + Relevancy, GPT-4o-mini judge"
+    - name: "red_team_detection_rate"
+      value: 0.72
+      unit: "ratio"
+      context: "Standard attacks against unguarded GPT-4o-mini endpoint"
+
+relationships:
+  alternatives:
+    - slug: "ragas"
+      note: "Focused RAG evaluation framework with established metrics"
+    - slug: "trulens"
+      note: "RAG evaluation with built-in observability tracing"
+    - slug: "phoenix"
+      note: "Arize Phoenix for LLM observability with evaluation"
+  complements:
+    - slug: "langchain"
+      role: "LLM application framework evaluated by DeepEval tests"
+    - slug: "guardrails_ai"
+      role: "Runtime guardrails validated by DeepEval red-teaming"
+    - slug: "openai"
+      role: "LLM provider used as the judge model for evaluation"
+  typical_pipeline_position: "evaluation"
+  pipeline_predecessors: ["llm_generation", "guardrails"]
+  pipeline_successors: ["monitoring", "optimization"]

@@ -1,0 +1,225 @@
+meta:
+  slug: "neo4j"
+  name: "Neo4j"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "graph_database"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Graph database with vector search for knowledge graphs and AI applications"
+  description: |
+    Neo4j is the leading graph database, widely used for knowledge graphs,
+    recommendation engines, and network analysis. With the addition of native
+    vector search capabilities, Neo4j enables hybrid retrieval combining graph
+    traversal with vector similarity search, making it powerful for advanced
+    RAG architectures.
+
+    Neo4j stores data as nodes and relationships with properties, queried using
+    the Cypher query language. The vector index support allows storing embeddings
+    on nodes and performing approximate nearest neighbor search alongside graph
+    queries, enabling GraphRAG patterns where knowledge graphs enhance LLM context.
+
+    Neo4j is available as a managed cloud service (Aura), self-hosted community
+    edition, or enterprise on-premises deployment. It has deep integrations with
+    LangChain and LlamaIndex for building graph-enhanced AI applications.
+  logo_url: "/assets/modules/neo4j.svg"
+  website: "https://neo4j.com"
+  documentation: "https://neo4j.com/docs/"
+  github: "https://github.com/neo4j/neo4j"
+  license: "GPL-3.0 (Community) / Commercial (Enterprise)"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Knowledge graph construction"
+    - "GraphRAG (graph-enhanced retrieval)"
+    - "Entity relationship modeling"
+    - "Recommendation systems"
+    - "Fraud detection"
+    - "Network analysis"
+  supported_operations:
+    - "cypher_query"
+    - "vector_search"
+    - "graph_traversal"
+    - "full_text_search"
+    - "graph_algorithms"
+    - "node_embedding"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+
+technical_specs:
+  query_language: "Cypher"
+  vector_index: "HNSW"
+  max_vector_dimensions: 4096
+  distance_metrics:
+    - "cosine"
+    - "euclidean"
+  graph_algorithms_library: "GDS (Graph Data Science)"
+  acid_transactions: true
+  clustering: true
+  managed_cloud: "Neo4j Aura"
+  sdk_languages:
+    - "python"
+    - "java"
+    - "node"
+    - "go"
+    - "dotnet"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Excellent graph traversal performance. Vector search is competent but not as optimized as purpose-built vector DBs."
+  scalability:
+    score: 7
+    justification: "Enterprise edition supports clustering and sharding. Community edition limited to single instance."
+  ease_of_use:
+    score: 6
+    justification: "Cypher has a learning curve. Graph modeling requires different thinking than relational or document databases."
+  cost_efficiency:
+    score: 6
+    justification: "Community edition is free. Aura cloud and Enterprise license can be expensive. More complex to operate than managed vector DBs."
+  community:
+    score: 9
+    justification: "Largest graph database community. Extensive resources, certifications, and enterprise ecosystem."
+  maturity:
+    score: 9
+    justification: "Founded in 2007. Battle-tested at scale across many industries. Vector search is newer but built on mature platform."
+  flexibility:
+    score: 8
+    justification: "Combines graph, vector, and full-text search. Rich query language. Graph algorithms library."
+  data_privacy:
+    score: 8
+    justification: "Self-hosted community and enterprise editions. Aura cloud available in multiple regions. GDPR compliant."
+
+knowledge:
+  entries:
+    - topic: "GraphRAG with Neo4j"
+      content: |
+        GraphRAG uses knowledge graphs to enhance RAG retrieval beyond simple
+        vector similarity. Neo4j enables several GraphRAG patterns:
+
+        1. Entity-based retrieval: Extract entities from the query, find them in
+        the knowledge graph, and retrieve connected context through graph traversal.
+
+        2. Hybrid vector+graph search: Use vector search to find relevant nodes,
+        then expand context by traversing relationships to related entities.
+
+        3. Community-based summarization: Use graph algorithms to identify
+        communities of related entities, pre-compute summaries, and use them
+        for high-level question answering.
+
+        4. Path-based reasoning: Find shortest paths between entities to answer
+        multi-hop questions that pure vector search cannot handle.
+
+        GraphRAG excels at questions involving relationships, multi-hop reasoning,
+        and structured knowledge. It complements rather than replaces traditional
+        vector-based RAG.
+      tags: ["graphrag", "rag", "knowledge-graph"]
+
+    - topic: "Building Knowledge Graphs from Documents"
+      content: |
+        A common workflow is extracting knowledge graphs from unstructured documents:
+
+        1. Parse documents into text chunks.
+        2. Use an LLM to extract entities and relationships from each chunk.
+        3. Resolve entity duplicates and merge into a unified graph in Neo4j.
+        4. Optionally generate embeddings for nodes to enable hybrid search.
+
+        LangChain provides LLMGraphTransformer for automated entity extraction,
+        and Neo4jGraph for storing the results. LlamaIndex has PropertyGraphIndex
+        for a similar workflow.
+
+        Key challenges: entity resolution (merging "IBM" and "International Business
+        Machines"), relationship normalization, and handling extraction errors.
+        Quality depends heavily on the LLM used for extraction and the complexity
+        of the source documents.
+      tags: ["construction", "extraction", "workflow"]
+
+code_examples:
+  - title: "Vector Search with Cypher"
+    language: "python"
+    code: |
+      from neo4j import GraphDatabase
+
+      driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+
+      with driver.session() as session:
+          # Create vector index
+          session.run("""
+              CREATE VECTOR INDEX doc_embeddings IF NOT EXISTS
+              FOR (d:Document) ON (d.embedding)
+              OPTIONS {indexConfig: {
+                  `vector.dimensions`: 1536,
+                  `vector.similarity_function`: 'cosine'
+              }}
+          """)
+
+          # Vector search
+          result = session.run("""
+              CALL db.index.vector.queryNodes('doc_embeddings', 5, $query_vector)
+              YIELD node, score
+              RETURN node.title AS title, node.text AS text, score
+          """, query_vector=query_embedding)
+
+          for record in result:
+              print(f"{record['title']} (score: {record['score']:.3f})")
+
+  - title: "LangChain GraphRAG"
+    language: "python"
+    code: |
+      from langchain_community.graphs import Neo4jGraph
+      from langchain.chains import GraphCypherQAChain
+      from langchain_openai import ChatOpenAI
+
+      graph = Neo4jGraph(
+          url="bolt://localhost:7687",
+          username="neo4j",
+          password="password"
+      )
+
+      chain = GraphCypherQAChain.from_llm(
+          ChatOpenAI(model="gpt-4o", temperature=0),
+          graph=graph,
+          verbose=True
+      )
+
+      result = chain.invoke({"query": "What companies are connected to AI research?"})
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "graph_traversal_depth3"
+      value: 5
+      unit: "ms"
+      context: "3-hop traversal, 10M nodes"
+    - name: "vector_search_latency"
+      value: 15
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M nodes with vector index"
+    - name: "hybrid_query_latency"
+      value: 25
+      unit: "ms"
+      context: "Vector search + 2-hop expansion"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Pure vector database, simpler but no graph capabilities"
+    - slug: "weaviate"
+      note: "Vector database with some graph-like references"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration with Neo4j graph and vector store integrations"
+    - slug: "llamaindex"
+      role: "PropertyGraphIndex for building and querying knowledge graphs"
+    - slug: "openai"
+      role: "LLM for entity extraction and graph-based Q&A"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings", "entity_extraction"]
+  pipeline_successors: ["reranking", "llm_generation"]

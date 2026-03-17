@@ -1,0 +1,177 @@
+meta:
+  slug: "langsmith"
+  name: "LangSmith"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "llm_observability"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "LangChain's platform for debugging, testing, and monitoring LLM applications"
+  description: |
+    LangSmith is a developer platform by LangChain for building production-grade
+    LLM applications. It provides tracing, evaluation, prompt engineering, and
+    monitoring tools tightly integrated with the LangChain ecosystem.
+
+    LangSmith automatically captures detailed traces of LangChain runs including
+    every chain step, LLM call, tool invocation, and retrieval operation. The
+    platform also supports evaluation datasets, automated evaluators, prompt
+    versioning through LangChain Hub, and production monitoring.
+
+    While LangSmith works best with LangChain applications, it also supports
+    generic tracing through the LangSmith SDK for non-LangChain codebases.
+  logo_url: "/assets/modules/langsmith.svg"
+  website: "https://smith.langchain.com"
+  documentation: "https://docs.smith.langchain.com"
+  github: "https://github.com/langchain-ai/langsmith-sdk"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "LangChain application debugging"
+    - "LLM evaluation and testing"
+    - "Prompt engineering and versioning"
+    - "Production monitoring"
+    - "Dataset curation"
+  supported_operations:
+    - "trace"
+    - "evaluate"
+    - "create_dataset"
+    - "prompt_hub"
+    - "annotation_queue"
+    - "monitor"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "openai"
+      type: "compatible"
+
+technical_specs:
+  tracing: true
+  evaluation: true
+  prompt_hub: true
+  annotation_queues: true
+  online_evaluation: true
+  automations: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "rest"
+  self_hosted: false
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Optimized tracing with background logging. Minimal overhead on application performance."
+  scalability:
+    score: 8
+    justification: "Cloud-hosted platform handles high-volume production workloads."
+  ease_of_use:
+    score: 9
+    justification: "Automatic tracing for LangChain apps with environment variables. Best-in-class debugging UI."
+  cost_efficiency:
+    score: 6
+    justification: "Free tier with limited traces. Paid plans for production use. No self-hosted option."
+  community:
+    score: 8
+    justification: "Large LangChain community. LangChain Hub for sharing prompts and chains."
+  maturity:
+    score: 7
+    justification: "Launched in 2023 by LangChain team. Rapidly maturing with strong adoption."
+  flexibility:
+    score: 6
+    justification: "Best with LangChain. Works with other frameworks but with less depth. Cloud-only."
+  data_privacy:
+    score: 5
+    justification: "Cloud-only service. All traces sent to LangSmith servers. Enterprise plans with additional controls."
+
+knowledge:
+  entries:
+    - topic: "LangSmith Evaluation Workflows"
+      content: |
+        LangSmith provides a structured evaluation workflow:
+
+        1. Create a dataset with input-output examples (from production traces,
+        manual curation, or synthetic generation).
+
+        2. Define evaluators: built-in (correctness, helpfulness), LLM-as-judge
+        (custom criteria), or custom Python functions.
+
+        3. Run evaluations against your chain or model. LangSmith tracks results
+        across multiple runs, enabling comparison of different configurations.
+
+        4. Use annotation queues for human evaluation. Reviewers score outputs
+        and provide feedback through the LangSmith UI.
+
+        This workflow enables continuous improvement: capture production failures,
+        add them to evaluation datasets, fix the pipeline, and verify the fix
+        with automated evaluation before redeployment.
+      tags: ["evaluation", "workflow", "testing"]
+
+code_examples:
+  - title: "Enable Tracing"
+    language: "python"
+    code: |
+      import os
+      os.environ["LANGCHAIN_TRACING_V2"] = "true"
+      os.environ["LANGCHAIN_API_KEY"] = "your-api-key"
+      os.environ["LANGCHAIN_PROJECT"] = "my-rag-app"
+
+      # All LangChain calls are now automatically traced
+      from langchain_openai import ChatOpenAI
+      llm = ChatOpenAI(model="gpt-4o")
+      response = llm.invoke("What is RAG?")
+
+  - title: "Run Evaluation"
+    language: "python"
+    code: |
+      from langsmith import Client
+      from langsmith.evaluation import evaluate
+
+      client = Client()
+
+      # Define your pipeline function
+      def my_rag_pipeline(inputs: dict) -> dict:
+          query = inputs["question"]
+          answer = rag_chain.invoke(query)
+          return {"answer": answer}
+
+      # Run evaluation against a dataset
+      results = evaluate(
+          my_rag_pipeline,
+          data="my-eval-dataset",
+          evaluators=["correctness", "helpfulness"],
+          experiment_prefix="rag-v2"
+      )
+
+benchmarks:
+  last_run: "2026-02-12"
+  results:
+    - name: "tracing_overhead"
+      value: 2
+      unit: "ms"
+      context: "Background async tracing overhead per run"
+    - name: "evaluation_throughput"
+      value: 50
+      unit: "examples/minute"
+      context: "With LLM-as-judge evaluator"
+
+relationships:
+  alternatives:
+    - slug: "langfuse"
+      note: "Open-source, self-hostable LLM observability platform"
+    - slug: "phoenix_arize"
+      note: "ML observability with LLM tracing, open-source"
+    - slug: "weights_biases"
+      note: "Broader ML platform with Weave for LLM evaluation"
+  complements:
+    - slug: "langchain"
+      role: "Core framework with automatic LangSmith integration"
+    - slug: "ragas"
+      role: "RAG evaluation metrics usable as LangSmith evaluators"
+  typical_pipeline_position: "monitoring"
+  pipeline_predecessors: ["llm_generation"]
+  pipeline_successors: ["evaluation", "improvement"]

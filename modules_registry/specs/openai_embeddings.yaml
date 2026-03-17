@@ -1,0 +1,274 @@
+meta:
+  slug: "openai_embeddings"
+  name: "OpenAI Embeddings"
+  version: "1.0.0"
+  category: "embeddings"
+  subcategory: "api"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Industry-standard text embedding models from OpenAI for semantic search and RAG"
+  description: |
+    OpenAI's text-embedding models convert text into dense vector representations that capture
+    semantic meaning. The current generation includes text-embedding-3-small and text-embedding-3-large,
+    which offer significant improvements in quality and cost efficiency over the previous ada-002 model.
+
+    A key innovation in the v3 models is native dimension reduction via the "dimensions" parameter,
+    allowing developers to trade off embedding quality for storage and compute savings without
+    retraining. For example, text-embedding-3-large can produce embeddings at 256, 1024, or the
+    full 3072 dimensions, all from the same model.
+
+    OpenAI embeddings are the most widely adopted embedding API in the industry, with first-class
+    support in virtually every AI framework and vector database. They are accessed via a simple
+    REST API or official SDKs and are priced per token processed.
+  logo_url: "/assets/modules/openai_embeddings.svg"
+  website: "https://platform.openai.com"
+  documentation: "https://platform.openai.com/docs/guides/embeddings"
+  github: "https://github.com/openai/openai-python"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Semantic search and retrieval"
+    - "RAG pipeline embedding generation"
+    - "Document clustering and classification"
+    - "Recommendation systems"
+    - "Duplicate detection"
+  supported_operations:
+    - "text_to_embedding"
+    - "batch_embedding"
+    - "dimension_reduction"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "weaviate"
+      type: "compatible"
+    - slug: "qdrant"
+      type: "compatible"
+    - slug: "chromadb"
+      type: "compatible"
+
+technical_specs:
+  models:
+    - name: "text-embedding-3-small"
+      max_dimensions: 1536
+      max_input_tokens: 8191
+      price_per_million_tokens: 0.02
+    - name: "text-embedding-3-large"
+      max_dimensions: 3072
+      max_input_tokens: 8191
+      price_per_million_tokens: 0.13
+    - name: "text-embedding-ada-002"
+      max_dimensions: 1536
+      max_input_tokens: 8191
+      price_per_million_tokens: 0.10
+  native_dimension_reduction: true
+  batch_support: true
+  max_batch_size: 2048
+  encoding: "cl100k_base"
+  output_format: "float32"
+  normalization: "unit_vector"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "High quality embeddings with strong MTEB benchmark scores. text-embedding-3-large ranks among top commercial embedding models."
+  scalability:
+    score: 8
+    justification: "Managed API handles any throughput with rate limiting. Batch endpoint available for large-scale processing."
+  ease_of_use:
+    score: 10
+    justification: "Single API call with excellent documentation. Universal framework support. Minimal configuration required."
+  cost_efficiency:
+    score: 7
+    justification: "text-embedding-3-small is very affordable at $0.02/M tokens. Dimension reduction further cuts downstream costs."
+  community:
+    score: 9
+    justification: "Largest community of any embedding API. Extensive tutorials, guides, and community resources available."
+  maturity:
+    score: 9
+    justification: "Production-proven across thousands of applications since 2022. Stable API with backward compatibility."
+  flexibility:
+    score: 6
+    justification: "API-only access with no self-hosting option. Limited to text modality. No fine-tuning available for embedding models."
+  data_privacy:
+    score: 5
+    justification: "Data sent to OpenAI servers. Zero data retention policy on API but requires trust in vendor. Not suitable for highly regulated environments without additional controls."
+
+knowledge:
+  entries:
+    - topic: "Model Selection Guide"
+      content: |
+        OpenAI offers three embedding models, each suited for different use cases:
+
+        text-embedding-3-small: Best for cost-sensitive applications. At $0.02 per million tokens,
+        it is 5x cheaper than ada-002 with better quality. Default 1536 dimensions but can be
+        reduced. Ideal for most production RAG applications.
+
+        text-embedding-3-large: Best for quality-critical applications. 3072 dimensions by default
+        with the highest quality scores. Use when retrieval accuracy is paramount, such as legal
+        or medical search. Can reduce dimensions to 1024 or 256 for cost savings while maintaining
+        most quality.
+
+        text-embedding-ada-002 (legacy): The previous generation model. Still functional but
+        text-embedding-3-small is strictly better in both quality and cost. Migrate away from
+        ada-002 for new projects.
+
+        For most use cases, start with text-embedding-3-small. Only upgrade to text-embedding-3-large
+        if retrieval quality benchmarks on your specific data show meaningful improvement.
+      tags: ["model-selection", "comparison", "cost"]
+
+    - topic: "Dimension Reduction with Matryoshka Embeddings"
+      content: |
+        The v3 embedding models support native dimension reduction through the "dimensions"
+        parameter. This is based on Matryoshka Representation Learning (MRL), where the most
+        important information is packed into the first N dimensions.
+
+        For text-embedding-3-large, reducing from 3072 to 1024 dimensions retains approximately
+        98% of the retrieval quality while cutting vector storage by 67%. Further reduction to
+        256 dimensions still maintains approximately 90% of quality.
+
+        This technique is particularly valuable for vector databases where storage costs scale
+        with dimensionality. A Pinecone or Qdrant index with 256-dim vectors uses roughly 6x
+        less storage and memory than 1536-dim vectors.
+
+        Important: dimension reduction must be specified at embedding time. You cannot truncate
+        pre-computed embeddings and expect the same quality. Always re-embed with the desired
+        dimensions parameter.
+      tags: ["dimensions", "optimization", "matryoshka"]
+
+    - topic: "Batch Processing and Rate Limits"
+      content: |
+        OpenAI's embedding API supports batching up to 2048 inputs per request. Batching is
+        critical for cost and throughput optimization during initial data loading.
+
+        Rate limits vary by tier: Tier 1 accounts get 3,000 RPM and 1,000,000 TPM for embeddings.
+        Tier 5 accounts get 10,000 RPM and 10,000,000 TPM.
+
+        For large-scale embedding jobs (millions of documents), use the Batch API endpoint which
+        offers 50% cost savings with 24-hour completion guarantees. This is ideal for initial
+        index population where real-time latency is not required.
+
+        Best practices: (1) Always batch inputs rather than sending single texts, (2) Tokenize
+        locally first to avoid sending inputs that exceed the 8191 token limit, (3) Use
+        exponential backoff for rate limit errors, (4) Consider the Batch API for jobs over
+        100K documents.
+      tags: ["batch", "rate-limits", "optimization"]
+
+    - topic: "Limitations and Considerations"
+      content: |
+        Key limitations of OpenAI embeddings:
+
+        1. Text-only. No support for images, audio, or multimodal embeddings. For multimodal
+        needs, consider Cohere Embed v3 or open-source CLIP-based models.
+
+        2. No fine-tuning. OpenAI does not offer fine-tuning for embedding models. If you need
+        domain-specific embeddings, consider training or fine-tuning open-source models like
+        BGE or E5 on your data.
+
+        3. Max input length of 8191 tokens. Documents longer than this must be chunked first.
+        Unlike some models, there is no automatic truncation warning.
+
+        4. API dependency. Requires internet access and introduces a network latency component.
+        For air-gapped or latency-critical applications, consider self-hosted alternatives.
+
+        5. No guarantee of model stability. While ada-002 embeddings are deterministic, OpenAI
+        may update v3 model weights. Always store embeddings with a model version identifier.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Embedding Generation"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()
+
+      response = client.embeddings.create(
+          model="text-embedding-3-small",
+          input="What is retrieval-augmented generation?",
+          dimensions=1536  # optional: reduce dimensions
+      )
+
+      embedding = response.data[0].embedding
+      print(f"Dimensions: {len(embedding)}")
+
+  - title: "Batch Embedding with Dimension Reduction"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()
+      texts = ["Document one content", "Document two content", "Document three content"]
+
+      response = client.embeddings.create(
+          model="text-embedding-3-large",
+          input=texts,
+          dimensions=1024  # reduce from 3072 to 1024
+      )
+
+      embeddings = [item.embedding for item in response.data]
+      print(f"Generated {len(embeddings)} embeddings of {len(embeddings[0])} dimensions")
+
+  - title: "Embedding with LangChain"
+    language: "python"
+    code: |
+      from langchain_openai import OpenAIEmbeddings
+
+      embeddings = OpenAIEmbeddings(
+          model="text-embedding-3-small",
+          dimensions=1024
+      )
+
+      # Single text
+      vector = embeddings.embed_query("What is RAG?")
+
+      # Batch of documents
+      vectors = embeddings.embed_documents([
+          "First document",
+          "Second document"
+      ])
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "mteb_avg_score_3_large"
+      value: 64.6
+      unit: "percent"
+      context: "MTEB benchmark average, text-embedding-3-large, 3072 dim"
+    - name: "mteb_avg_score_3_small"
+      value: 62.3
+      unit: "percent"
+      context: "MTEB benchmark average, text-embedding-3-small, 1536 dim"
+    - name: "embedding_latency_single"
+      value: 45
+      unit: "ms"
+      context: "Single text, text-embedding-3-small, ~100 tokens"
+    - name: "embedding_throughput_batch"
+      value: 3000
+      unit: "texts/sec"
+      context: "Batch of 2048 short texts, text-embedding-3-small"
+
+relationships:
+  alternatives:
+    - slug: "cohere_embed"
+      note: "Multilingual and multimodal embeddings with search/classification task types"
+    - slug: "voyage_ai"
+      note: "High-quality embeddings optimized for code and domain-specific retrieval"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for storing and querying OpenAI embeddings"
+    - slug: "langchain"
+      role: "Orchestration framework with native OpenAI embedding support"
+    - slug: "llamaindex"
+      role: "Data framework for RAG pipelines using OpenAI embeddings"
+  typical_pipeline_position: "embedding"
+  pipeline_predecessors: ["chunking", "data_ingestion"]
+  pipeline_successors: ["vector_databases", "retrieval"]

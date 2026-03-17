@@ -1,0 +1,165 @@
+meta:
+  slug: "marqo"
+  name: "Marqo"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "tensor_search"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "End-to-end tensor search engine with built-in embedding generation"
+  description: |
+    Marqo is an open-source tensor search engine that combines embedding
+    generation and vector search in a single platform. Unlike most vector
+    databases that require you to generate embeddings externally, Marqo
+    handles the entire pipeline: it accepts raw text or images, generates
+    embeddings using built-in models, indexes them, and performs search.
+
+    Marqo supports both text and image search, multi-modal search (search
+    images with text queries and vice versa), and hybrid text-vector search.
+    It uses HNSW indexing for fast approximate nearest neighbor search and
+    supports metadata filtering.
+
+    The integrated approach simplifies the search pipeline by eliminating
+    the need for separate embedding and indexing steps. Marqo is available
+    as open-source (self-hosted) and as a managed cloud service.
+  logo_url: "/assets/modules/marqo.svg"
+  website: "https://www.marqo.ai"
+  documentation: "https://docs.marqo.ai"
+  github: "https://github.com/marqo-ai/marqo"
+  license: "Apache-2.0"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "End-to-end semantic search"
+    - "Multi-modal search (text + images)"
+    - "E-commerce product search"
+    - "Content recommendation"
+    - "Document search without embedding pipeline"
+  supported_operations:
+    - "add_documents"
+    - "search"
+    - "delete"
+    - "get_document"
+    - "bulk_search"
+  integrations:
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  built_in_models:
+    - "hf/all-MiniLM-L6-v2"
+    - "hf/e5-base-v2"
+    - "open_clip/ViT-B-32"
+    - "custom ONNX models"
+  multi_modal: true
+  hybrid_search: true
+  metadata_filtering: true
+  index_type: "HNSW"
+  gpu_acceleration: true
+  self_hosted: true
+  cloud_service: true
+  sdk_languages:
+    - "python"
+    - "node"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Good search performance with HNSW. Built-in embedding adds latency to indexing but simplifies the overall pipeline."
+  scalability:
+    score: 6
+    justification: "Self-hosted scales with hardware. Cloud service handles larger workloads. Not as battle-tested at massive scale."
+  ease_of_use:
+    score: 9
+    justification: "No separate embedding pipeline needed. Send text, get search results. Extremely low barrier to entry."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source with self-hosting option. Cloud service pricing is competitive."
+  community:
+    score: 5
+    justification: "Smaller community than established vector databases. Active development but fewer third-party resources."
+  maturity:
+    score: 5
+    justification: "Founded in 2022. Actively developing with regular releases. Less production track record than established alternatives."
+  flexibility:
+    score: 7
+    justification: "Multi-modal support, custom models, hybrid search. Good flexibility for a search-focused platform."
+  data_privacy:
+    score: 8
+    justification: "Open-source with self-hosting for full data control. Cloud option available."
+
+knowledge:
+  entries:
+    - topic: "Marqo's Integrated Approach"
+      content: |
+        Most vector databases require a separate embedding pipeline: you generate
+        embeddings with a model (e.g., OpenAI, Sentence Transformers), then store
+        them in the database. This creates operational complexity and potential
+        inconsistencies.
+
+        Marqo integrates the embedding model into the search engine itself.
+        When you add a document, Marqo generates the embedding internally.
+        When you search, it embeds the query with the same model. This ensures
+        consistency and simplifies the architecture.
+
+        The trade-off is less flexibility in embedding model choice (limited to
+        supported models) and coupling between the search engine and embedding
+        model. For teams that want full control over their embedding pipeline,
+        a separate model + vector database approach is more appropriate.
+      tags: ["architecture", "comparison"]
+
+code_examples:
+  - title: "End-to-End Search"
+    language: "python"
+    code: |
+      import marqo
+
+      mq = marqo.Client(url="http://localhost:8882")
+
+      # Create index with built-in model
+      mq.create_index("my-docs", model="hf/all-MiniLM-L6-v2")
+
+      # Add documents (no embedding needed!)
+      mq.index("my-docs").add_documents([
+          {"title": "Vector Database Guide", "content": "How to choose a vector DB..."},
+          {"title": "RAG Architecture", "content": "Building retrieval-augmented generation..."},
+          {"title": "LLM Deployment", "content": "Best practices for serving LLMs..."}
+      ])
+
+      # Search with text
+      results = mq.index("my-docs").search("How to build a search system?")
+      for hit in results["hits"]:
+          print(f"{hit['title']}: {hit['_score']:.3f}")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "search_latency_p50"
+      value: 30
+      unit: "ms"
+      context: "Text search, 100K documents, MiniLM model"
+    - name: "indexing_throughput"
+      value: 500
+      unit: "documents/second"
+      context: "With built-in embedding, GPU-accelerated"
+
+relationships:
+  alternatives:
+    - slug: "weaviate"
+      note: "Also has built-in vectorization but more mature and feature-rich"
+    - slug: "pinecone"
+      note: "Managed vector DB without built-in embedding, requires external pipeline"
+    - slug: "vespa"
+      note: "Enterprise search with built-in embedding and more features"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with Marqo integration"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["raw_text"]
+  pipeline_successors: ["reranking", "llm_generation"]

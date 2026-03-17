@@ -1,0 +1,255 @@
+meta:
+  slug: "tavily"
+  name: "Tavily"
+  version: "1.0.0"
+  category: "search_discovery"
+  subcategory: "web_search"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Search API built specifically for AI agents and LLM applications"
+  description: |
+    Tavily is a search engine and API designed from the ground up for AI applications.
+    Unlike traditional search APIs that return a list of links, Tavily returns
+    clean, relevant content optimized for LLM consumption. It handles the full
+    pipeline of searching, scraping, filtering, and extracting relevant content
+    from web pages, delivering concise answers and source documents ready for
+    RAG pipelines.
+
+    Tavily offers two main modes: a search API that returns relevant snippets
+    and sources, and an extract API that pulls structured content from specific
+    URLs. Both are designed to minimize token usage while maximizing information
+    quality for downstream LLM processing.
+
+    The service has gained strong adoption in the AI agent ecosystem, with native
+    integrations in LangChain, LlamaIndex, CrewAI, and other agent frameworks.
+    It is particularly popular for building research agents and real-time
+    information retrieval systems.
+  logo_url: "/assets/modules/tavily.svg"
+  website: "https://tavily.com"
+  documentation: "https://docs.tavily.com"
+  github: "https://github.com/tavily-ai/tavily-python"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Real-time web search for AI agents"
+    - "RAG with live web data"
+    - "Research automation"
+    - "Fact-checking and verification"
+    - "Content aggregation"
+  supported_operations:
+    - "search"
+    - "extract"
+    - "get_search_context"
+    - "qna_search"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "crewai"
+      type: "native"
+    - slug: "autogen"
+      type: "compatible"
+
+technical_specs:
+  max_results_per_query: 20
+  search_depth_options:
+    - "basic"
+    - "advanced"
+  content_types:
+    - "text"
+    - "raw_content"
+  include_domains_filter: true
+  exclude_domains_filter: true
+  date_filtering: true
+  response_format: "JSON"
+  sdk_languages:
+    - "python"
+    - "node"
+    - "rest"
+  rate_limit_free_tier: "1000 searches/month"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Fast response times under 2 seconds for basic search. Advanced search takes 3-5 seconds but returns higher quality content."
+  scalability:
+    score: 7
+    justification: "Cloud-hosted API scales well for most use cases. Enterprise tier supports higher concurrency and rate limits."
+  ease_of_use:
+    score: 9
+    justification: "Extremely simple API with a single function call. Native framework integrations make it trivial to add web search to agents."
+  cost_efficiency:
+    score: 7
+    justification: "Free tier with 1000 searches/month is generous for development. Paid plans are reasonable for production use."
+  community:
+    score: 7
+    justification: "Growing community driven by AI agent builders. Strong presence in LangChain and CrewAI ecosystems."
+  maturity:
+    score: 6
+    justification: "Relatively new service (launched 2023) but has rapidly matured with stable APIs and growing enterprise adoption."
+  flexibility:
+    score: 7
+    justification: "Good filtering options for domains, dates, and content types. Search depth parameter allows quality vs speed trade-off."
+  data_privacy:
+    score: 6
+    justification: "Cloud-only service. Queries are processed on Tavily servers. No self-hosted option available."
+
+knowledge:
+  entries:
+    - topic: "How Tavily Differs from Traditional Search APIs"
+      content: |
+        Traditional search APIs like Google Custom Search or Bing Search return
+        a list of URLs with brief snippets. Building an AI application on top of
+        these requires additional steps: fetching each page, parsing HTML, extracting
+        relevant content, and filtering noise. This adds latency, complexity, and cost.
+
+        Tavily handles this entire pipeline internally. When you make a search request,
+        Tavily searches the web, visits the most relevant pages, extracts and cleans
+        the content, and returns structured results with relevant text snippets. The
+        response is optimized for LLM context windows, reducing token waste.
+
+        The advanced search mode goes further by performing deeper content extraction
+        and cross-referencing multiple sources. This is particularly valuable for
+        research tasks where accuracy and comprehensiveness matter more than speed.
+      tags: ["comparison", "architecture"]
+
+    - topic: "Using Tavily with AI Agents"
+      content: |
+        Tavily is designed as a tool for AI agents. In the LangChain ecosystem,
+        TavilySearchResults is one of the most commonly used tools for giving
+        agents web access. The tool returns structured search results that agents
+        can reason over to answer questions or gather information.
+
+        For agent frameworks like CrewAI and AutoGen, Tavily provides pre-built
+        tool definitions that can be directly assigned to agents. This allows
+        multi-agent systems to have dedicated research agents that use Tavily
+        for information gathering.
+
+        Best practices for agent integration: (1) Use basic search for simple
+        factual queries, (2) Use advanced search for complex research tasks,
+        (3) Set include_domains to restrict to authoritative sources when accuracy
+        is critical, (4) Use the get_search_context helper to get pre-formatted
+        content ready for LLM prompts.
+      tags: ["agents", "integration", "best-practices"]
+
+    - topic: "Tavily Extract API"
+      content: |
+        The Extract API complements the Search API by allowing you to pull
+        structured content from specific URLs. This is useful when you already
+        know which pages contain relevant information and need to extract their
+        content cleanly.
+
+        The Extract API handles JavaScript-rendered pages, removes boilerplate
+        (navigation, ads, footers), and returns the main content in clean text
+        format. It supports batch extraction of multiple URLs in a single call.
+
+        Common use cases include: extracting documentation pages for a knowledge
+        base, pulling product information from known e-commerce URLs, and
+        converting web articles into structured data for downstream processing.
+      tags: ["extract", "scraping", "api"]
+
+code_examples:
+  - title: "Basic Web Search"
+    language: "python"
+    code: |
+      from tavily import TavilyClient
+
+      client = TavilyClient(api_key="your-api-key")
+
+      # Simple search
+      response = client.search(
+          query="latest developments in RAG architectures 2026",
+          search_depth="advanced",
+          max_results=5
+      )
+
+      for result in response["results"]:
+          print(f"Title: {result['title']}")
+          print(f"URL: {result['url']}")
+          print(f"Content: {result['content'][:200]}")
+          print("---")
+
+  - title: "LangChain Agent with Tavily Search"
+    language: "python"
+    code: |
+      from langchain_community.tools.tavily_search import TavilySearchResults
+      from langchain_openai import ChatOpenAI
+      from langchain.agents import create_tool_calling_agent, AgentExecutor
+      from langchain_core.prompts import ChatPromptTemplate
+
+      # Create Tavily search tool
+      search_tool = TavilySearchResults(max_results=5)
+
+      # Create agent
+      llm = ChatOpenAI(model="gpt-4o")
+      prompt = ChatPromptTemplate.from_messages([
+          ("system", "You are a research assistant. Use search to find information."),
+          ("human", "{input}"),
+          ("placeholder", "{agent_scratchpad}")
+      ])
+      agent = create_tool_calling_agent(llm, [search_tool], prompt)
+      executor = AgentExecutor(agent=agent, tools=[search_tool])
+
+      result = executor.invoke({"input": "What are the newest vector databases in 2026?"})
+
+  - title: "Search Context for RAG"
+    language: "python"
+    code: |
+      from tavily import TavilyClient
+
+      client = TavilyClient(api_key="your-api-key")
+
+      # Get pre-formatted context for LLM
+      context = client.get_search_context(
+          query="How does hybrid search work in vector databases?",
+          max_tokens=4000
+      )
+
+      # Use context directly in your prompt
+      prompt = f"""Based on the following information:
+      {context}
+
+      Answer: How does hybrid search work in vector databases?"""
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "basic_search_latency"
+      value: 1.2
+      unit: "seconds"
+      context: "Average response time for basic search depth"
+    - name: "advanced_search_latency"
+      value: 3.8
+      unit: "seconds"
+      context: "Average response time for advanced search depth"
+    - name: "content_relevance_score"
+      value: 0.87
+      unit: "ratio"
+      context: "Human-evaluated relevance of returned content vs query"
+    - name: "extract_latency"
+      value: 2.1
+      unit: "seconds"
+      context: "Average time to extract content from a single URL"
+
+relationships:
+  alternatives:
+    - slug: "serper"
+      note: "Google Search API wrapper, returns traditional search results"
+    - slug: "firecrawl"
+      note: "Focuses on web scraping and crawling rather than search"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with native Tavily tool integration"
+    - slug: "crewai"
+      role: "Multi-agent framework using Tavily for research agents"
+    - slug: "openai"
+      role: "LLM that processes Tavily search results"
+  typical_pipeline_position: "data_source"
+  pipeline_predecessors: ["user_query"]
+  pipeline_successors: ["llm_generation", "embeddings"]

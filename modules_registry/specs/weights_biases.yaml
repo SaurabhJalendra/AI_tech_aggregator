@@ -1,0 +1,194 @@
+meta:
+  slug: "weights_biases"
+  name: "Weights & Biases"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "experiment_tracking"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "ML experiment tracking, model management, and AI application monitoring"
+  description: |
+    Weights & Biases (W&B) is a platform for machine learning experiment tracking,
+    dataset versioning, model management, and AI application evaluation. It provides
+    tools to log metrics, hyperparameters, model artifacts, and visualizations during
+    training and evaluation runs.
+
+    W&B has expanded beyond traditional ML experiment tracking to include Weave, a
+    toolkit for evaluating and monitoring LLM applications including RAG pipelines,
+    agents, and AI features. Weave provides tracing, evaluation datasets, and
+    automated scoring for LLM outputs.
+
+    The platform is widely adopted in both research and industry, with integrations
+    across all major ML frameworks (PyTorch, TensorFlow, Hugging Face, etc.) and
+    AI application frameworks (LangChain, LlamaIndex).
+  logo_url: "/assets/modules/weights_biases.svg"
+  website: "https://wandb.ai"
+  documentation: "https://docs.wandb.ai"
+  github: "https://github.com/wandb/wandb"
+  license: "MIT (client) / Proprietary (server)"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "ML experiment tracking"
+    - "LLM evaluation and monitoring"
+    - "Dataset versioning"
+    - "Model registry"
+    - "Hyperparameter sweeps"
+    - "RAG pipeline evaluation"
+  supported_operations:
+    - "log_metrics"
+    - "log_artifacts"
+    - "create_sweep"
+    - "model_registry"
+    - "weave_trace"
+    - "weave_evaluate"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "compatible"
+    - slug: "openai"
+      type: "native"
+
+technical_specs:
+  experiment_tracking: true
+  artifact_versioning: true
+  model_registry: true
+  hyperparameter_sweeps: true
+  collaborative_dashboards: true
+  weave_tracing: true
+  weave_evaluation: true
+  self_hosted_option: true
+  sdk_languages:
+    - "python"
+    - "node"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Lightweight logging client with minimal overhead. Dashboard can be slow with very large experiment histories."
+  scalability:
+    score: 8
+    justification: "Handles millions of experiments. Cloud-hosted with enterprise self-hosted option."
+  ease_of_use:
+    score: 9
+    justification: "Two lines of code to start logging. Beautiful visualizations and dashboards out of the box."
+  cost_efficiency:
+    score: 7
+    justification: "Generous free tier for individuals. Team and enterprise plans can be expensive."
+  community:
+    score: 9
+    justification: "One of the most widely used ML platforms. Extensive documentation, tutorials, and community reports."
+  maturity:
+    score: 9
+    justification: "Founded in 2017. Battle-tested at thousands of organizations including major tech companies and research labs."
+  flexibility:
+    score: 8
+    justification: "Works with any ML framework. Custom visualizations. API access for programmatic use."
+  data_privacy:
+    score: 7
+    justification: "Cloud-hosted with self-hosted enterprise option. SOC2 compliant. Data isolation controls available."
+
+knowledge:
+  entries:
+    - topic: "W&B Weave for LLM Applications"
+      content: |
+        W&B Weave extends the traditional experiment tracking paradigm to LLM
+        applications. Key capabilities:
+
+        Tracing: Automatic instrumentation of LLM calls, tool use, and retrieval
+        steps. Captures inputs, outputs, latency, and token usage across your
+        entire pipeline.
+
+        Evaluation: Define evaluation datasets and scoring functions, then run
+        them against your pipeline to measure quality. Supports both automated
+        metrics (faithfulness, relevance) and human evaluation.
+
+        Monitoring: Track production LLM calls to detect regressions, cost
+        anomalies, and quality issues over time.
+
+        Weave is particularly valuable for RAG pipelines where you need to
+        evaluate retrieval quality, answer faithfulness, and overall pipeline
+        performance across many test cases.
+      tags: ["weave", "llm", "evaluation"]
+
+code_examples:
+  - title: "Basic Experiment Tracking"
+    language: "python"
+    code: |
+      import wandb
+
+      wandb.init(project="rag-experiments", config={
+          "embedding_model": "text-embedding-3-small",
+          "chunk_size": 512,
+          "top_k": 5,
+          "llm": "gpt-4o"
+      })
+
+      # Log metrics during evaluation
+      wandb.log({
+          "faithfulness": 0.89,
+          "answer_relevancy": 0.92,
+          "context_precision": 0.85,
+          "latency_ms": 1200
+      })
+
+      wandb.finish()
+
+  - title: "Weave Tracing for LLM Pipeline"
+    language: "python"
+    code: |
+      import weave
+
+      weave.init("my-rag-app")
+
+      @weave.op()
+      def retrieve_context(query: str) -> list[str]:
+          # Your retrieval logic
+          return vector_store.search(query, top_k=5)
+
+      @weave.op()
+      def generate_answer(query: str, context: list[str]) -> str:
+          # Your LLM call
+          return llm.invoke(f"Context: {context}\nQuestion: {query}")
+
+      @weave.op()
+      def rag_pipeline(query: str) -> str:
+          context = retrieve_context(query)
+          return generate_answer(query, context)
+
+      # All calls are automatically traced
+      answer = rag_pipeline("What is vector search?")
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "logging_overhead"
+      value: 2
+      unit: "ms"
+      context: "Per wandb.log() call overhead"
+    - name: "artifact_upload_speed"
+      value: 50
+      unit: "MB/second"
+      context: "Model artifact upload to cloud storage"
+
+relationships:
+  alternatives:
+    - slug: "mlflow"
+      note: "Open-source alternative with similar experiment tracking capabilities"
+    - slug: "langfuse"
+      note: "Focused specifically on LLM observability"
+    - slug: "langsmith"
+      note: "LangChain's native debugging and evaluation platform"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with W&B callback integration"
+    - slug: "openai"
+      role: "LLM provider with W&B fine-tuning integration"
+  typical_pipeline_position: "monitoring"
+  pipeline_predecessors: ["model_training", "llm_generation"]
+  pipeline_successors: ["model_improvement"]

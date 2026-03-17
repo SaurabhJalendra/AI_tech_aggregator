@@ -1,0 +1,302 @@
+meta:
+  slug: "llamaindex_node_parsers"
+  name: "LlamaIndex Node Parsers"
+  version: "1.0.0"
+  category: "chunking"
+  subcategory: "framework"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Node-based document parsing and chunking framework with hierarchical and semantic splitting"
+  description: |
+    LlamaIndex Node Parsers convert documents into Node objects, the fundamental data unit in
+    LlamaIndex's architecture. Nodes maintain relationships with parent documents and sibling
+    nodes, enabling sophisticated retrieval strategies like hierarchical retrieval and
+    auto-merging.
+
+    The library provides multiple parsing strategies including SentenceSplitter (the default),
+    SemanticSplitterNodeParser, HierarchicalNodeParser, and format-specific parsers for
+    markdown, HTML, JSON, and code. Each parser produces nodes with metadata, relationships,
+    and configurable chunk sizes.
+
+    A key differentiator from LangChain text splitters is the node relationship model. Nodes
+    know their parent, child, and sibling nodes, enabling retrieval strategies that start with
+    a specific chunk and expand to surrounding context. This powers LlamaIndex's
+    AutoMergingRetriever and HierarchicalRetriever.
+  logo_url: "/assets/modules/llamaindex_node_parsers.svg"
+  website: "https://www.llamaindex.ai"
+  documentation: "https://docs.llamaindex.ai/en/stable/module_guides/loading/node_parsers/"
+  github: "https://github.com/run-llama/llama_index"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Document chunking for LlamaIndex pipelines"
+    - "Hierarchical document parsing with parent-child relationships"
+    - "Semantic splitting using embedding similarity"
+    - "Format-aware parsing for markdown, HTML, and code"
+    - "Auto-merging retrieval with multi-level chunks"
+  supported_operations:
+    - "sentence_splitting"
+    - "semantic_splitting"
+    - "hierarchical_splitting"
+    - "token_splitting"
+    - "markdown_splitting"
+    - "html_splitting"
+    - "code_splitting"
+    - "json_splitting"
+  integrations:
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "compatible"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "qdrant"
+      type: "compatible"
+    - slug: "chromadb"
+      type: "compatible"
+
+technical_specs:
+  parser_types:
+    - name: "SentenceSplitter"
+      description: "Default parser, splits on sentence boundaries with configurable chunk size"
+      default_chunk_size: 1024
+      default_overlap: 20
+    - name: "SemanticSplitterNodeParser"
+      description: "Splits based on embedding similarity between sentences"
+      requires_embeddings: true
+    - name: "HierarchicalNodeParser"
+      description: "Creates multi-level node hierarchy with configurable chunk sizes per level"
+      default_levels: [2048, 512, 128]
+    - name: "SentenceWindowNodeParser"
+      description: "Creates nodes with surrounding sentence context window"
+      default_window_size: 3
+    - name: "MarkdownNodeParser"
+      description: "Parses markdown preserving header hierarchy"
+    - name: "HTMLNodeParser"
+      description: "Parses HTML preserving document structure"
+    - name: "CodeSplitter"
+      description: "Language-aware code splitting using tree-sitter"
+  node_relationships:
+    - "PARENT"
+    - "CHILD"
+    - "PREVIOUS"
+    - "NEXT"
+    - "SOURCE"
+  package: "llama-index-core"
+  python_version: ">=3.9"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Node relationships enable advanced retrieval strategies. Hierarchical parsing significantly improves retrieval quality for complex documents."
+  scalability:
+    score: 7
+    justification: "Processes documents locally. Hierarchical parsing creates more nodes per document, increasing storage requirements."
+  ease_of_use:
+    score: 7
+    justification: "Powerful but more complex API than LangChain splitters. Node relationships add conceptual overhead. Good documentation."
+  cost_efficiency:
+    score: 9
+    justification: "Open source and free. Semantic splitter requires embedding API calls but other parsers are purely local."
+  community:
+    score: 8
+    justification: "Large and active LlamaIndex community. Good documentation and examples. Slightly smaller than LangChain."
+  maturity:
+    score: 8
+    justification: "Core component of LlamaIndex, which is production-proven. Active development with regular improvements."
+  flexibility:
+    score: 9
+    justification: "Node relationship model enables unique retrieval strategies. Multiple parser types. Custom parser support."
+  data_privacy:
+    score: 9
+    justification: "Runs locally with no data transmission. Semantic splitter uses external embeddings but all other parsers are offline."
+
+knowledge:
+  entries:
+    - topic: "Node Relationships and Hierarchical Retrieval"
+      content: |
+        The key advantage of LlamaIndex node parsers over simple text splitters is the node
+        relationship model. Each node maintains references to:
+
+        - SOURCE: The original document the node was created from
+        - PARENT: A larger chunk containing this node (in hierarchical parsing)
+        - CHILD: Smaller chunks within this node
+        - PREVIOUS/NEXT: Sibling nodes in sequential order
+
+        This enables powerful retrieval strategies:
+
+        AutoMergingRetriever: Retrieves small leaf nodes for precision, then automatically
+        merges to parent nodes when multiple children from the same parent are retrieved.
+        This provides both precision and context.
+
+        SentenceWindowRetriever: Retrieves individual sentences but returns surrounding
+        context window. Combines precise matching with adequate context for LLM generation.
+
+        HierarchicalRetriever: Searches at multiple granularity levels simultaneously,
+        using parent-child relationships to navigate from broad to specific.
+      tags: ["nodes", "relationships", "hierarchical", "retrieval"]
+
+    - topic: "SentenceWindowNodeParser for Precise Retrieval"
+      content: |
+        The SentenceWindowNodeParser creates nodes at the sentence level but stores surrounding
+        sentences as metadata. During retrieval, individual sentences are matched (high precision),
+        but the surrounding window is returned for LLM context (adequate context).
+
+        Configuration: window_size controls how many surrounding sentences to include (default 3).
+        A window of 3 means 3 sentences before and 3 after the matched sentence are included.
+
+        This approach solves the chunk size dilemma: small chunks for precise retrieval vs large
+        chunks for adequate LLM context. The sentence window gives you both.
+
+        Pipeline: Use SentenceWindowNodeParser -> VectorStoreIndex with MetadataReplacementPostProcessor
+        that swaps the sentence node text with the windowed text before sending to the LLM.
+
+        Best for: Question-answering systems where precise fact retrieval is critical but the LLM
+        needs surrounding context to generate good answers.
+      tags: ["sentence-window", "precision", "retrieval"]
+
+    - topic: "Hierarchical Parsing and Auto-Merging"
+      content: |
+        HierarchicalNodeParser creates a tree of nodes at multiple chunk sizes. Default levels
+        are [2048, 512, 128], creating three layers of granularity from the same document.
+
+        How it works: The document is first split into 2048-token chunks (level 1). Each level 1
+        chunk is split into 512-token chunks (level 2). Each level 2 chunk is split into
+        128-token chunks (level 3). Parent-child relationships are maintained between levels.
+
+        AutoMergingRetriever then searches at the leaf level (128 tokens) for precision. If
+        multiple leaf nodes from the same parent are retrieved, they are merged back into the
+        parent node. This threshold is configurable (default: if >50% of children match).
+
+        This adaptive granularity means narrow queries get small, focused chunks while broad
+        queries automatically expand to larger, more contextual chunks.
+
+        Cost: Hierarchical parsing creates approximately 20x more nodes than flat parsing for
+        three levels. Storage and embedding costs increase proportionally.
+      tags: ["hierarchical", "auto-merging", "advanced"]
+
+    - topic: "Comparison with LangChain Text Splitters"
+      content: |
+        LlamaIndex Node Parsers and LangChain Text Splitters serve the same fundamental purpose
+        but differ in philosophy and features:
+
+        Node Parsers advantages:
+        - Node relationships enable hierarchical and auto-merging retrieval
+        - SentenceWindowNodeParser provides unique precision+context approach
+        - Tighter integration with LlamaIndex retrieval strategies
+        - Built-in metadata propagation from source documents
+
+        LangChain Text Splitters advantages:
+        - Simpler API with lower learning curve
+        - Larger community and more examples
+        - More language-specific code splitters
+        - Standalone package usable outside LangChain
+
+        If using LlamaIndex as your framework, use Node Parsers. If using LangChain or a custom
+        pipeline, use LangChain Text Splitters. The core splitting algorithms are similar; the
+        difference is in the node relationship model and downstream integration.
+      tags: ["comparison", "langchain", "decision"]
+
+code_examples:
+  - title: "Basic Sentence Splitting"
+    language: "python"
+    code: |
+      from llama_index.core.node_parser import SentenceSplitter
+
+      parser = SentenceSplitter(
+          chunk_size=1024,
+          chunk_overlap=20
+      )
+
+      nodes = parser.get_nodes_from_documents(documents)
+      print(f"Created {len(nodes)} nodes")
+
+  - title: "Hierarchical Parsing with Auto-Merging"
+    language: "python"
+    code: |
+      from llama_index.core.node_parser import HierarchicalNodeParser, get_leaf_nodes
+      from llama_index.core.storage.docstore import SimpleDocumentStore
+      from llama_index.core.retrievers import AutoMergingRetriever
+      from llama_index.core import VectorStoreIndex, StorageContext
+
+      # Create hierarchical nodes
+      parser = HierarchicalNodeParser.from_defaults(
+          chunk_sizes=[2048, 512, 128]
+      )
+      nodes = parser.get_nodes_from_documents(documents)
+      leaf_nodes = get_leaf_nodes(nodes)
+
+      # Store all nodes in docstore, index only leaves
+      docstore = SimpleDocumentStore()
+      docstore.add_documents(nodes)
+      storage_context = StorageContext.from_defaults(docstore=docstore)
+
+      index = VectorStoreIndex(leaf_nodes, storage_context=storage_context)
+
+      # Auto-merging retriever
+      retriever = AutoMergingRetriever(
+          index.as_retriever(similarity_top_k=6),
+          storage_context=storage_context
+      )
+
+  - title: "Sentence Window Parsing"
+    language: "python"
+    code: |
+      from llama_index.core.node_parser import SentenceWindowNodeParser
+      from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+      from llama_index.core import VectorStoreIndex
+
+      parser = SentenceWindowNodeParser.from_defaults(
+          window_size=3,
+          window_metadata_key="window",
+          original_text_metadata_key="original_text"
+      )
+
+      nodes = parser.get_nodes_from_documents(documents)
+      index = VectorStoreIndex(nodes)
+
+      query_engine = index.as_query_engine(
+          node_postprocessors=[
+              MetadataReplacementPostProcessor(target_metadata_key="window")
+          ]
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "sentence_split_speed"
+      value: 40000
+      unit: "chars/sec"
+      context: "SentenceSplitter, chunk_size=1024"
+    - name: "retrieval_quality_sentence"
+      value: 0.71
+      unit: "ndcg@10"
+      context: "RAG benchmark, SentenceSplitter, chunk_size=1024"
+    - name: "retrieval_quality_auto_merge"
+      value: 0.82
+      unit: "ndcg@10"
+      context: "RAG benchmark, HierarchicalNodeParser + AutoMergingRetriever"
+    - name: "retrieval_quality_sentence_window"
+      value: 0.80
+      unit: "ndcg@10"
+      context: "RAG benchmark, SentenceWindowNodeParser, window=3"
+
+relationships:
+  alternatives:
+    - slug: "langchain_text_splitters"
+      note: "Simpler API and larger community but lacks node relationship model"
+  complements:
+    - slug: "llamaindex"
+      role: "Parent framework providing document loaders, indexes, and retrievers"
+    - slug: "openai_embeddings"
+      role: "Embedding model for semantic splitting and vector indexing"
+    - slug: "pinecone"
+      role: "Vector database for storing parsed nodes"
+  typical_pipeline_position: "chunking"
+  pipeline_predecessors: ["data_ingestion"]
+  pipeline_successors: ["embeddings"]

@@ -62,6 +62,8 @@ class ChatService:
         agent = AdvisorAgent(
             db=self.db,
             anthropic_api_key=settings.anthropic_api_key,
+            model=settings.anthropic_model,
+            use_claude_code=settings.use_claude_code,
         )
 
         collected_text = ""

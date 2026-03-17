@@ -1,0 +1,175 @@
+meta:
+  slug: "fastembed"
+  name: "FastEmbed"
+  version: "1.0.0"
+  category: "embeddings"
+  subcategory: "embedding_library"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Lightweight, fast Python library for generating text embeddings with ONNX"
+  description: |
+    FastEmbed is a lightweight Python library developed by Qdrant for generating
+    text embeddings efficiently using ONNX Runtime. It is designed for scenarios
+    where you need fast, CPU-friendly embedding generation without the overhead
+    of PyTorch or TensorFlow.
+
+    FastEmbed supports popular embedding models like BGE, E5, and multilingual-e5
+    in quantized ONNX format. Models are automatically downloaded and cached.
+    The library is optimized for CPU inference, making it ideal for environments
+    without GPU access or for applications where embedding generation is not the
+    bottleneck.
+
+    It serves as a lighter alternative to Sentence Transformers when you need
+    fast inference and small installation footprint, at the cost of fewer model
+    options and no fine-tuning support.
+  logo_url: "/assets/modules/fastembed.svg"
+  website: "https://qdrant.github.io/fastembed/"
+  documentation: "https://qdrant.github.io/fastembed/"
+  github: "https://github.com/qdrant/fastembed"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Fast CPU-based text embedding"
+    - "Lightweight embedding in edge or serverless environments"
+    - "Batch embedding for indexing pipelines"
+    - "Sparse embedding generation (SPLADE)"
+  supported_operations:
+    - "embed"
+    - "passage_embed"
+    - "query_embed"
+    - "embed_sparse"
+  integrations:
+    - slug: "qdrant"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  runtime: "ONNX Runtime"
+  quantization: "INT8"
+  gpu_required: false
+  supported_models:
+    - "BAAI/bge-small-en-v1.5"
+    - "BAAI/bge-base-en-v1.5"
+    - "sentence-transformers/all-MiniLM-L6-v2"
+    - "intfloat/multilingual-e5-large"
+  sparse_models:
+    - "prithivida/Splade_PP_en_v1"
+  batch_processing: true
+  languages:
+    - "python"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Excellent CPU inference speed due to ONNX quantization. 2-3x faster than Sentence Transformers on CPU."
+  scalability:
+    score: 6
+    justification: "Single-process library. Good for moderate workloads but lacks multi-process or distributed support."
+  ease_of_use:
+    score: 9
+    justification: "Minimal dependencies and simple API. pip install and two lines of code to start embedding."
+  cost_efficiency:
+    score: 10
+    justification: "Open-source, CPU-only, no API costs. Minimal infrastructure requirements."
+  community:
+    score: 5
+    justification: "Smaller community than Sentence Transformers. Primarily driven by Qdrant users."
+  maturity:
+    score: 5
+    justification: "Relatively new library. Stable for inference but limited model selection compared to alternatives."
+  flexibility:
+    score: 5
+    justification: "Limited model selection. No fine-tuning support. ONNX-only runtime."
+  data_privacy:
+    score: 10
+    justification: "Fully local processing. No external API calls. Models cached locally after first download."
+
+knowledge:
+  entries:
+    - topic: "FastEmbed vs Sentence Transformers"
+      content: |
+        FastEmbed and Sentence Transformers both generate local embeddings but
+        serve different needs:
+
+        FastEmbed advantages: 2-3x faster CPU inference through ONNX quantization,
+        much smaller installation footprint (no PyTorch), faster cold start, lower
+        memory usage. Ideal for serverless functions, edge deployments, and
+        CPU-only environments.
+
+        Sentence Transformers advantages: vastly more model options (5000+ vs ~20),
+        fine-tuning support, multi-GPU encoding, richer API for similarity
+        computation and semantic search, better documentation and community.
+
+        Rule of thumb: use FastEmbed for production inference on CPU where speed
+        and footprint matter. Use Sentence Transformers for experimentation,
+        fine-tuning, and when you need access to the latest models.
+      tags: ["comparison", "sentence-transformers"]
+
+code_examples:
+  - title: "Generate Text Embeddings"
+    language: "python"
+    code: |
+      from fastembed import TextEmbedding
+
+      model = TextEmbedding("BAAI/bge-small-en-v1.5")
+
+      documents = [
+          "How to build a RAG pipeline",
+          "Vector databases comparison",
+          "LLM inference optimization"
+      ]
+
+      embeddings = list(model.embed(documents))
+      print(f"Dimensions: {len(embeddings[0])}")  # 384
+
+  - title: "Sparse Embeddings with SPLADE"
+    language: "python"
+    code: |
+      from fastembed import SparseTextEmbedding
+
+      model = SparseTextEmbedding("prithivida/Splade_PP_en_v1")
+
+      texts = ["vector database performance comparison"]
+      sparse_embeddings = list(model.embed(texts))
+
+      # Returns sparse vectors with indices and values
+      print(f"Non-zero terms: {len(sparse_embeddings[0].indices)}")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "encoding_speed_cpu"
+      value: 3200
+      unit: "sentences/second"
+      context: "bge-small-en-v1.5, batch size 256, Intel Xeon"
+    - name: "memory_usage"
+      value: 180
+      unit: "MB"
+      context: "bge-small-en-v1.5 loaded model memory"
+    - name: "cold_start"
+      value: 1.2
+      unit: "seconds"
+      context: "Time to load model from cache"
+
+relationships:
+  alternatives:
+    - slug: "sentence_transformers"
+      note: "More models and features but heavier dependency footprint"
+    - slug: "openai_embeddings"
+      note: "Cloud API, no local compute needed but has per-token costs"
+  complements:
+    - slug: "qdrant"
+      role: "Vector database by the same team, native integration"
+    - slug: "langchain"
+      role: "Orchestration framework with compatible embedding interface"
+  typical_pipeline_position: "embeddings"
+  pipeline_predecessors: ["chunking"]
+  pipeline_successors: ["vector_databases"]

@@ -1,0 +1,347 @@
+meta:
+  slug: "algolia_ai"
+  name: "Algolia AI Search"
+  version: "1.0.0"
+  category: "search_discovery"
+  subcategory: "search_as_a_service"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Managed AI-powered search and discovery platform with sub-millisecond response times"
+  description: |
+    Algolia is a hosted search-as-a-service platform that combines traditional keyword search
+    with AI-powered features including neural search, dynamic re-ranking, and personalization.
+    Known for its exceptional speed (sub-10ms query responses) and developer experience, Algolia
+    is widely adopted for e-commerce search, site search, and in-app search use cases.
+
+    Algolia's NeuralSearch feature blends keyword matching with vector-based semantic understanding,
+    automatically determining the optimal balance for each query. This means queries like
+    "comfortable office chair under $500" leverage both the semantic understanding of "comfortable"
+    and the precise filtering of "$500" without manual tuning.
+
+    The platform provides a comprehensive suite of search features out of the box: typo tolerance,
+    faceting, geo search, A/B testing, analytics, and merchandising rules. For AI applications,
+    Algolia Recommend provides ML-powered product recommendations, and the Algolia AI suite
+    includes query categorization, synonym suggestion, and revenue optimization.
+  logo_url: "/assets/modules/algolia.svg"
+  website: "https://www.algolia.com"
+  documentation: "https://www.algolia.com/doc/"
+  github: "https://github.com/algolia/algoliasearch-client-python"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "E-commerce product search"
+    - "Site and documentation search"
+    - "In-app search experiences"
+    - "AI-powered recommendations"
+    - "Content discovery"
+    - "Marketplace search"
+  supported_operations:
+    - "search"
+    - "browse"
+    - "neural_search"
+    - "faceted_search"
+    - "geo_search"
+    - "multi_index_search"
+    - "ab_testing"
+    - "analytics"
+    - "recommendations"
+    - "personalization"
+  integrations:
+    - slug: "langchain"
+      type: "community"
+
+technical_specs:
+  query_latency_p50_ms: 5
+  query_latency_p99_ms: 20
+  max_record_size_kb: 100
+  max_records_per_index: "unlimited"
+  typo_tolerance: true
+  faceting: true
+  geo_search: true
+  neural_search: true
+  personalization: true
+  ab_testing: true
+  analytics_dashboard: true
+  synonyms_management: true
+  rules_engine: true
+  sdk_languages:
+    - "javascript"
+    - "python"
+    - "ruby"
+    - "php"
+    - "java"
+    - "kotlin"
+    - "swift"
+    - "go"
+    - "scala"
+    - "csharp"
+  ui_libraries:
+    - "InstantSearch.js"
+    - "React InstantSearch"
+    - "Vue InstantSearch"
+    - "Angular InstantSearch"
+    - "InstantSearch iOS"
+    - "InstantSearch Android"
+  data_centers: 70
+  sla_uptime: "99.999%"
+
+comparison_dimensions:
+  performance:
+    score: 10
+    justification: "Industry-leading sub-10ms query latency globally through distributed search network across 70+ data centers."
+  scalability:
+    score: 9
+    justification: "Fully managed infrastructure handling billions of queries per month for major enterprises. Automatic scaling with no capacity planning."
+  ease_of_use:
+    score: 10
+    justification: "Best-in-class developer experience with comprehensive SDKs, InstantSearch UI libraries, and dashboard. Minutes to first search experience."
+  cost_efficiency:
+    score: 5
+    justification: "Premium pricing. Free tier limited to 10K searches/month. Costs scale with search operations and records, which can become expensive at high volume."
+  community:
+    score: 8
+    justification: "Large developer community with extensive documentation, tutorials, and open-source UI libraries. Active forums and developer advocacy."
+  maturity:
+    score: 9
+    justification: "Production-proven since 2012 powering search for thousands of companies including Stripe, Slack, and Twitch."
+  flexibility:
+    score: 6
+    justification: "Excellent within its search domain but limited to managed cloud deployment. Not designed as a general-purpose vector database or analytics engine."
+  data_privacy:
+    score: 7
+    justification: "SOC2 Type II, GDPR compliant, data residency options. Managed-only service means data is processed on Algolia infrastructure."
+
+knowledge:
+  entries:
+    - topic: "NeuralSearch Architecture"
+      content: |
+        Algolia NeuralSearch combines keyword-based search with vector-based semantic retrieval
+        in a single query. Unlike basic hybrid search that requires manual tuning of keyword
+        vs. vector weights, NeuralSearch uses a learning-to-rank model trained on billions
+        of search interactions to automatically optimize the blend for each query.
+
+        The system works in three stages:
+        1. Keyword retrieval using Algolia's optimized inverted index (typo-tolerant, prefix matching)
+        2. Neural retrieval using transformer-based embeddings for semantic matching
+        3. Dynamic fusion that combines both result sets using a learned ranking model
+
+        This automatic fusion means that a query like "red running shoes" correctly matches
+        products tagged as "crimson joggers" (semantic match) while still boosting exact
+        keyword matches. The balance adapts per query: highly specific queries lean toward
+        keyword matching while vague or natural language queries lean toward semantic.
+
+        NeuralSearch is enabled per index and requires no embedding model management. Algolia
+        handles the embedding generation, indexing, and query-time inference internally.
+      tags: ["neuralsearch", "architecture", "hybrid"]
+
+    - topic: "When to Choose Algolia"
+      content: |
+        Algolia is the right choice when:
+
+        1. User-facing search speed is critical. Sub-10ms globally means instant search-as-you-type
+        experiences that directly impact conversion rates and user satisfaction.
+
+        2. You need a complete search solution fast. Algolia's InstantSearch libraries provide
+        production-ready search UIs in hours, not weeks.
+
+        3. E-commerce search with merchandising control. Algolia's rules engine lets business
+        teams boost, bury, pin, and filter results without engineering involvement.
+
+        4. Search analytics and A/B testing matter. Algolia provides comprehensive analytics
+        on search performance, click-through rates, and conversion, with built-in A/B testing.
+
+        5. You want AI search features without ML infrastructure. NeuralSearch and Recommend
+        work out of the box without managing models or embeddings.
+
+        Algolia may NOT be the right choice when: cost is the primary concern (self-hosted
+        solutions are cheaper at scale), you need a general-purpose vector database for RAG
+        (consider Pinecone or Elasticsearch), you need complex analytics or aggregations
+        (consider Elasticsearch), or you need full control over ranking algorithms.
+      tags: ["decision", "comparison"]
+
+    - topic: "Algolia Recommend for AI-Powered Recommendations"
+      content: |
+        Algolia Recommend provides ML-powered product and content recommendations through
+        several models:
+
+        Related Products: "Customers who viewed X also viewed Y" based on collaborative
+        filtering trained on user interaction events (clicks, conversions).
+
+        Frequently Bought Together: Market basket analysis for cross-selling on product
+        detail pages and cart pages.
+
+        Trending Items: Surfaces currently popular items based on recent interaction velocity.
+
+        Looking Similar: Visual and attribute-based similarity for "more like this" experiences.
+
+        Implementation requires sending user interaction events (viewed, clicked, purchased)
+        to Algolia's Insights API. Models are trained automatically and updated continuously.
+        No ML expertise required.
+
+        The Recommend API returns results in the same format as search results, making it
+        easy to use the same InstantSearch components for both search and recommendations.
+        Custom business rules can be applied on top of ML recommendations.
+      tags: ["recommendations", "personalization", "ml"]
+
+    - topic: "Integration with AI/RAG Pipelines"
+      content: |
+        While Algolia is primarily designed for user-facing search, it can serve as a retrieval
+        layer in RAG architectures:
+
+        1. As a retriever: Use Algolia's search API to retrieve relevant documents, then pass
+        them as context to an LLM. Algolia's speed and relevance make it effective for
+        real-time RAG where latency matters.
+
+        2. With LangChain: The community Algolia retriever for LangChain allows using Algolia
+        as a vector store in LangChain pipelines, though it's primarily useful for keyword
+        and hybrid retrieval rather than pure vector search.
+
+        3. Structured data retrieval: Algolia excels at retrieving structured records (products,
+        articles, documentation) with faceting and filtering that complement semantic search.
+
+        For pure vector RAG workloads, purpose-built vector databases (Pinecone, Qdrant) are
+        generally more appropriate. Algolia's strength in RAG is when the retrieval needs
+        also serve a user-facing search interface, avoiding the need for two separate systems.
+      tags: ["rag", "integration", "langchain"]
+
+code_examples:
+  - title: "Basic Search with InstantSearch"
+    language: "javascript"
+    code: |
+      import algoliasearch from 'algoliasearch';
+      import instantsearch from 'instantsearch.js';
+      import { searchBox, hits, refinementList } from 'instantsearch.js/es/widgets';
+
+      const searchClient = algoliasearch('APP_ID', 'SEARCH_API_KEY');
+
+      const search = instantsearch({
+        indexName: 'products',
+        searchClient,
+      });
+
+      search.addWidgets([
+        searchBox({ container: '#searchbox' }),
+        hits({
+          container: '#hits',
+          templates: {
+            item: (hit) => `
+              <div>
+                <h3>${hit._highlightResult.name.value}</h3>
+                <p>${hit.description}</p>
+                <span>$${hit.price}</span>
+              </div>
+            `,
+          },
+        }),
+        refinementList({ container: '#categories', attribute: 'category' }),
+      ]);
+
+      search.start();
+
+  - title: "Python Backend Search"
+    language: "python"
+    code: |
+      from algoliasearch.search.client import SearchClientSync
+
+      client = SearchClientSync("APP_ID", "ADMIN_API_KEY")
+
+      # Index records
+      client.save_objects(
+          index_name="products",
+          objects=[
+              {
+                  "objectID": "prod-1",
+                  "name": "Ergonomic Office Chair",
+                  "description": "Comfortable mesh chair with lumbar support",
+                  "price": 449,
+                  "category": "furniture"
+              }
+          ]
+      )
+
+      # Search with filters
+      results = client.search(
+          search_method_params={
+              "requests": [
+                  {
+                      "indexName": "products",
+                      "query": "comfortable chair",
+                      "filters": "price < 500",
+                      "hitsPerPage": 10
+                  }
+              ]
+          }
+      )
+
+  - title: "Sending Events for Recommendations"
+    language: "python"
+    code: |
+      from algoliasearch.insights.client import InsightsClientSync
+
+      insights = InsightsClientSync("APP_ID", "API_KEY")
+
+      # Track product view
+      insights.push_events(events_items=[
+          {
+              "eventType": "view",
+              "eventName": "Product Viewed",
+              "index": "products",
+              "userToken": "user-123",
+              "objectIDs": ["prod-1"],
+          }
+      ])
+
+      # Track purchase for Frequently Bought Together
+      insights.push_events(events_items=[
+          {
+              "eventType": "conversion",
+              "eventName": "Product Purchased",
+              "index": "products",
+              "userToken": "user-123",
+              "objectIDs": ["prod-1", "prod-2"],
+          }
+      ])
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "query_latency_p50"
+      value: 5
+      unit: "ms"
+      context: "Standard keyword search, global average"
+    - name: "query_latency_p99"
+      value: 18
+      unit: "ms"
+      context: "Standard keyword search, global average"
+    - name: "neuralsearch_latency_p50"
+      value: 35
+      unit: "ms"
+      context: "NeuralSearch hybrid query, global average"
+    - name: "indexing_throughput"
+      value: 10000
+      unit: "records/sec"
+      context: "Batch indexing via API"
+    - name: "uptime_sla"
+      value: 99.999
+      unit: "percent"
+      context: "Published SLA, historical performance"
+
+relationships:
+  alternatives:
+    - slug: "elasticsearch_vector"
+      note: "Self-hostable search engine with vector search capabilities"
+    - slug: "pinecone"
+      note: "Purpose-built vector database for pure semantic search"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Custom embedding generation for advanced vector search use cases"
+    - slug: "langchain"
+      role: "Orchestration framework for RAG pipelines using Algolia retrieval"
+  typical_pipeline_position: "retrieval"
+  pipeline_predecessors: ["data_ingestion", "content_processing"]
+  pipeline_successors: ["reranking", "llm_generation", "ui_rendering"]

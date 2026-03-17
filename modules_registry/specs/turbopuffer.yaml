@@ -1,0 +1,167 @@
+meta:
+  slug: "turbopuffer"
+  name: "Turbopuffer"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "serverless"
+  status: "emerging"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Serverless vector database with storage-optimized architecture for cost-efficient search"
+  description: |
+    Turbopuffer is a serverless vector database designed for cost-efficient
+    vector search at scale. It uses a storage-optimized architecture that keeps
+    data on object storage (S3) with intelligent caching, achieving significantly
+    lower costs than memory-resident vector databases while maintaining good
+    query performance.
+
+    Turbopuffer is designed for workloads where cost efficiency matters more
+    than ultra-low latency. By leveraging object storage instead of keeping
+    all vectors in memory, it can handle very large datasets at a fraction
+    of the cost of memory-resident alternatives like Pinecone or Weaviate.
+
+    The service provides a simple REST API with namespace-based data isolation,
+    attribute filtering, and automatic scaling. It is particularly well-suited
+    for applications with large vector datasets and moderate query latency
+    requirements.
+  logo_url: "/assets/modules/turbopuffer.svg"
+  website: "https://turbopuffer.com"
+  documentation: "https://turbopuffer.com/docs"
+  github: "https://github.com/turbopuffer"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Cost-efficient vector search at scale"
+    - "Large-scale RAG knowledge bases"
+    - "Multi-tenant vector search"
+    - "Archival vector storage with search"
+  supported_operations:
+    - "upsert"
+    - "query"
+    - "delete"
+    - "namespace_management"
+  integrations:
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  architecture: "storage-optimized (S3-backed)"
+  distance_metrics:
+    - "cosine"
+    - "euclidean"
+  attribute_filtering: true
+  namespaces: true
+  auto_scaling: true
+  serverless: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "rest"
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Good for storage-optimized architecture. Higher latency than memory-resident DBs but adequate for most applications."
+  scalability:
+    score: 8
+    justification: "Serverless architecture scales to large datasets. S3-backed storage has virtually no limits."
+  ease_of_use:
+    score: 8
+    justification: "Simple REST API. No infrastructure management. Quick to get started."
+  cost_efficiency:
+    score: 9
+    justification: "Significantly cheaper than memory-resident vector databases for large datasets. Storage on S3 is very affordable."
+  community:
+    score: 4
+    justification: "New service with a small but growing community. Limited third-party resources."
+  maturity:
+    score: 4
+    justification: "Young service still establishing itself. API and features are still evolving."
+  flexibility:
+    score: 5
+    justification: "Focused on vector search. Fewer features than established vector databases."
+  data_privacy:
+    score: 5
+    justification: "Cloud-only service. Data stored on Turbopuffer infrastructure."
+
+knowledge:
+  entries:
+    - topic: "When to Choose Turbopuffer"
+      content: |
+        Turbopuffer is ideal when cost is a primary concern for vector storage:
+
+        Choose Turbopuffer when: you have large datasets (10M+ vectors) where
+        memory-resident databases become expensive, you can tolerate slightly
+        higher query latency (10-50ms vs 1-10ms), cost efficiency is more
+        important than absolute speed, or you have archival vector data that
+        is queried infrequently.
+
+        Avoid Turbopuffer when: you need sub-10ms query latency, you need
+        advanced features like hybrid search or graph-like queries, you need
+        a mature ecosystem with extensive integrations, or you're looking
+        for a self-hosted solution.
+      tags: ["decision", "cost", "comparison"]
+
+code_examples:
+  - title: "Basic Vector Operations"
+    language: "python"
+    code: |
+      import turbopuffer as tpuf
+
+      # Connect to namespace
+      ns = tpuf.Namespace("my-documents")
+
+      # Upsert vectors
+      ns.upsert(
+          ids=[1, 2, 3],
+          vectors=[[0.1, 0.2, ...], [0.3, 0.4, ...], [0.5, 0.6, ...]],
+          attributes={
+              "text": ["doc1", "doc2", "doc3"],
+              "category": ["tech", "science", "tech"]
+          }
+      )
+
+      # Query with filter
+      results = ns.query(
+          vector=[0.1, 0.2, ...],
+          top_k=5,
+          filters={"category": ["In", ["tech"]]}
+      )
+
+      for result in results:
+          print(f"ID: {result.id}, Score: {result.dist}")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "query_latency_p50"
+      value: 25
+      unit: "ms"
+      context: "1536-dim, top-k=10, 10M vectors, warm cache"
+    - name: "storage_cost_10m"
+      value: 5
+      unit: "USD/month"
+      context: "10M vectors at 1536 dimensions"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Managed vector DB, faster but more expensive at scale"
+    - slug: "lancedb"
+      note: "Embedded vector DB with object storage support"
+    - slug: "qdrant"
+      note: "Feature-rich vector DB with self-hosted option"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Embedding generation for vectors stored in Turbopuffer"
+    - slug: "langchain"
+      role: "Orchestration framework for RAG pipelines"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

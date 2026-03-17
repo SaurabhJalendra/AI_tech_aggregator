@@ -1,0 +1,194 @@
+meta:
+  slug: "langfuse"
+  name: "Langfuse"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "llm_observability"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source LLM observability, tracing, and evaluation platform"
+  description: |
+    Langfuse is an open-source observability platform purpose-built for LLM
+    applications. It provides tracing, prompt management, evaluation, and
+    analytics for RAG pipelines, agents, and other AI applications.
+
+    Langfuse captures the full execution trace of LLM applications including
+    retrieval steps, LLM calls, tool usage, and custom spans. This enables
+    debugging, performance optimization, and quality monitoring. The platform
+    also supports evaluation with scoring functions, human feedback collection,
+    and dataset management.
+
+    Being open-source and self-hostable, Langfuse is popular among teams that
+    need LLM observability without sending data to third-party services. It
+    integrates with major frameworks including LangChain, LlamaIndex, and the
+    OpenAI SDK through decorators and callbacks.
+  logo_url: "/assets/modules/langfuse.svg"
+  website: "https://langfuse.com"
+  documentation: "https://langfuse.com/docs"
+  github: "https://github.com/langfuse/langfuse"
+  license: "MIT"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "LLM application tracing"
+    - "RAG pipeline debugging"
+    - "Prompt management and versioning"
+    - "LLM evaluation and scoring"
+    - "Cost and latency monitoring"
+  supported_operations:
+    - "trace"
+    - "score"
+    - "create_dataset"
+    - "manage_prompts"
+    - "evaluate"
+    - "log_generation"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+
+technical_specs:
+  tracing: true
+  prompt_management: true
+  evaluation_datasets: true
+  scoring: true
+  cost_tracking: true
+  user_feedback: true
+  self_hosted: true
+  cloud_option: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "rest"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Async tracing with minimal latency overhead. Self-hosted performance depends on PostgreSQL backend."
+  scalability:
+    score: 7
+    justification: "Scales with PostgreSQL backend. Cloud version handles production workloads well."
+  ease_of_use:
+    score: 8
+    justification: "Simple decorator-based integration. Native framework callbacks for LangChain and LlamaIndex."
+  cost_efficiency:
+    score: 9
+    justification: "Open-source and self-hostable. Cloud free tier is generous. No per-trace pricing."
+  community:
+    score: 7
+    justification: "Active open-source community. Growing rapidly as LLM observability becomes essential."
+  maturity:
+    score: 6
+    justification: "Founded in 2023. Rapidly maturing with frequent releases. API is stabilizing."
+  flexibility:
+    score: 8
+    justification: "Framework-agnostic with native integrations. Self-hosted or cloud. Custom scoring functions."
+  data_privacy:
+    score: 9
+    justification: "Open-source with self-hosting option for complete data control. No data leaves your infrastructure when self-hosted."
+
+knowledge:
+  entries:
+    - topic: "Langfuse vs LangSmith"
+      content: |
+        Langfuse and LangSmith are the two leading LLM observability platforms:
+
+        Langfuse advantages: open-source, self-hostable, framework-agnostic,
+        MIT license, community-driven. Works equally well with LangChain,
+        LlamaIndex, or custom code.
+
+        LangSmith advantages: deeper LangChain integration, more mature evaluation
+        features, LangChain Hub for prompt sharing, better documentation for
+        LangChain-specific workflows.
+
+        Choose Langfuse when: you need self-hosting for data privacy, you use
+        multiple frameworks or custom code, you want open-source flexibility,
+        or you prefer vendor independence.
+
+        Choose LangSmith when: you're deeply invested in the LangChain ecosystem,
+        you want the most polished LangChain debugging experience, or you need
+        LangChain Hub for prompt management.
+      tags: ["comparison", "langsmith", "decision"]
+
+code_examples:
+  - title: "Python Decorator Tracing"
+    language: "python"
+    code: |
+      from langfuse.decorators import observe, langfuse_context
+
+      @observe()
+      def rag_pipeline(query: str) -> str:
+          context = retrieve(query)
+          answer = generate(query, context)
+          return answer
+
+      @observe()
+      def retrieve(query: str) -> list[str]:
+          results = vector_store.search(query, top_k=5)
+          return [r.text for r in results]
+
+      @observe(as_type="generation")
+      def generate(query: str, context: list[str]) -> str:
+          response = openai.chat.completions.create(
+              model="gpt-4o",
+              messages=[{"role": "user", "content": f"Context: {context}\n{query}"}]
+          )
+          return response.choices[0].message.content
+
+      # All calls are automatically traced to Langfuse
+      result = rag_pipeline("What is vector search?")
+
+  - title: "LangChain Callback Integration"
+    language: "python"
+    code: |
+      from langfuse.callback import CallbackHandler
+
+      langfuse_handler = CallbackHandler(
+          public_key="pk-...",
+          secret_key="sk-...",
+          host="https://cloud.langfuse.com"
+      )
+
+      # Pass to any LangChain invocation
+      chain.invoke(
+          {"question": "What is RAG?"},
+          config={"callbacks": [langfuse_handler]}
+      )
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "tracing_overhead"
+      value: 3
+      unit: "ms"
+      context: "Per-trace async logging overhead"
+    - name: "dashboard_load"
+      value: 1.2
+      unit: "seconds"
+      context: "Trace list page with 10K traces"
+
+relationships:
+  alternatives:
+    - slug: "langsmith"
+      note: "LangChain's native observability platform, deeper LangChain integration"
+    - slug: "phoenix_arize"
+      note: "ML observability with LLM tracing capabilities"
+    - slug: "weights_biases"
+      note: "Broader ML platform with Weave for LLM evaluation"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with native Langfuse callback"
+    - slug: "llamaindex"
+      role: "Data framework with Langfuse instrumentation"
+    - slug: "ragas"
+      role: "RAG evaluation metrics logged to Langfuse"
+  typical_pipeline_position: "monitoring"
+  pipeline_predecessors: ["llm_generation"]
+  pipeline_successors: ["evaluation", "improvement"]

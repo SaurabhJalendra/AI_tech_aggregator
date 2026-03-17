@@ -1,0 +1,180 @@
+meta:
+  slug: "replicate"
+  name: "Replicate"
+  version: "1.0.0"
+  category: "deployment"
+  subcategory: "model_hosting"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Run and deploy ML models with a cloud API"
+  description: |
+    Replicate is a platform for running machine learning models in the cloud
+    via a simple API. It hosts thousands of open-source models contributed by
+    the community and model authors, covering text generation, image generation,
+    audio, video, and more.
+
+    Replicate's key value proposition is simplicity: any model packaged with Cog
+    (Replicate's open-source container format) can be deployed and served via API
+    with automatic scaling. Users can run models without managing infrastructure,
+    GPUs, or containers.
+
+    The platform is popular for rapid prototyping, accessing a wide variety of
+    models through a single API, and deploying custom models without DevOps
+    overhead. It charges per-second of compute time with no minimum commitment.
+  logo_url: "/assets/modules/replicate.svg"
+  website: "https://replicate.com"
+  documentation: "https://replicate.com/docs"
+  github: "https://github.com/replicate"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "ML model hosting and serving"
+    - "Image generation API"
+    - "LLM inference"
+    - "Audio/video model deployment"
+    - "Custom model deployment with Cog"
+  supported_operations:
+    - "predictions_create"
+    - "predictions_get"
+    - "models_list"
+    - "deployments_create"
+    - "training"
+    - "streaming"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  model_catalog: "thousands of community models"
+  packaging: "Cog (open-source container format)"
+  gpu_types:
+    - "NVIDIA T4"
+    - "NVIDIA A40"
+    - "NVIDIA A100"
+  auto_scaling: true
+  scale_to_zero: true
+  webhooks: true
+  streaming: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "go"
+    - "swift"
+    - "elixir"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Good inference performance once warm. Cold starts can be significant for large models."
+  scalability:
+    score: 7
+    justification: "Auto-scaling with dedicated deployments. Scale-to-zero for cost savings."
+  ease_of_use:
+    score: 9
+    justification: "Extremely simple API. Run any hosted model with a single API call. Web playground for testing."
+  cost_efficiency:
+    score: 6
+    justification: "Per-second billing is transparent but can be expensive at scale. Cold start time is billed."
+  community:
+    score: 8
+    justification: "Large community of model contributors. Thousands of models available. Active model discovery."
+  maturity:
+    score: 7
+    justification: "Established since 2021. Stable platform with growing enterprise adoption."
+  flexibility:
+    score: 8
+    justification: "Supports any model packaged with Cog. Wide variety of model types beyond just LLMs."
+  data_privacy:
+    score: 5
+    justification: "Cloud-only processing. Dedicated deployments available for enterprise. No on-premises option."
+
+knowledge:
+  entries:
+    - topic: "Replicate vs Modal"
+      content: |
+        Replicate and Modal serve different needs:
+
+        Replicate is model-centric: you push a model, get an API endpoint. Best for
+        teams that want to deploy specific models quickly without writing serving code.
+        The model catalog is a major advantage for discovery and prototyping.
+
+        Modal is compute-centric: you push Python functions that run on GPUs. Best
+        for teams that need custom inference logic, batch processing, or workloads
+        beyond just model serving.
+
+        Choose Replicate when: you want the simplest path to serving a model,
+        you want to use community models, or you need multi-language SDK support.
+        Choose Modal when: you need custom compute logic, batch processing,
+        or tighter integration between model serving and application code.
+      tags: ["comparison", "modal", "decision"]
+
+code_examples:
+  - title: "Run a Model"
+    language: "python"
+    code: |
+      import replicate
+
+      output = replicate.run(
+          "meta/llama-3.1-70b-instruct",
+          input={
+              "prompt": "Explain vector databases in simple terms",
+              "max_tokens": 256,
+              "temperature": 0.7
+          }
+      )
+
+      for text in output:
+          print(text, end="")
+
+  - title: "Deploy a Custom Model"
+    language: "python"
+    code: |
+      import replicate
+
+      # Create a deployment for production use
+      deployment = replicate.deployments.create(
+          name="my-llm-deployment",
+          model="meta/llama-3.1-70b-instruct",
+          hardware="gpu-a100-large",
+          min_instances=1,
+          max_instances=5
+      )
+
+      # Run prediction on deployment
+      prediction = deployment.predictions.create(
+          input={"prompt": "Hello, world!", "max_tokens": 100}
+      )
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "cold_start_llm"
+      value: 30
+      unit: "seconds"
+      context: "Llama 3.1 70B, first request cold start"
+    - name: "warm_inference_speed"
+      value: 120
+      unit: "tokens/second"
+      context: "Llama 3.1 70B, warm deployment"
+
+relationships:
+  alternatives:
+    - slug: "modal"
+      note: "General-purpose serverless GPU compute, more flexible"
+    - slug: "together_ai"
+      note: "Inference API focused on LLMs with fine-tuning"
+    - slug: "anyscale"
+      note: "Ray-based platform for distributed ML workloads"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with Replicate model integration"
+  typical_pipeline_position: "infrastructure"
+  pipeline_predecessors: ["model_training"]
+  pipeline_successors: ["inference_api"]

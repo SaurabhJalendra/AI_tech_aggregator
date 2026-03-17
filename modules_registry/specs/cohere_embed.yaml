@@ -1,0 +1,282 @@
+meta:
+  slug: "cohere_embed"
+  name: "Cohere Embed"
+  version: "1.0.0"
+  category: "embeddings"
+  subcategory: "api"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Multilingual embedding models with task-specific optimization and compression"
+  description: |
+    Cohere Embed is a family of embedding models designed for search, classification, and
+    clustering across 100+ languages. The latest Embed v3 models introduce input_type-based
+    optimization, where embeddings are generated differently depending on whether the input
+    is a search query, a document, or a classification target.
+
+    Embed v3 supports multiple output formats including float32, int8, ubinary, and binary,
+    enabling massive compression for large-scale deployments. Binary embeddings reduce storage
+    by 32x compared to float32, with only a modest quality trade-off when combined with
+    rescoring.
+
+    Cohere also offers the embed-multilingual model, which produces aligned embeddings across
+    100+ languages, allowing cross-lingual search where a query in English can match documents
+    in Japanese or French. This makes Cohere a strong choice for international and multilingual
+    RAG applications.
+  logo_url: "/assets/modules/cohere_embed.svg"
+  website: "https://cohere.com"
+  documentation: "https://docs.cohere.com/docs/embeddings"
+  github: "https://github.com/cohere-ai/cohere-python"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Multilingual semantic search"
+    - "Cross-lingual document retrieval"
+    - "Text classification"
+    - "Clustering and topic modeling"
+    - "RAG pipeline embedding generation"
+  supported_operations:
+    - "text_to_embedding"
+    - "batch_embedding"
+    - "task_type_optimization"
+    - "compression_formats"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "weaviate"
+      type: "native"
+    - slug: "qdrant"
+      type: "compatible"
+
+technical_specs:
+  models:
+    - name: "embed-english-v3.0"
+      max_dimensions: 1024
+      max_input_tokens: 512
+      languages: 1
+    - name: "embed-multilingual-v3.0"
+      max_dimensions: 1024
+      max_input_tokens: 512
+      languages: 100
+    - name: "embed-english-light-v3.0"
+      max_dimensions: 384
+      max_input_tokens: 512
+      languages: 1
+    - name: "embed-multilingual-light-v3.0"
+      max_dimensions: 384
+      max_input_tokens: 512
+      languages: 100
+  input_types:
+    - "search_document"
+    - "search_query"
+    - "classification"
+    - "clustering"
+  output_formats:
+    - "float"
+    - "int8"
+    - "ubinary"
+    - "binary"
+  max_batch_size: 96
+  truncation: "END"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Embed v3 ranks competitively on MTEB, especially in multilingual benchmarks. Task-type optimization improves retrieval quality."
+  scalability:
+    score: 8
+    justification: "Binary embeddings enable massive scale at 32x compression. Managed API handles high throughput with rate limiting."
+  ease_of_use:
+    score: 8
+    justification: "Clean API with task-type parameter. Good documentation and framework integrations. Slightly more configuration than OpenAI."
+  cost_efficiency:
+    score: 8
+    justification: "Free tier with 1000 API calls/month. Binary compression dramatically reduces downstream storage costs."
+  community:
+    score: 6
+    justification: "Smaller community than OpenAI but active. Good documentation and tutorials. Growing enterprise adoption."
+  maturity:
+    score: 8
+    justification: "Embed v3 released in late 2023 and is production-proven. Cohere has been offering embeddings since 2021."
+  flexibility:
+    score: 7
+    justification: "Multiple compression formats and task types. Multilingual support. API-only with no self-hosting except through cloud partners."
+  data_privacy:
+    score: 6
+    justification: "SOC2 compliant. Data processing on Cohere servers. Private deployments available for enterprise customers on AWS and others."
+
+knowledge:
+  entries:
+    - topic: "Task-Type Optimization"
+      content: |
+        Cohere Embed v3 introduces the input_type parameter which optimizes embeddings for
+        specific downstream tasks:
+
+        - search_document: Use when embedding documents to be searched. Produces embeddings
+          optimized for being retrieved.
+        - search_query: Use when embedding search queries. Produces embeddings optimized for
+          finding relevant documents. Always pair search_query with search_document.
+        - classification: Use when embeddings will be used as features for classification tasks.
+        - clustering: Use when embeddings will be used for clustering or topic modeling.
+
+        This asymmetric approach (different embeddings for queries vs documents) improves retrieval
+        quality by 5-15% compared to symmetric embeddings on most benchmarks. It is critical to
+        use the correct input_type for both indexing and query time; mixing types degrades quality.
+      tags: ["input-type", "optimization", "search"]
+
+    - topic: "Binary Embeddings and Compression"
+      content: |
+        Embed v3 supports multiple embedding formats that enable dramatic storage savings:
+
+        float (default): Full float32 embeddings at 1024 dimensions = 4KB per vector.
+        int8: Quantized to 8-bit integers = 1KB per vector (4x compression).
+        ubinary/binary: Packed binary representations = 128 bytes per vector (32x compression).
+
+        Binary embeddings work best with a two-stage retrieval approach: first retrieve a
+        large candidate set using binary embeddings (fast and cheap), then rescore the top
+        candidates using float embeddings. This approach maintains 95%+ of full-precision
+        quality while dramatically reducing storage and search costs.
+
+        For a collection of 100M documents, binary embeddings require approximately 12GB of
+        storage vs 400GB for float32. This makes billion-scale search feasible without
+        expensive infrastructure.
+      tags: ["compression", "binary", "optimization", "scale"]
+
+    - topic: "Multilingual and Cross-Lingual Search"
+      content: |
+        Cohere's embed-multilingual-v3.0 model produces aligned embeddings across 100+ languages.
+        This means a query in English will have high cosine similarity with a relevant document
+        in French, Japanese, or Arabic.
+
+        This is not translation-based; the model natively understands multiple languages and
+        maps them into a shared embedding space. Cross-lingual retrieval quality is typically
+        within 5% of same-language retrieval.
+
+        Use cases: (1) Multilingual knowledge bases where documents exist in many languages,
+        (2) Customer support systems serving global users, (3) Legal or compliance search across
+        jurisdictions with different languages, (4) Academic paper search across languages.
+
+        The multilingual model has the same 1024-dimension output as the English model, so
+        switching requires no changes to vector database schema or retrieval pipeline.
+      tags: ["multilingual", "cross-lingual", "international"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of Cohere Embed:
+
+        1. Shorter context window. Max 512 tokens per input, shorter than OpenAI's 8191 tokens.
+        Long documents must be chunked more aggressively.
+
+        2. Smaller batch size. 96 texts per API call vs OpenAI's 2048, requiring more API calls
+        for large-scale embedding jobs.
+
+        3. Lower default dimensions. 1024 dimensions (or 384 for light models) vs OpenAI's
+        1536/3072. Adequate for most use cases but may matter for very high-precision retrieval.
+
+        4. Smaller community ecosystem. Fewer tutorials, guides, and community examples compared
+        to OpenAI embeddings.
+
+        5. No native dimension reduction. Unlike OpenAI's v3 models, dimensions are fixed per
+        model. Use compression formats (int8, binary) instead for size reduction.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Embedding with Task Types"
+    language: "python"
+    code: |
+      import cohere
+
+      co = cohere.Client("your-api-key")
+
+      # Embed documents for indexing
+      doc_response = co.embed(
+          texts=["RAG combines retrieval with generation", "Vector databases store embeddings"],
+          model="embed-english-v3.0",
+          input_type="search_document"
+      )
+
+      # Embed query for searching
+      query_response = co.embed(
+          texts=["How does RAG work?"],
+          model="embed-english-v3.0",
+          input_type="search_query"
+      )
+
+  - title: "Binary Embeddings for Scale"
+    language: "python"
+    code: |
+      import cohere
+      import numpy as np
+
+      co = cohere.Client("your-api-key")
+
+      response = co.embed(
+          texts=["Document to embed"],
+          model="embed-english-v3.0",
+          input_type="search_document",
+          embedding_types=["ubinary"]
+      )
+
+      binary_embedding = response.embeddings.ubinary[0]
+      print(f"Binary embedding size: {len(binary_embedding)} bytes")
+
+  - title: "Multilingual Search with LangChain"
+    language: "python"
+    code: |
+      from langchain_cohere import CohereEmbeddings
+
+      embeddings = CohereEmbeddings(
+          model="embed-multilingual-v3.0",
+          cohere_api_key="your-api-key"
+      )
+
+      # These will be in the same embedding space
+      en_vector = embeddings.embed_query("What is machine learning?")
+      fr_vector = embeddings.embed_query("Qu'est-ce que l'apprentissage automatique?")
+
+      # Cosine similarity will be high despite different languages
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "mteb_avg_score_english_v3"
+      value: 64.5
+      unit: "percent"
+      context: "MTEB benchmark average, embed-english-v3.0"
+    - name: "mteb_avg_score_multilingual_v3"
+      value: 66.3
+      unit: "percent"
+      context: "MTEB multilingual benchmark, embed-multilingual-v3.0"
+    - name: "embedding_latency_single"
+      value: 50
+      unit: "ms"
+      context: "Single text, embed-english-v3.0, ~100 tokens"
+    - name: "binary_compression_ratio"
+      value: 32
+      unit: "x"
+      context: "Binary vs float32, 1024 dimensions"
+
+relationships:
+  alternatives:
+    - slug: "openai_embeddings"
+      note: "Larger community and longer context window but English-only optimization"
+    - slug: "voyage_ai"
+      note: "Specialized for code and domain-specific retrieval"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for storing and querying Cohere embeddings"
+    - slug: "weaviate"
+      role: "Vector database with native Cohere integration for automatic embedding"
+    - slug: "langchain"
+      role: "Orchestration framework with native Cohere embedding support"
+  typical_pipeline_position: "embedding"
+  pipeline_predecessors: ["chunking", "data_ingestion"]
+  pipeline_successors: ["vector_databases", "retrieval"]

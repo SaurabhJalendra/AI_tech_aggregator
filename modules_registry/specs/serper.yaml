@@ -1,0 +1,207 @@
+meta:
+  slug: "serper"
+  name: "Serper"
+  version: "1.0.0"
+  category: "search_discovery"
+  subcategory: "web_search"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Fast and affordable Google Search API for developers and AI applications"
+  description: |
+    Serper provides a clean REST API to access Google Search results programmatically.
+    It returns structured JSON data from Google Search including organic results,
+    knowledge graph data, people also ask, and related searches. Unlike Tavily which
+    processes and extracts page content, Serper focuses on delivering raw Google
+    Search results quickly and affordably.
+
+    Serper supports multiple search types including web search, image search, news
+    search, shopping, and maps. It is commonly used in AI agent workflows where
+    Google-quality search results are needed without the complexity and cost of
+    Google's official Custom Search API.
+
+    The service is known for its speed (sub-second responses) and generous free
+    tier (2,500 searches). It has become a popular choice in the LangChain ecosystem
+    as an alternative to SerpAPI for Google search integration.
+  logo_url: "/assets/modules/serper.svg"
+  website: "https://serper.dev"
+  documentation: "https://serper.dev/docs"
+  github: "https://github.com/serper-dev"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Google Search integration for AI agents"
+    - "Real-time information retrieval"
+    - "SERP data extraction"
+    - "News monitoring"
+    - "Competitive research automation"
+  supported_operations:
+    - "search"
+    - "images"
+    - "news"
+    - "shopping"
+    - "maps"
+    - "places"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "compatible"
+    - slug: "crewai"
+      type: "native"
+
+technical_specs:
+  max_results_per_query: 100
+  search_types:
+    - "web"
+    - "images"
+    - "news"
+    - "shopping"
+    - "maps"
+    - "places"
+  geo_targeting: true
+  language_support: true
+  autocomplete: true
+  response_format: "JSON"
+  rate_limit_free_tier: "2500 searches"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Sub-second response times. One of the fastest search APIs available, consistently under 500ms."
+  scalability:
+    score: 8
+    justification: "Cloud-hosted with high availability. Handles large query volumes well on paid plans."
+  ease_of_use:
+    score: 8
+    justification: "Simple REST API with a single endpoint per search type. Good LangChain integration."
+  cost_efficiency:
+    score: 8
+    justification: "Very affordable with 2500 free searches and low per-query pricing. Significantly cheaper than Google Custom Search API."
+  community:
+    score: 6
+    justification: "Growing community, primarily through LangChain and CrewAI users. Less documentation than larger search APIs."
+  maturity:
+    score: 6
+    justification: "Established since 2022. Reliable service but relatively young compared to established search APIs."
+  flexibility:
+    score: 7
+    justification: "Multiple search types and good filtering options. Geo-targeting and language selection available."
+  data_privacy:
+    score: 5
+    justification: "Cloud-only service. Queries pass through Serper and Google servers. No self-hosted option."
+
+knowledge:
+  entries:
+    - topic: "When to Choose Serper vs Tavily"
+      content: |
+        Serper and Tavily serve different needs in the AI search space:
+
+        Choose Serper when: (1) You need raw Google Search results with SERP features
+        like knowledge graphs and People Also Ask, (2) Speed is critical and you need
+        sub-500ms responses, (3) You need image, news, or shopping search in addition
+        to web search, (4) Budget is a concern and you want the cheapest per-query pricing,
+        (5) You want to handle content extraction yourself.
+
+        Choose Tavily when: (1) You need pre-extracted, clean content ready for LLM
+        consumption, (2) You want to minimize the scraping and parsing work in your
+        pipeline, (3) You are building RAG with web sources and need the content,
+        not just links, (4) You need the search context helper for prompt building.
+
+        Many production systems use both: Serper for quick factual lookups where
+        Google's knowledge graph provides direct answers, and Tavily for deep
+        research where extracted page content is needed.
+      tags: ["comparison", "decision", "tavily"]
+
+    - topic: "Integration with LangChain"
+      content: |
+        Serper integrates with LangChain through the GoogleSerperAPIWrapper and
+        the corresponding tool class. The integration supports web, news, and
+        image search modes.
+
+        The GoogleSerperResults tool returns the full JSON response from Serper,
+        including organic results, knowledge graph data, and related searches.
+        This gives agents access to rich structured data beyond simple text snippets.
+
+        For simple question-answering agents, the GoogleSerperRun tool returns
+        a condensed text summary of results, which uses fewer tokens in the
+        agent's context window.
+      tags: ["langchain", "integration"]
+
+code_examples:
+  - title: "Basic Google Search"
+    language: "python"
+    code: |
+      import requests
+      import json
+
+      url = "https://google.serper.dev/search"
+      payload = json.dumps({
+          "q": "best vector databases for production 2026",
+          "num": 10
+      })
+      headers = {
+          "X-API-KEY": "your-api-key",
+          "Content-Type": "application/json"
+      }
+
+      response = requests.post(url, headers=headers, data=payload)
+      results = response.json()
+
+      for item in results.get("organic", []):
+          print(f"{item['title']}: {item['link']}")
+
+  - title: "LangChain Agent with Serper"
+    language: "python"
+    code: |
+      from langchain_community.utilities import GoogleSerperAPIWrapper
+      from langchain.agents import initialize_agent, AgentType
+      from langchain_openai import ChatOpenAI
+      from langchain.tools import Tool
+
+      search = GoogleSerperAPIWrapper()
+      tools = [
+          Tool(
+              name="Google Search",
+              func=search.run,
+              description="Search Google for recent information"
+          )
+      ]
+
+      llm = ChatOpenAI(model="gpt-4o", temperature=0)
+      agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION)
+
+      result = agent.run("What are the latest AI infrastructure trends?")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "search_latency_p50"
+      value: 320
+      unit: "ms"
+      context: "Web search, 10 results"
+    - name: "search_latency_p99"
+      value: 780
+      unit: "ms"
+      context: "Web search, 10 results"
+    - name: "news_search_latency"
+      value: 410
+      unit: "ms"
+      context: "News search, 10 results"
+
+relationships:
+  alternatives:
+    - slug: "tavily"
+      note: "AI-focused search with content extraction, higher latency but richer content"
+  complements:
+    - slug: "langchain"
+      role: "Agent framework with native Serper tool integration"
+    - slug: "firecrawl"
+      role: "Can scrape pages from Serper results for full content extraction"
+  typical_pipeline_position: "data_source"
+  pipeline_predecessors: ["user_query"]
+  pipeline_successors: ["llm_generation", "data_ingestion"]

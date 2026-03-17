@@ -1,0 +1,296 @@
+meta:
+  slug: "elevenlabs"
+  name: "ElevenLabs"
+  version: "1.0.0"
+  category: "voice_conversational"
+  subcategory: "text_to_speech"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "AI-powered voice synthesis and cloning platform for realistic speech generation"
+  description: |
+    ElevenLabs is a leading voice AI platform specializing in high-fidelity text-to-speech
+    synthesis, voice cloning, and audio content creation. The platform uses advanced deep
+    learning models to generate natural-sounding speech in dozens of languages with fine-grained
+    control over tone, emotion, pacing, and delivery style.
+
+    The platform offers both pre-built voices and custom voice cloning, where users can create
+    a digital replica of any voice from just a few minutes of audio samples. ElevenLabs also
+    provides a conversational AI API for building voice-driven interactive agents, as well as
+    audio dubbing capabilities for translating spoken content across languages while preserving
+    the original speaker's voice characteristics.
+
+    ElevenLabs has rapidly become the go-to solution for content creators, game developers,
+    accessibility applications, and enterprises needing high-quality synthetic speech at scale.
+    Its API-first approach makes it straightforward to integrate into existing workflows and
+    applications.
+  logo_url: "/assets/modules/elevenlabs.svg"
+  website: "https://elevenlabs.io"
+  documentation: "https://docs.elevenlabs.io"
+  github: "https://github.com/elevenlabs/elevenlabs-python"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Text-to-speech generation"
+    - "Voice cloning from audio samples"
+    - "Conversational AI voice agents"
+    - "Audio dubbing and translation"
+    - "Audiobook and podcast production"
+    - "Accessibility applications"
+  supported_operations:
+    - "text_to_speech"
+    - "speech_to_speech"
+    - "voice_cloning"
+    - "voice_design"
+    - "audio_isolation"
+    - "conversational_ai"
+    - "dubbing"
+    - "sound_effects"
+  integrations:
+    - slug: "langchain"
+      type: "community"
+    - slug: "openai"
+      type: "compatible"
+
+technical_specs:
+  supported_languages: 32
+  max_characters_per_request: 5000
+  audio_output_formats:
+    - "mp3"
+    - "pcm"
+    - "opus"
+    - "flac"
+  sample_rates:
+    - 22050
+    - 44100
+  streaming_support: true
+  websocket_api: true
+  latency_first_byte_ms: 300
+  voice_cloning_min_samples: "1 minute of audio"
+  concurrent_requests: "plan-dependent"
+  sdk_languages:
+    - "python"
+    - "node"
+    - "react"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Industry-leading voice quality with low latency streaming. Sub-300ms time-to-first-byte for real-time applications."
+  scalability:
+    score: 8
+    justification: "Cloud-based API scales automatically. Enterprise plans support high concurrency and dedicated infrastructure."
+  ease_of_use:
+    score: 9
+    justification: "Simple REST and WebSocket APIs with well-documented SDKs. Voice cloning requires minimal technical expertise."
+  cost_efficiency:
+    score: 5
+    justification: "Free tier offers limited characters per month. Professional use requires paid plans that can become expensive for high-volume applications."
+  community:
+    score: 7
+    justification: "Growing developer community. Active Discord and community voice library. Fewer open-source contributions compared to speech-to-text alternatives."
+  maturity:
+    score: 7
+    justification: "Rapidly maturing platform founded in 2022. Strong adoption in content creation and enterprise verticals, though API surface continues to evolve."
+  flexibility:
+    score: 7
+    justification: "Supports multiple models, voices, and output formats. Voice design and cloning provide customization. Limited to cloud-only deployment."
+  data_privacy:
+    score: 6
+    justification: "Voice data processed in the cloud. Enterprise plans offer enhanced data retention controls. Voice cloning raises ethical considerations that ElevenLabs addresses with safeguards."
+
+knowledge:
+  entries:
+    - topic: "Architecture and Models"
+      content: |
+        ElevenLabs offers several TTS model variants optimized for different use cases:
+
+        Multilingual v2 is the flagship model supporting 32 languages with high emotional
+        range and natural prosody. It excels at long-form content and handles code-switching
+        between languages within the same text.
+
+        Turbo v2.5 is optimized for low-latency applications such as conversational AI agents.
+        It sacrifices some voice quality for significantly faster time-to-first-byte, making
+        it suitable for real-time interactive applications.
+
+        The voice cloning pipeline uses a few-shot learning approach where the model adapts
+        to a target voice from as little as one minute of clean audio. Professional voice
+        clones trained on longer samples (30+ minutes) achieve near-indistinguishable quality
+        from the original speaker.
+
+        The Conversational AI system combines the TTS engine with turn-taking logic, interrupt
+        handling, and integration points for LLM backends (such as OpenAI or Anthropic) to
+        create fully voice-driven interactive agents.
+      tags: ["architecture", "models", "voice-cloning"]
+
+    - topic: "When to Choose ElevenLabs"
+      content: |
+        ElevenLabs is the right choice when:
+
+        1. Voice quality is the top priority. ElevenLabs consistently leads in naturalness
+        benchmarks and supports a wide range of emotional expressions and speaking styles.
+
+        2. You need voice cloning capabilities. The platform makes it straightforward to
+        create custom voices from audio samples, useful for brand voices, character voices
+        in games, or personalized accessibility tools.
+
+        3. You're building a conversational AI agent that needs a voice interface. The
+        Conversational AI API handles the complexity of real-time voice interaction including
+        turn-taking and interruption handling.
+
+        4. Multilingual support is needed. The Multilingual v2 model supports 32 languages
+        with natural pronunciation and can handle mixed-language text.
+
+        ElevenLabs may NOT be the right choice when: you need on-premises deployment for
+        data sovereignty, cost is the primary concern for high-volume TTS (consider open-source
+        alternatives like Coqui TTS or Piper), or you need speech-to-text (use Whisper or
+        Deepgram instead).
+      tags: ["decision", "comparison"]
+
+    - topic: "Streaming and Real-Time Usage"
+      content: |
+        ElevenLabs supports two streaming modes for real-time applications:
+
+        HTTP streaming returns audio chunks as they are generated via chunked transfer encoding.
+        This is the simplest integration path and works well for applications where the full
+        text is known upfront.
+
+        WebSocket streaming allows sending text chunks incrementally and receiving audio in
+        real time. This is essential for conversational AI where the LLM generates text token
+        by token. You can pipe LLM output directly into the WebSocket and get audio output
+        with minimal latency.
+
+        For optimal latency, use the Turbo v2.5 model with the WebSocket API. The
+        time-to-first-byte is typically under 300ms, enabling responsive voice interactions.
+
+        The flush mechanism allows you to signal the end of a text segment, ensuring the
+        model generates complete prosody for the final sentence rather than waiting for more
+        input. This is critical for natural-sounding conversational turns.
+      tags: ["streaming", "real-time", "websocket"]
+
+    - topic: "Pricing and Cost Optimization"
+      content: |
+        ElevenLabs pricing is primarily based on character count (number of characters
+        converted to speech):
+
+        Free tier: ~10,000 characters/month with limited voice options.
+        Starter: ~30,000 characters/month with voice cloning.
+        Creator: ~100,000 characters/month with professional voice cloning.
+        Scale and Enterprise: higher volumes with priority support and SLAs.
+
+        Cost optimization strategies:
+        1. Cache generated audio for repeated content instead of regenerating.
+        2. Use the appropriate model (Turbo for conversations, Multilingual for quality-critical content).
+        3. Preprocess text to remove unnecessary whitespace and formatting characters.
+        4. Use SSML-like pronunciation controls sparingly as they add character count.
+        5. For very high volumes, contact sales for custom enterprise pricing.
+
+        The Conversational AI product has separate usage-based pricing based on minutes
+        of conversation rather than character count.
+      tags: ["pricing", "cost", "optimization"]
+
+code_examples:
+  - title: "Basic Text-to-Speech"
+    language: "python"
+    code: |
+      from elevenlabs import ElevenLabs
+
+      client = ElevenLabs(api_key="your-api-key")
+
+      # Generate speech
+      audio = client.text_to_speech.convert(
+          voice_id="JBFqnCBsd6RMkjVDRZzb",
+          text="Hello, welcome to our AI platform.",
+          model_id="eleven_multilingual_v2",
+          output_format="mp3_44100_128"
+      )
+
+      # Save to file
+      with open("output.mp3", "wb") as f:
+          for chunk in audio:
+              f.write(chunk)
+
+  - title: "WebSocket Streaming with LLM"
+    language: "python"
+    code: |
+      import asyncio
+      from elevenlabs import ElevenLabs
+
+      client = ElevenLabs(api_key="your-api-key")
+
+      async def stream_tts(text_iterator):
+          """Stream LLM output directly to ElevenLabs for real-time audio."""
+          audio_stream = client.text_to_speech.convert_as_stream(
+              voice_id="JBFqnCBsd6RMkjVDRZzb",
+              model_id="eleven_turbo_v2_5",
+              text=text_iterator,
+              optimize_streaming_latency=3
+          )
+
+          async for audio_chunk in audio_stream:
+              # Play or forward audio chunk
+              yield audio_chunk
+
+  - title: "Voice Cloning"
+    language: "python"
+    code: |
+      from elevenlabs import ElevenLabs
+
+      client = ElevenLabs(api_key="your-api-key")
+
+      # Clone a voice from audio files
+      voice = client.clone(
+          name="My Custom Voice",
+          description="A warm, professional speaking voice",
+          files=["sample1.mp3", "sample2.mp3"]
+      )
+
+      # Use the cloned voice
+      audio = client.text_to_speech.convert(
+          voice_id=voice.voice_id,
+          text="This is my cloned voice speaking.",
+          model_id="eleven_multilingual_v2"
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "time_to_first_byte_turbo"
+      value: 280
+      unit: "ms"
+      context: "Turbo v2.5, WebSocket streaming"
+    - name: "time_to_first_byte_multilingual"
+      value: 550
+      unit: "ms"
+      context: "Multilingual v2, HTTP streaming"
+    - name: "mos_score_multilingual"
+      value: 4.5
+      unit: "MOS"
+      context: "Mean Opinion Score, English, Multilingual v2"
+    - name: "character_throughput"
+      value: 1200
+      unit: "chars/sec"
+      context: "Sustained throughput, Multilingual v2"
+
+relationships:
+  alternatives:
+    - slug: "whisper"
+      note: "Open-source speech-to-text (complementary rather than alternative for STT)"
+    - slug: "livekit"
+      note: "Real-time communication platform with voice AI capabilities"
+  complements:
+    - slug: "whisper"
+      role: "Provides speech-to-text input for conversational AI pipelines"
+    - slug: "openai"
+      role: "LLM backend for conversational AI agents using ElevenLabs voice"
+    - slug: "anthropic_claude"
+      role: "LLM backend for conversational AI agents"
+    - slug: "livekit"
+      role: "Real-time transport layer for voice AI applications"
+  typical_pipeline_position: "output_synthesis"
+  pipeline_predecessors: ["llm_generation", "text_processing"]
+  pipeline_successors: ["audio_delivery", "playback"]

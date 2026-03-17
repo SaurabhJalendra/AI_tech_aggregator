@@ -1,0 +1,435 @@
+meta:
+  slug: "openai"
+  name: "OpenAI GPT"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "cloud_api"
+  status: "stable"
+  last_updated: "2026-03-01"
+  maintainer: "system"
+
+identity:
+  tagline: "Industry-leading large language models powering the modern AI ecosystem"
+  description: |
+    OpenAI provides the GPT family of large language models, including GPT-4o, GPT-4.5,
+    and the reasoning-focused o1 and o3 series. These models are accessible via a REST API
+    and power a vast ecosystem of AI applications, from chatbots to code generation to
+    complex multi-step reasoning tasks.
+
+    The OpenAI API offers a unified interface for chat completions, embeddings, image
+    generation (DALL-E), text-to-speech, speech-to-text (Whisper), and fine-tuning.
+    Function calling (tool use) is a first-class feature, enabling structured agent
+    workflows where the model can invoke external tools and APIs.
+
+    OpenAI models consistently rank at or near the top of public benchmarks for general
+    reasoning, code generation, and instruction following. The trade-offs include higher
+    cost compared to open-source alternatives, lack of on-premises deployment options
+    (outside Azure OpenAI), and limited transparency into model weights and training data.
+  logo_url: "/assets/modules/openai.svg"
+  website: "https://openai.com"
+  documentation: "https://platform.openai.com/docs"
+  github: "https://github.com/openai/openai-python"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Conversational AI and chatbots"
+    - "Code generation and debugging"
+    - "Text summarization and analysis"
+    - "Complex multi-step reasoning"
+    - "Function calling and agent workflows"
+    - "Content generation and creative writing"
+  supported_operations:
+    - "chat_completions"
+    - "completions"
+    - "embeddings"
+    - "fine_tuning"
+    - "function_calling"
+    - "structured_output"
+    - "vision"
+    - "audio_transcription"
+    - "audio_generation"
+    - "image_generation"
+    - "batch_api"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "semantic_kernel"
+      type: "native"
+    - slug: "autogen"
+      type: "native"
+    - slug: "vercel_ai_sdk"
+      type: "native"
+
+technical_specs:
+  models:
+    - name: "gpt-4o"
+      context_window: 128000
+      max_output_tokens: 16384
+      training_cutoff: "2025-10"
+      modalities: ["text", "image", "audio"]
+    - name: "gpt-4.5-preview"
+      context_window: 128000
+      max_output_tokens: 16384
+      training_cutoff: "2025-10"
+      modalities: ["text", "image"]
+    - name: "o3"
+      context_window: 200000
+      max_output_tokens: 100000
+      training_cutoff: "2025-10"
+      modalities: ["text", "image"]
+    - name: "o3-mini"
+      context_window: 200000
+      max_output_tokens: 100000
+      training_cutoff: "2025-10"
+      modalities: ["text"]
+    - name: "gpt-4o-mini"
+      context_window: 128000
+      max_output_tokens: 16384
+      training_cutoff: "2025-10"
+      modalities: ["text", "image"]
+  function_calling: true
+  structured_output: true
+  streaming: true
+  json_mode: true
+  fine_tuning_supported: true
+  batch_api: true
+  rate_limits_vary_by_tier: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "dotnet"
+    - "java"
+    - "go"
+  hosted_regions:
+    - "US"
+    - "EU (via Azure OpenAI)"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "GPT-4o and o3 consistently rank at or near the top on major benchmarks (MMLU, HumanEval, GPQA). Strong across reasoning, code, and creative tasks."
+  scalability:
+    score: 9
+    justification: "Fully managed API scales automatically. Batch API available for high-volume offline workloads. Tiered rate limits scale with usage history."
+  ease_of_use:
+    score: 9
+    justification: "Excellent documentation, mature SDKs in all major languages, and the largest ecosystem of tutorials, examples, and third-party integrations."
+  cost_efficiency:
+    score: 5
+    justification: "Premium pricing for frontier models. GPT-4o is $2.50/$10 per 1M input/output tokens. gpt-4o-mini at $0.15/$0.60 is competitive for simpler tasks."
+  community:
+    score: 10
+    justification: "The largest developer community in generative AI. Extensive third-party tooling, tutorials, and integrations. De facto standard API format adopted by competitors."
+  maturity:
+    score: 10
+    justification: "Production-proven since 2020 (GPT-3). Enterprise customers across every industry. SOC2, HIPAA-eligible, and GDPR-compliant options available."
+  flexibility:
+    score: 5
+    justification: "Cloud-only API with no self-hosting option. Fine-tuning available but limited to specific models. No access to model weights."
+  data_privacy:
+    score: 6
+    justification: "API data is not used for training by default. Zero data retention option available. No self-hosted deployment (except via Azure OpenAI with additional controls)."
+
+knowledge:
+  entries:
+    - topic: "Model Selection Guide"
+      content: |
+        Choosing the right OpenAI model depends on your task complexity, latency requirements,
+        and budget:
+
+        GPT-4o: The flagship multimodal model. Best balance of intelligence and speed for
+        most production applications. Handles text, images, and audio natively. Use this
+        as your default for complex tasks requiring high quality.
+
+        GPT-4o-mini: A smaller, faster, and much cheaper model. Excellent for classification,
+        extraction, simple Q&A, and high-volume tasks where GPT-4o is overkill. At $0.15/1M
+        input tokens, it is 16x cheaper than GPT-4o.
+
+        o3 / o3-mini: Reasoning-focused models that use chain-of-thought before responding.
+        Best for math, science, coding competitions, and complex multi-step logic problems.
+        Higher latency due to internal reasoning. o3-mini is significantly cheaper while
+        retaining strong reasoning ability.
+
+        GPT-4.5-preview: The largest dense model with enhanced emotional intelligence and
+        reduced hallucination rates. Best for nuanced writing, complex creative tasks, and
+        situations where factual accuracy is critical.
+
+        General rule: Start with gpt-4o-mini, upgrade to gpt-4o if quality is insufficient,
+        and use o3-mini/o3 only for tasks requiring deep reasoning.
+      tags: ["model-selection", "decision", "comparison"]
+
+    - topic: "Function Calling and Tool Use"
+      content: |
+        OpenAI's function calling feature allows models to generate structured JSON arguments
+        for functions you define. This is the foundation of agent-based architectures where
+        the LLM acts as a controller, deciding which tools to invoke and with what parameters.
+
+        How it works: You define functions in the tools parameter of a chat completion request.
+        Each function has a name, description, and a JSON Schema for its parameters. The model
+        decides when to call a function and returns a tool_calls message with the function name
+        and arguments. Your application executes the function and returns the result, which
+        the model uses to continue the conversation.
+
+        Parallel function calling: GPT-4o can request multiple function calls in a single
+        response, enabling efficient multi-tool workflows. For example, it might simultaneously
+        request a database query and a web search.
+
+        Structured outputs: Setting strict: true on function definitions guarantees the model
+        output will exactly match your JSON Schema, eliminating parsing errors. This is critical
+        for production systems where malformed JSON would cause failures.
+
+        Best practices: (1) Write clear function descriptions - the model uses these to decide
+        when to call each function. (2) Use enums in your schema to constrain valid values.
+        (3) Keep the number of functions under 20 for best accuracy. (4) Use structured outputs
+        for any function where schema compliance is critical.
+      tags: ["function-calling", "agents", "tools"]
+
+    - topic: "Cost Optimization Strategies"
+      content: |
+        OpenAI API costs can escalate quickly in production. Key strategies to control spend:
+
+        1. Model tiering: Route simple tasks (classification, extraction) to gpt-4o-mini
+        ($0.15/$0.60 per 1M tokens) and reserve gpt-4o ($2.50/$10) for complex tasks. A
+        routing classifier can reduce costs by 60-80%.
+
+        2. Prompt caching: OpenAI automatically caches the longest prefix of prompts that
+        remains identical across requests, giving a 50% discount on cached input tokens.
+        Structure prompts with static system instructions first and variable content last.
+
+        3. Batch API: For non-real-time workloads, the Batch API offers a 50% discount with
+        24-hour turnaround. Ideal for bulk classification, embedding generation, and data
+        processing pipelines.
+
+        4. Context management: Trim conversation history aggressively. Summarize earlier
+        turns rather than including full history. Each token in the context window costs money
+        on every request.
+
+        5. Max tokens: Always set max_tokens to a reasonable limit. Without it, the model may
+        generate unnecessarily long responses.
+
+        6. Fine-tuning: For repetitive tasks with consistent patterns, a fine-tuned
+        gpt-4o-mini can match gpt-4o quality at a fraction of the cost, with shorter prompts.
+      tags: ["cost", "optimization", "pricing"]
+
+    - topic: "Structured Output and JSON Mode"
+      content: |
+        OpenAI offers two levels of structured output control:
+
+        JSON mode: Setting response_format to {"type": "json_object"} ensures the model
+        returns valid JSON. However, the structure is not guaranteed to match a specific
+        schema. You must describe the desired structure in your prompt.
+
+        Structured outputs: Available in function calling with strict: true and in
+        response_format with {"type": "json_schema", "json_schema": {...}}. The model is
+        constrained to output JSON that exactly matches your provided JSON Schema. This uses
+        constrained decoding at the token level, so schema compliance is guaranteed, not
+        just likely.
+
+        Structured outputs support most JSON Schema features including nested objects, arrays,
+        enums, optional fields (via anyOf with null), and recursive schemas. Limitations
+        include no support for arbitrary additional properties and maximum schema depth of 5
+        levels for recursive schemas.
+
+        When to use which: Use structured outputs (strict mode) for any production system
+        where you parse the output programmatically. Use JSON mode only for flexible
+        exploration or when your desired format cannot be expressed in JSON Schema.
+      tags: ["structured-output", "json", "reliability"]
+
+    - topic: "When to Choose OpenAI vs Alternatives"
+      content: |
+        Choose OpenAI when:
+        - You need the highest general-purpose quality across diverse tasks
+        - Your team values ecosystem maturity and community support
+        - You need a unified API for text, vision, audio, and embeddings
+        - Time-to-market is critical and you want well-documented, battle-tested SDKs
+        - You need enterprise compliance features (SOC2, HIPAA)
+
+        Consider Anthropic Claude when:
+        - You need very long context processing (200K tokens)
+        - Safety and steerability are top priorities
+        - You prefer a model with more nuanced refusal behavior
+        - You need strong performance on analysis and writing tasks
+
+        Consider Google Gemini when:
+        - You need the longest context windows (up to 2M tokens)
+        - You are in the Google Cloud ecosystem
+        - You need native multimodal capabilities at lower cost
+        - Grounding with Google Search is valuable for your use case
+
+        Consider Ollama / local models when:
+        - Data must never leave your infrastructure
+        - You need zero-latency inference without network calls
+        - Cost predictability is more important than peak quality
+        - You are running inference at the edge or on-device
+      tags: ["decision", "comparison"]
+
+    - topic: "Rate Limits and Production Considerations"
+      content: |
+        OpenAI uses a tiered rate limit system based on your usage history and spend. New
+        accounts start at Tier 1 with relatively low limits. As you spend more, you
+        automatically advance to higher tiers with increased limits.
+
+        Rate limits are applied per-model and per-minute for both requests per minute (RPM)
+        and tokens per minute (TPM). Tier 5 (highest) allows up to 10,000 RPM and 30M TPM
+        for GPT-4o.
+
+        Production best practices:
+        1. Implement exponential backoff with jitter for 429 (rate limit) errors.
+        2. Use the x-ratelimit-* response headers to monitor remaining capacity.
+        3. Queue requests and process them at a steady rate below your limit.
+        4. For burst traffic, use the Batch API for deferrable work.
+        5. Request a rate limit increase through the OpenAI dashboard if needed.
+        6. Consider Azure OpenAI for provisioned throughput with guaranteed capacity.
+
+        Latency considerations: GPT-4o typically responds in 500ms-2s for standard prompts.
+        Streaming (stream: true) delivers the first token in 200-400ms. o3 models are
+        significantly slower (5-60s) due to internal reasoning.
+      tags: ["production", "rate-limits", "latency"]
+
+code_examples:
+  - title: "Basic Chat Completion"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()  # Uses OPENAI_API_KEY env var
+
+      response = client.chat.completions.create(
+          model="gpt-4o",
+          messages=[
+              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "user", "content": "Explain RAG in 3 sentences."}
+          ],
+          temperature=0.7,
+          max_tokens=500
+      )
+
+      print(response.choices[0].message.content)
+
+  - title: "Function Calling with Tools"
+    language: "python"
+    code: |
+      from openai import OpenAI
+      import json
+
+      client = OpenAI()
+
+      tools = [
+          {
+              "type": "function",
+              "function": {
+                  "name": "search_knowledge_base",
+                  "description": "Search the internal knowledge base for relevant documents",
+                  "strict": True,
+                  "parameters": {
+                      "type": "object",
+                      "required": ["query", "top_k"],
+                      "properties": {
+                          "query": {"type": "string", "description": "Search query"},
+                          "top_k": {"type": "integer", "description": "Number of results"}
+                      },
+                      "additionalProperties": False
+                  }
+              }
+          }
+      ]
+
+      response = client.chat.completions.create(
+          model="gpt-4o",
+          messages=[{"role": "user", "content": "Find docs about deployment best practices"}],
+          tools=tools,
+          tool_choice="auto"
+      )
+
+      # Handle tool calls
+      if response.choices[0].message.tool_calls:
+          for tool_call in response.choices[0].message.tool_calls:
+              args = json.loads(tool_call.function.arguments)
+              print(f"Call {tool_call.function.name} with {args}")
+
+  - title: "Streaming with Structured Output"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()
+
+      schema = {
+          "type": "object",
+          "properties": {
+              "summary": {"type": "string"},
+              "key_points": {"type": "array", "items": {"type": "string"}},
+              "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]}
+          },
+          "required": ["summary", "key_points", "sentiment"],
+          "additionalProperties": False
+      }
+
+      response = client.chat.completions.create(
+          model="gpt-4o",
+          messages=[
+              {"role": "system", "content": "Analyze the provided text."},
+              {"role": "user", "content": "OpenAI just launched GPT-4o with native audio..."}
+          ],
+          response_format={
+              "type": "json_schema",
+              "json_schema": {"name": "analysis", "strict": True, "schema": schema}
+          }
+      )
+
+      import json
+      result = json.loads(response.choices[0].message.content)
+      print(result["summary"])
+
+benchmarks:
+  last_run: "2026-02-25"
+  results:
+    - name: "mmlu_pro"
+      value: 78.4
+      unit: "percent"
+      context: "GPT-4o on MMLU-Pro benchmark"
+    - name: "humaneval"
+      value: 90.2
+      unit: "percent"
+      context: "GPT-4o pass@1 on HumanEval coding benchmark"
+    - name: "gpqa_diamond"
+      value: 79.3
+      unit: "percent"
+      context: "o3 on GPQA Diamond graduate-level reasoning"
+    - name: "latency_first_token_p50"
+      value: 320
+      unit: "ms"
+      context: "GPT-4o streaming, short prompt"
+    - name: "latency_full_response_p50"
+      value: 1200
+      unit: "ms"
+      context: "GPT-4o, ~200 output tokens"
+    - name: "throughput_output_tokens"
+      value: 110
+      unit: "tokens/sec"
+      context: "GPT-4o streaming output speed"
+
+relationships:
+  alternatives:
+    - slug: "anthropic_claude"
+      note: "Strong competitor with longer context and emphasis on safety and steerability"
+    - slug: "google_gemini"
+      note: "Google's multimodal model family with very large context windows"
+    - slug: "ollama"
+      note: "Local LLM runner for self-hosted open-weight models"
+    - slug: "mistral"
+      note: "European AI lab offering competitive models with open-weight options"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for storing embeddings generated by OpenAI models"
+    - slug: "langchain"
+      role: "Orchestration framework with deep OpenAI integration"
+    - slug: "llamaindex"
+      role: "Data framework for building RAG pipelines with OpenAI models"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation", "caching"]

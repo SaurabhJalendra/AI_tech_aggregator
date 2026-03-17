@@ -1,0 +1,348 @@
+meta:
+  slug: "graph_rag"
+  name: "GraphRAG"
+  version: "1.0.0"
+  category: "rag_architectures"
+  subcategory: "knowledge_graph"
+  status: "emerging"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Knowledge graph-enhanced RAG for complex reasoning over structured relationships"
+  description: |
+    GraphRAG is an advanced RAG architecture that combines knowledge graphs with traditional
+    vector retrieval to enable complex reasoning over structured relationships between entities.
+    Instead of treating documents as isolated chunks, GraphRAG builds a graph of entities and
+    their relationships, allowing the system to traverse connections, answer multi-hop questions,
+    and provide more comprehensive answers.
+
+    Microsoft Research's GraphRAG implementation (open-sourced in 2024) introduced a two-level
+    approach: local search for specific entity-centric queries and global search for
+    corpus-wide summarization queries. The system uses LLMs to extract entities and relationships
+    from source documents, builds a knowledge graph, creates hierarchical community summaries,
+    and uses this structured representation for retrieval.
+
+    GraphRAG excels at questions that require understanding relationships between concepts,
+    such as "How are these technologies related?", "What are the downstream effects of X?",
+    or "Summarize the main themes across all documents." These queries are poorly served by
+    traditional chunk-based vector retrieval.
+
+    The approach has gained significant traction in enterprise applications where documents
+    describe complex systems, organizational structures, or interconnected processes. The
+    trade-off is higher indexing cost (multiple LLM calls per document) and more complex
+    infrastructure compared to standard RAG.
+  logo_url: "/assets/modules/graph_rag.svg"
+  website: "https://microsoft.github.io/graphrag/"
+  documentation: "https://microsoft.github.io/graphrag/get_started/"
+  github: "https://github.com/microsoft/graphrag"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Multi-hop question answering over complex document sets"
+    - "Corpus-wide summarization and theme extraction"
+    - "Relationship discovery between entities"
+    - "Enterprise knowledge management"
+    - "Research literature analysis"
+    - "Regulatory and compliance document analysis"
+  supported_operations:
+    - "entity_extraction"
+    - "relationship_extraction"
+    - "community_detection"
+    - "local_search"
+    - "global_search"
+    - "graph_traversal"
+    - "community_summarization"
+  integrations:
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai"
+      type: "compatible"
+    - slug: "anthropic_claude"
+      type: "compatible"
+
+technical_specs:
+  graph_databases:
+    - "Neo4j"
+    - "NetworkX (in-memory)"
+    - "Kuzu"
+    - "FalkorDB"
+    - "Amazon Neptune"
+  entity_extraction_methods:
+    - "LLM-based extraction (GPT-4, Claude)"
+    - "NER models (spaCy, Hugging Face)"
+    - "Custom extraction prompts"
+  community_detection_algorithms:
+    - "Leiden algorithm"
+    - "Louvain algorithm"
+  search_modes:
+    - name: "Local Search"
+      description: "Entity-centric search using graph neighborhood and related text chunks"
+      best_for: "Specific questions about entities and their relationships"
+    - name: "Global Search"
+      description: "Uses community summaries for corpus-wide questions"
+      best_for: "Summarization, theme extraction, broad questions"
+  indexing_cost: "High (multiple LLM calls per document for entity/relationship extraction)"
+  typical_graph_size: "1K-1M entities, 10K-10M relationships"
+  requires_llm_for_indexing: true
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Significantly outperforms standard RAG on multi-hop and summarization queries. Microsoft research showed 20-70% improvement on comprehensiveness for global queries."
+  scalability:
+    score: 5
+    justification: "High indexing cost limits scalability for large corpora. Graph storage and traversal add complexity. Community summarization helps manage scale."
+  ease_of_use:
+    score: 4
+    justification: "Requires understanding of graph databases, entity extraction, and community detection. More complex setup than standard RAG."
+  cost_efficiency:
+    score: 4
+    justification: "Indexing cost is 10-50x standard RAG due to LLM-based entity extraction. Query-time costs are modest but infrastructure is more complex."
+  community:
+    score: 7
+    justification: "Strong interest from research and enterprise communities. Microsoft's open-source release sparked significant adoption and variant implementations."
+  maturity:
+    score: 5
+    justification: "Microsoft GraphRAG released in 2024. Concept is proven but production best practices are still emerging."
+  flexibility:
+    score: 7
+    justification: "Works with any LLM for extraction and generation. Supports multiple graph databases. Custom entity types and relationship schemas."
+  data_privacy:
+    score: 6
+    justification: "Can self-host the graph database and extraction pipeline. However, LLM-based extraction may send document content to external APIs."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        GraphRAG operates in two phases: indexing and querying.
+
+        Indexing Phase:
+        1. Document chunking: Source documents are split into manageable text chunks.
+        2. Entity and relationship extraction: An LLM processes each chunk to identify entities
+           (people, organizations, technologies, concepts) and relationships between them.
+        3. Graph construction: Entities become nodes, relationships become edges, forming a
+           knowledge graph. Entity descriptions are merged across chunks.
+        4. Community detection: The Leiden algorithm partitions the graph into hierarchical
+           communities of related entities.
+        5. Community summarization: An LLM generates summaries for each community at multiple
+           hierarchy levels, capturing the key themes and relationships.
+
+        Query Phase (Local Search):
+        - Identifies relevant entities in the query
+        - Retrieves the entity's graph neighborhood (connected entities, relationships)
+        - Fetches associated text chunks
+        - Combines graph context with text chunks for LLM generation
+
+        Query Phase (Global Search):
+        - Uses pre-computed community summaries
+        - Maps the query to relevant communities across hierarchy levels
+        - Aggregates community summaries for comprehensive corpus-wide answers
+      tags: ["architecture", "indexing", "querying"]
+
+    - topic: "When to Use GraphRAG"
+      content: |
+        GraphRAG is the right choice when:
+
+        1. Multi-hop reasoning is required. Questions like "Which companies that use Kubernetes
+        also have partnerships with cloud providers mentioned in our security reports?" require
+        traversing entity relationships that span multiple documents.
+
+        2. Corpus-wide summarization is needed. "What are the top 5 themes across all our
+        customer feedback?" requires understanding the entire document set, not just retrieving
+        relevant chunks.
+
+        3. Entity relationships are central to the domain. Legal contracts, organizational
+        hierarchies, research citation networks, and technical dependency graphs all benefit
+        from explicit relationship modeling.
+
+        4. Standard RAG produces fragmented or incomplete answers. If users report that
+        answers miss connections between concepts or lack context about relationships,
+        GraphRAG can fill these gaps.
+
+        GraphRAG is NOT the right choice when:
+        - Queries are simple and fact-based (standard RAG is sufficient and much cheaper)
+        - The corpus is small (under 100 documents) - manual graph construction may suffice
+        - Real-time indexing is required (GraphRAG indexing is batch-oriented and expensive)
+        - Budget is limited - indexing costs are 10-50x standard RAG
+      tags: ["decision", "when-to-use"]
+
+    - topic: "Microsoft GraphRAG Implementation"
+      content: |
+        Microsoft's open-source GraphRAG implementation provides a complete pipeline:
+
+        Configuration: A settings.yaml file defines the LLM provider, embedding model,
+        chunking strategy, entity extraction prompts, and graph storage backend.
+
+        Indexing: The `graphrag index` CLI command processes a directory of documents through
+        the full pipeline: chunking, entity extraction, graph construction, community
+        detection, and summarization. Progress is logged and intermediate outputs are saved.
+
+        Querying: The `graphrag query` CLI supports both local and global search modes.
+        Local search retrieves entity neighborhoods and associated text. Global search uses
+        community summaries to answer broad questions.
+
+        Customization: Entity extraction prompts can be customized for specific domains.
+        Custom entity types (beyond the default person/organization/location/event) can be
+        defined. Graph storage can use NetworkX (default) or Neo4j.
+
+        Cost considerations: For a 1000-page corpus, expect 50K-200K LLM input tokens for
+        entity extraction and 10K-50K tokens for community summarization. At GPT-4o pricing,
+        this translates to approximately $5-20 for initial indexing.
+      tags: ["microsoft", "implementation", "setup"]
+
+    - topic: "Alternatives and Variants"
+      content: |
+        Several GraphRAG variants and alternatives have emerged:
+
+        LlamaIndex Knowledge Graph Index: Integrates knowledge graph construction and querying
+        into the LlamaIndex framework. Supports Neo4j, Kuzu, and FalkorDB as graph backends.
+        Simpler setup than Microsoft GraphRAG but less sophisticated community detection.
+
+        Neo4j GraphRAG: Neo4j's official Python package for building GraphRAG applications.
+        Leverages Neo4j's native graph capabilities and Cypher query language. Best for teams
+        already using Neo4j.
+
+        LightRAG: A lightweight alternative that uses a simpler entity-relationship extraction
+        approach with lower indexing costs. Trades some of GraphRAG's comprehensiveness for
+        efficiency.
+
+        HippoRAG: Research approach that mimics hippocampal memory indexing, using a knowledge
+        graph as a long-term memory store with a retrieval model inspired by neuroscience.
+
+        Hybrid approaches combining standard vector RAG with graph-based retrieval are
+        increasingly common, using the graph for relationship queries and vectors for
+        content-similarity queries.
+      tags: ["alternatives", "variants", "comparison"]
+
+code_examples:
+  - title: "Microsoft GraphRAG Indexing"
+    language: "python"
+    code: |
+      # Initialize and run GraphRAG indexing pipeline
+      import asyncio
+      from graphrag.index import run_pipeline_with_config
+      from graphrag.config import create_graphrag_config
+
+      # Configure from settings file
+      config = create_graphrag_config(root_dir="./ragtest")
+
+      # Run indexing (processes documents, extracts entities,
+      # builds graph, detects communities, generates summaries)
+      asyncio.run(run_pipeline_with_config(config))
+
+      # Or use CLI:
+      # graphrag index --root ./ragtest
+
+  - title: "Microsoft GraphRAG Querying"
+    language: "python"
+    code: |
+      import asyncio
+      from graphrag.query.structured_search.local_search import LocalSearch
+      from graphrag.query.structured_search.global_search import GlobalSearch
+
+      # Local search - entity-centric queries
+      local_search = LocalSearch(
+          llm=llm,
+          context_builder=local_context_builder,
+          token_limit=12000
+      )
+      local_result = await local_search.asearch(
+          "What are Pinecone's key technical advantages?"
+      )
+
+      # Global search - corpus-wide queries
+      global_search = GlobalSearch(
+          llm=llm,
+          context_builder=global_context_builder,
+          token_limit=12000
+      )
+      global_result = await global_search.asearch(
+          "What are the main themes across all infrastructure documents?"
+      )
+
+  - title: "LlamaIndex Knowledge Graph RAG"
+    language: "python"
+    code: |
+      from llama_index.core import KnowledgeGraphIndex, SimpleDirectoryReader
+      from llama_index.graph_stores.neo4j import Neo4jGraphStore
+      from llama_index.core import StorageContext
+
+      # Set up Neo4j graph store
+      graph_store = Neo4jGraphStore(
+          username="neo4j",
+          password="password",
+          url="bolt://localhost:7687",
+          database="neo4j"
+      )
+      storage_context = StorageContext.from_defaults(graph_store=graph_store)
+
+      # Load documents and build knowledge graph
+      documents = SimpleDirectoryReader("./data").load_data()
+      kg_index = KnowledgeGraphIndex.from_documents(
+          documents,
+          storage_context=storage_context,
+          max_triplets_per_chunk=10,
+          include_embeddings=True
+      )
+
+      # Query with graph-enhanced retrieval
+      query_engine = kg_index.as_query_engine(
+          include_text=True,
+          response_mode="tree_summarize"
+      )
+      response = query_engine.query(
+          "How are the vector databases related to embedding models?"
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "comprehensiveness_improvement"
+      value: 45
+      unit: "percent"
+      context: "GraphRAG global search vs standard RAG on summarization queries"
+    - name: "multi_hop_accuracy"
+      value: 72
+      unit: "percent"
+      context: "GraphRAG local search on multi-hop questions, HotpotQA subset"
+    - name: "standard_rag_multi_hop"
+      value: 48
+      unit: "percent"
+      context: "Standard vector RAG on same multi-hop questions for comparison"
+    - name: "indexing_cost_per_1k_pages"
+      value: 12
+      unit: "USD"
+      context: "GPT-4o-based entity extraction for 1000 pages"
+    - name: "query_latency_local"
+      value: 2500
+      unit: "ms"
+      context: "Local search including graph traversal and LLM generation"
+    - name: "query_latency_global"
+      value: 4000
+      unit: "ms"
+      context: "Global search with community summary aggregation"
+
+relationships:
+  alternatives:
+    - slug: "rag_architectures"
+      note: "Standard RAG is simpler and cheaper; sufficient for single-hop factual queries"
+    - slug: "agentic_rag"
+      note: "Agentic RAG uses agent-driven retrieval rather than graph-based reasoning"
+  complements:
+    - slug: "pinecone"
+      role: "Vector store for the text chunk retrieval component of GraphRAG"
+    - slug: "langchain"
+      role: "Orchestration framework for building custom GraphRAG pipelines"
+    - slug: "llamaindex"
+      role: "Framework with native KnowledgeGraphIndex support"
+    - slug: "openai"
+      role: "LLM for entity extraction and answer generation"
+  typical_pipeline_position: "rag_architecture"
+  pipeline_predecessors: ["data_ingestion", "chunking", "embeddings"]
+  pipeline_successors: ["llm_generation"]

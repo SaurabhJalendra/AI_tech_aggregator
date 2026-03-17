@@ -1,0 +1,377 @@
+meta:
+  slug: "nemo_guardrails"
+  name: "NVIDIA NeMo Guardrails"
+  version: "1.0.0"
+  category: "security_compliance"
+  subcategory: "llm_safety"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source toolkit for adding programmable safety guardrails to LLM-powered applications"
+  description: |
+    NVIDIA NeMo Guardrails is an open-source toolkit for adding programmable guardrails to
+    large language model applications. It allows developers to define rules and constraints
+    that control the behavior of LLM-powered systems, preventing harmful outputs, enforcing
+    topic boundaries, ensuring factual accuracy, and maintaining compliance with organizational
+    policies.
+
+    NeMo Guardrails uses a domain-specific language called Colang to define conversational
+    flows and safety rules. These rules are enforced at runtime through a combination of
+    LLM-based evaluation, embedding-based classification, and programmable actions. The system
+    intercepts both user inputs and LLM outputs, applying checks before the response reaches
+    the user.
+
+    The toolkit supports multiple guardrail types: input rails (filtering harmful or off-topic
+    user inputs), output rails (checking LLM responses for safety, accuracy, and policy
+    compliance), retrieval rails (validating retrieved context in RAG systems), and dialog
+    rails (ensuring conversations follow defined flows). It integrates with any LLM provider
+    and can be added to existing applications with minimal code changes.
+  logo_url: "/assets/modules/nemo_guardrails.svg"
+  website: "https://github.com/NVIDIA/NeMo-Guardrails"
+  documentation: "https://docs.nvidia.com/nemo/guardrails/"
+  github: "https://github.com/NVIDIA/NeMo-Guardrails"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Preventing harmful or toxic LLM outputs"
+    - "Enforcing topic boundaries for AI assistants"
+    - "Fact-checking and hallucination mitigation"
+    - "PII detection and redaction"
+    - "Jailbreak and prompt injection prevention"
+    - "Compliance enforcement for regulated industries"
+    - "RAG retrieval quality validation"
+  supported_operations:
+    - "input_rail"
+    - "output_rail"
+    - "retrieval_rail"
+    - "dialog_rail"
+    - "fact_checking"
+    - "hallucination_detection"
+    - "topic_control"
+    - "moderation"
+    - "pii_detection"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "compatible"
+
+technical_specs:
+  colang_version: "2.0"
+  supported_llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "NVIDIA NIM"
+    - "HuggingFace"
+    - "Any OpenAI-compatible API"
+  rail_types:
+    - "input"
+    - "output"
+    - "retrieval"
+    - "dialog"
+  built_in_rails:
+    - "content_safety"
+    - "jailbreak_detection"
+    - "hallucination_check"
+    - "pii_detection"
+    - "topic_control"
+    - "fact_checking"
+  deployment_modes:
+    - "library (in-process)"
+    - "server (standalone)"
+  async_support: true
+  streaming_support: true
+  python_version_required: "3.8+"
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Guardrails add latency (50-500ms per rail depending on type). LLM-based rails are slower than embedding-based ones. Careful rail selection is needed for real-time applications."
+  scalability:
+    score: 7
+    justification: "Stateless design scales horizontally. Server mode supports multiple concurrent requests. Latency overhead is per-request, not per-user."
+  ease_of_use:
+    score: 7
+    justification: "Colang DSL has a learning curve but is well-documented. Built-in rails cover common cases. Custom rails require understanding of the execution model."
+  cost_efficiency:
+    score: 8
+    justification: "Open-source with Apache-2.0 license. Main cost is additional LLM calls for LLM-based rails. Embedding-based rails are very cost-efficient."
+  community:
+    score: 7
+    justification: "Active open-source community with NVIDIA backing. Growing ecosystem of shared rail definitions. Regular releases and improvements."
+  maturity:
+    score: 7
+    justification: "Version 2.0 with Colang 2.0 represents a significant maturation. Production usage at multiple enterprises. API surface is stabilizing."
+  flexibility:
+    score: 9
+    justification: "Highly customizable through Colang flows and Python actions. Works with any LLM provider. Modular rail system allows mixing built-in and custom rails."
+  data_privacy:
+    score: 9
+    justification: "Self-hosted, open-source. No data leaves your infrastructure. PII detection rails help enforce data privacy policies. Can use local models for rail evaluation."
+
+knowledge:
+  entries:
+    - topic: "Guardrails Architecture"
+      content: |
+        NeMo Guardrails operates as a middleware layer between the user and the LLM. The
+        execution flow is:
+
+        1. User Input -> Input Rails: Check the user's message for safety, relevance, and
+        policy compliance before it reaches the LLM. This prevents prompt injection,
+        jailbreak attempts, and off-topic requests.
+
+        2. Input Rails -> Dialog Rails: If the input passes, dialog rails determine the
+        conversational flow. Colang defines allowed conversation patterns, canonical forms
+        for user intents, and bot response templates.
+
+        3. Dialog Rails -> LLM Generation: The LLM generates a response based on the
+        conversation context, guided by the dialog rails and any retrieved context.
+
+        4. LLM Output -> Output Rails: Check the generated response for safety, accuracy,
+        and policy compliance. This includes hallucination detection, factual consistency
+        checks, and content moderation.
+
+        5. Output Rails -> User: Only responses that pass all output rails are delivered
+        to the user. Failed responses trigger fallback behaviors defined in Colang.
+
+        For RAG applications, retrieval rails sit between the retrieval step and LLM
+        generation, validating that retrieved context is relevant and appropriate.
+      tags: ["architecture", "execution-flow"]
+
+    - topic: "Colang 2.0 Language"
+      content: |
+        Colang 2.0 is the domain-specific language used to define guardrails. It provides
+        a Python-like syntax for defining conversational flows and safety rules:
+
+        Flows define the expected structure of conversations. A flow specifies a sequence of
+        user intents and bot responses, with branching logic for different scenarios.
+
+        User canonical forms define how diverse user inputs map to canonical intents. For
+        example, "I want to buy something", "show me products", and "what do you sell" can
+        all map to the canonical form "user asks about products".
+
+        Bot canonical forms define the expected bot responses for each intent. These can be
+        templates filled by the LLM or exact text for safety-critical responses.
+
+        Guardrail decorators (@meta(allow/deny)) and flow control statements allow fine-grained
+        control over what conversations are allowed.
+
+        Colang 2.0 improvements over 1.0 include: multi-modal support, improved flow control,
+        better integration with Python actions, and more expressive pattern matching.
+      tags: ["colang", "language", "configuration"]
+
+    - topic: "When to Choose NeMo Guardrails"
+      content: |
+        NeMo Guardrails is the right choice when:
+
+        1. You need programmable, deterministic safety controls. Unlike relying solely on
+        the LLM's training to avoid harmful outputs, guardrails provide explicit rules
+        that are enforced consistently.
+
+        2. Regulatory compliance requires documented safety controls. Guardrails provide
+        an auditable layer that demonstrates what controls are in place and how they operate.
+
+        3. You're building a customer-facing LLM application. The reputational risk of
+        harmful or off-topic outputs justifies the additional latency and complexity.
+
+        4. You need topic control. Ensuring an AI assistant stays on-topic (e.g., only
+        answering questions about your product) is a core use case.
+
+        5. You need a self-hosted solution. The open-source nature means full control
+        over the guardrails infrastructure and no external dependencies.
+
+        NeMo Guardrails may NOT be the right choice when: latency is extremely critical
+        and any additional overhead is unacceptable, you have a simple chatbot that doesn't
+        need safety controls, or you prefer a managed guardrails service (consider
+        Guardrails AI or Azure Content Safety).
+      tags: ["decision", "comparison"]
+
+    - topic: "Integration with RAG Pipelines"
+      content: |
+        NeMo Guardrails provides specific support for RAG applications through retrieval rails:
+
+        1. Context Relevance Check: After retrieval, verify that the retrieved documents are
+        actually relevant to the user's query. Irrelevant context can lead to hallucinations.
+
+        2. Factual Grounding: Output rails can check that the LLM's response is grounded in
+        the retrieved context, flagging responses that introduce information not present
+        in the source documents.
+
+        3. Source Attribution: Rails can enforce that responses include proper citations to
+        source documents, enabling users to verify claims.
+
+        4. Sensitive Content Filtering: Retrieval rails can filter out documents containing
+        sensitive information that should not be exposed to certain users, adding an
+        access control layer to RAG.
+
+        Integration with LangChain is straightforward: wrap your existing LangChain chain
+        with NeMo Guardrails using the RunnableRails wrapper. This adds guardrails to any
+        LangChain pipeline without restructuring the code.
+
+        For production RAG systems, the combination of retrieval rails (context quality),
+        output rails (response quality), and input rails (query safety) provides comprehensive
+        protection across the entire RAG pipeline.
+      tags: ["rag", "integration", "retrieval"]
+
+code_examples:
+  - title: "Basic Guardrails Configuration"
+    language: "yaml"
+    code: |
+      # config.yml - NeMo Guardrails configuration
+      models:
+        - type: main
+          engine: openai
+          model: gpt-4o
+
+      rails:
+        input:
+          flows:
+            - self check input
+        output:
+          flows:
+            - self check output
+
+      instructions:
+        - type: general
+          content: |
+            You are a helpful customer support assistant for TechCorp.
+            You only answer questions about TechCorp products and services.
+            You do not provide medical, legal, or financial advice.
+
+  - title: "Colang 2.0 Guardrail Flows"
+    language: "python"
+    code: |
+      # rails.co - Colang 2.0 guardrail definitions
+
+      # Define user intents
+      flow user asks about products
+        user said "what products do you offer"
+          or user said "tell me about your services"
+          or user said "what do you sell"
+
+      flow user asks off topic
+        user said "what is the meaning of life"
+          or user said "write me a poem"
+          or user said "help me with my homework"
+
+      # Define bot responses
+      flow bot responds to off topic
+        bot say "I can only help with TechCorp products and services. Is there something specific about our products I can help with?"
+
+      # Define guardrail: block off-topic requests
+      flow handle off topic
+        user asks off topic
+        bot responds to off topic
+
+      # Define guardrail: check output for harmful content
+      flow self check output
+        $result = execute output_moderation_check
+        if $result.safe == False
+          bot say "I apologize, but I cannot provide that information. Let me help you with something else."
+          stop
+
+  - title: "Python Integration with LangChain"
+    language: "python"
+    code: |
+      from nemoguardrails import RailsConfig, LLMRails
+      from nemoguardrails.integrations.langchain import RunnableRails
+
+      # Load guardrails configuration
+      config = RailsConfig.from_path("./guardrails_config")
+      guardrails = LLMRails(config)
+
+      # Use directly
+      response = await guardrails.generate_async(
+          messages=[{"role": "user", "content": "How do I reset my password?"}]
+      )
+
+      # Or wrap a LangChain chain
+      from langchain_openai import ChatOpenAI
+      from langchain_core.prompts import ChatPromptTemplate
+
+      llm = ChatOpenAI(model="gpt-4o")
+      prompt = ChatPromptTemplate.from_template(
+          "You are a helpful assistant. Answer: {question}"
+      )
+      chain = prompt | llm
+
+      # Add guardrails to the chain
+      guarded_chain = RunnableRails(config) | chain
+
+      result = await guarded_chain.ainvoke({"question": "How do I reset my password?"})
+
+  - title: "Custom Action for PII Detection"
+    language: "python"
+    code: |
+      from nemoguardrails.actions import action
+
+      @action(name="check_pii")
+      async def check_pii(context: dict, llm) -> dict:
+          """Check if the bot response contains PII and redact it."""
+          bot_response = context.get("bot_message", "")
+
+          # Use regex or a specialized model to detect PII
+          import re
+          patterns = {
+              "email": r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+              "ssn": r'\b\d{3}-\d{2}-\d{4}\b',
+              "phone": r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'
+          }
+
+          pii_found = False
+          for pii_type, pattern in patterns.items():
+              if re.search(pattern, bot_response):
+                  pii_found = True
+                  bot_response = re.sub(pattern, f"[REDACTED_{pii_type.upper()}]", bot_response)
+
+          return {
+              "pii_detected": pii_found,
+              "cleaned_response": bot_response
+          }
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "input_rail_latency"
+      value: 80
+      unit: "ms"
+      context: "Self-check input rail, GPT-4o, average"
+    - name: "output_rail_latency"
+      value: 120
+      unit: "ms"
+      context: "Self-check output rail, GPT-4o, average"
+    - name: "embedding_rail_latency"
+      value: 15
+      unit: "ms"
+      context: "Embedding-based topic classification"
+    - name: "jailbreak_detection_accuracy"
+      value: 92
+      unit: "percent"
+      context: "Detection rate on standard jailbreak prompts dataset"
+    - name: "topic_control_accuracy"
+      value: 95
+      unit: "percent"
+      context: "Correctly blocking off-topic requests, configured domain"
+
+relationships:
+  alternatives:
+    - slug: "guardrails_ai"
+      note: "Alternative guardrails framework focused on structured output validation"
+  complements:
+    - slug: "openai"
+      role: "LLM backend for guardrail evaluation and main generation"
+    - slug: "anthropic_claude"
+      role: "LLM backend with built-in safety features complementing guardrails"
+    - slug: "langchain"
+      role: "Orchestration framework with native NeMo Guardrails integration"
+    - slug: "pinecone"
+      role: "Vector store for RAG applications protected by retrieval rails"
+  typical_pipeline_position: "safety_layer"
+  pipeline_predecessors: ["user_input"]
+  pipeline_successors: ["llm_generation", "output_delivery"]

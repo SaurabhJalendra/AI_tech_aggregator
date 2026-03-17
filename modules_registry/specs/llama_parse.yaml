@@ -1,0 +1,204 @@
+meta:
+  slug: "llama_parse"
+  name: "LlamaParse"
+  version: "1.0.0"
+  category: "data_ingestion"
+  subcategory: "document_parsing"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "LlamaIndex's managed document parsing service for complex PDFs and documents"
+  description: |
+    LlamaParse is a managed document parsing service developed by LlamaIndex
+    (formerly GPT Index). It uses proprietary models to parse complex documents
+    including PDFs with tables, charts, diagrams, and mixed layouts into clean
+    structured output optimized for LLM consumption.
+
+    LlamaParse differentiates itself by using LLM-powered parsing for complex
+    elements that traditional OCR and layout analysis struggle with, such as
+    interpreting charts, understanding figure captions, and extracting structured
+    data from complex table layouts. It produces markdown output with preserved
+    structure.
+
+    The service integrates natively with LlamaIndex and is available as a cloud
+    API. It is particularly strong at handling financial documents, research papers,
+    and technical documentation with complex formatting.
+  logo_url: "/assets/modules/llama_parse.svg"
+  website: "https://cloud.llamaindex.ai"
+  documentation: "https://docs.cloud.llamaindex.ai/llamaparse/getting_started"
+  github: "https://github.com/run-llama/llama_parse"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Complex PDF parsing for RAG"
+    - "Financial document extraction"
+    - "Research paper parsing"
+    - "Table and chart extraction"
+    - "Multi-modal document understanding"
+  supported_operations:
+    - "parse"
+    - "parse_async"
+    - "get_results"
+    - "export_markdown"
+    - "export_json"
+  integrations:
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  supported_formats:
+    - "PDF"
+    - "DOCX"
+    - "PPTX"
+    - "images"
+  parsing_modes:
+    - "fast"
+    - "accurate"
+  table_extraction: true
+  chart_understanding: true
+  figure_extraction: true
+  multi_page_tables: true
+  max_file_size_mb: 50
+  free_tier_pages: "1000 pages/day"
+  sdk_languages:
+    - "python"
+    - "node"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "High-quality parsing results, especially for complex documents. Cloud processing adds latency but quality is excellent."
+  scalability:
+    score: 8
+    justification: "Cloud-hosted service scales with demand. Async API supports batch processing."
+  ease_of_use:
+    score: 9
+    justification: "Simple API and seamless LlamaIndex integration. Upload and get markdown in a few lines."
+  cost_efficiency:
+    score: 6
+    justification: "Free tier limited to 1000 pages/day. Paid plans needed for production volume. More expensive than open-source alternatives."
+  community:
+    score: 7
+    justification: "Strong backing from LlamaIndex community. Growing adoption for enterprise document processing."
+  maturity:
+    score: 6
+    justification: "Launched in 2024. Rapidly improving but relatively new service."
+  flexibility:
+    score: 6
+    justification: "Cloud-only service with limited configuration options. Focused on quality over customization."
+  data_privacy:
+    score: 4
+    justification: "Documents are processed on LlamaIndex cloud servers. Not suitable for highly sensitive documents without enterprise agreement."
+
+knowledge:
+  entries:
+    - topic: "When to Choose LlamaParse"
+      content: |
+        LlamaParse excels in scenarios where document complexity exceeds what
+        traditional parsing can handle:
+
+        1. Financial documents with complex tables spanning multiple pages,
+        footnotes, and mixed text/numeric content.
+        2. Research papers with equations, figures, and multi-column layouts.
+        3. Technical documentation with code blocks, diagrams, and nested lists.
+        4. Scanned documents where OCR alone produces poor results.
+
+        For simpler documents (plain text PDFs, basic DOCX files), open-source
+        alternatives like Docling or Unstructured provide comparable quality
+        at no cost. LlamaParse's advantage is specifically in handling the
+        hard cases where layout complexity matters.
+      tags: ["decision", "comparison"]
+
+    - topic: "Integration with LlamaIndex RAG Pipeline"
+      content: |
+        LlamaParse is designed as the first step in a LlamaIndex RAG pipeline.
+        The typical workflow is:
+
+        1. Parse documents with LlamaParse to get structured markdown.
+        2. Use a MarkdownNodeParser or SentenceSplitter to create nodes.
+        3. Generate embeddings with an embedding model.
+        4. Index nodes in a vector store.
+        5. Create a query engine for retrieval and generation.
+
+        The LlamaParseReader class integrates directly with LlamaIndex's
+        ingestion pipeline, handling the parse-to-node conversion automatically.
+        This tight integration is LlamaParse's main advantage over standalone
+        parsing services.
+      tags: ["llamaindex", "rag", "pipeline"]
+
+code_examples:
+  - title: "Basic Document Parsing"
+    language: "python"
+    code: |
+      from llama_parse import LlamaParse
+
+      parser = LlamaParse(
+          api_key="your-api-key",
+          result_type="markdown"
+      )
+
+      # Parse a document
+      documents = parser.load_data("path/to/complex-report.pdf")
+
+      for doc in documents:
+          print(doc.text[:500])
+
+  - title: "LlamaIndex RAG Pipeline"
+    language: "python"
+    code: |
+      from llama_parse import LlamaParse
+      from llama_index.core import VectorStoreIndex
+      from llama_index.core.node_parser import MarkdownNodeParser
+
+      # Parse documents
+      parser = LlamaParse(api_key="your-key", result_type="markdown")
+      documents = parser.load_data("financial_report.pdf")
+
+      # Create nodes from markdown
+      node_parser = MarkdownNodeParser()
+      nodes = node_parser.get_nodes_from_documents(documents)
+
+      # Build index and query
+      index = VectorStoreIndex(nodes)
+      query_engine = index.as_query_engine()
+
+      response = query_engine.query("What was the revenue growth in Q4?")
+
+benchmarks:
+  last_run: "2026-02-18"
+  results:
+    - name: "parse_speed"
+      value: 3.5
+      unit: "pages/second"
+      context: "Standard text PDFs, fast mode"
+    - name: "table_accuracy"
+      value: 0.93
+      unit: "ratio"
+      context: "Cell-level accuracy on financial tables"
+    - name: "complex_layout_accuracy"
+      value: 0.88
+      unit: "ratio"
+      context: "Content preservation on multi-column research papers"
+
+relationships:
+  alternatives:
+    - slug: "docling"
+      note: "Open-source, fully local document parsing from IBM"
+    - slug: "unstructured_io"
+      note: "Open-source + managed API for broader format support"
+    - slug: "apache_tika"
+      note: "Java-based document parsing, mature but less AI-focused"
+  complements:
+    - slug: "llamaindex"
+      role: "Data framework with native LlamaParse integration"
+    - slug: "openai_embeddings"
+      role: "Embedding generation for parsed document chunks"
+  typical_pipeline_position: "data_source"
+  pipeline_predecessors: ["raw_documents"]
+  pipeline_successors: ["chunking", "embeddings"]

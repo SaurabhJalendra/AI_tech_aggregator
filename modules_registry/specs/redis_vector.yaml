@@ -1,0 +1,386 @@
+meta:
+  slug: "redis_vector"
+  name: "Redis Vector Search"
+  version: "1.0.0"
+  category: "caching"
+  subcategory: "vector_cache"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "In-memory vector search and semantic caching built on Redis Stack"
+  description: |
+    Redis Vector Search extends Redis with vector similarity search capabilities through
+    the RediSearch module (part of Redis Stack). It enables storing, indexing, and querying
+    vector embeddings alongside traditional Redis data structures, combining the speed of
+    in-memory operations with semantic search capabilities.
+
+    The key advantage of Redis as a vector store is its dual role as both a high-performance
+    cache and a vector database. This makes it ideal for semantic caching -- storing LLM
+    responses alongside their query embeddings so that semantically similar future queries
+    can be answered from cache instead of calling the LLM again, reducing latency and cost.
+
+    Redis supports both FLAT (brute-force) and HNSW (approximate nearest neighbor) indexing
+    algorithms. HNSW provides sub-millisecond query latency for datasets up to tens of
+    millions of vectors. Combined with Redis's native features like TTL expiration, pub/sub,
+    and Lua scripting, vector search integrates naturally into existing Redis-based
+    architectures.
+  logo_url: "/assets/modules/redis_vector.svg"
+  website: "https://redis.io/docs/latest/develop/interact/search-and-query/query/vector-search/"
+  documentation: "https://redis.io/docs/latest/develop/interact/search-and-query/"
+  github: "https://github.com/redis/redis"
+  license: "RSALv2/SSPL (Redis Stack)"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Semantic caching for LLM responses"
+    - "Low-latency vector similarity search"
+    - "Real-time recommendation systems"
+    - "Session-based personalization"
+    - "Hybrid keyword + vector search"
+  supported_operations:
+    - "vector_store"
+    - "vector_search"
+    - "hybrid_search"
+    - "range_query"
+    - "aggregation"
+    - "ttl_expiration"
+    - "json_storage"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai"
+      type: "compatible"
+    - slug: "semantic_kernel"
+      type: "compatible"
+    - slug: "spring_ai"
+      type: "native"
+
+technical_specs:
+  index_algorithms:
+    - "FLAT"
+    - "HNSW"
+  supported_distance_metrics:
+    - "cosine"
+    - "L2"
+    - "IP (inner product)"
+  max_dimensions: 32768
+  data_types_for_vectors:
+    - "FLOAT32"
+    - "FLOAT64"
+    - "BFLOAT16"
+  hybrid_search: true
+  full_text_search: true
+  json_support: true
+  geospatial: true
+  ttl_support: true
+  clustering: true
+  persistence:
+    - "RDB snapshots"
+    - "AOF logging"
+  max_vectors: "limited by memory"
+  sdk_languages:
+    - "python"
+    - "node"
+    - "java"
+    - "go"
+    - "dotnet"
+    - "rust"
+  cloud_providers:
+    - "Redis Cloud (AWS, GCP, Azure)"
+    - "Self-hosted"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "In-memory architecture delivers sub-millisecond vector query latency. HNSW index provides consistent performance. Fastest vector search for datasets that fit in memory."
+  scalability:
+    score: 7
+    justification: "Scales vertically with memory. Redis Cluster provides horizontal scaling but vector indexes are per-shard. Dataset size limited by available RAM, which is expensive at scale."
+  ease_of_use:
+    score: 7
+    justification: "Familiar Redis interface with vector extensions. Redis Stack simplifies setup. However, index creation and schema design require understanding RediSearch query syntax."
+  cost_efficiency:
+    score: 5
+    justification: "In-memory storage is expensive at scale. 1M 1536-dim vectors requires ~6GB RAM. Cost-effective for caching and small-medium datasets but expensive for billion-vector workloads."
+  community:
+    score: 9
+    justification: "Massive Redis community (60k+ GitHub stars). Vector search benefits from Redis's established ecosystem of clients, tools, and operational knowledge."
+  maturity:
+    score: 8
+    justification: "RediSearch has been production-ready since 2020. Vector search added in 2022. Redis itself is one of the most battle-tested databases in existence (15+ years)."
+  flexibility:
+    score: 8
+    justification: "Combines vector search with full-text search, JSON, geospatial, and time-series in one system. Can serve as cache, message broker, and vector store simultaneously."
+  data_privacy:
+    score: 9
+    justification: "Self-hosted deployment keeps all data on-premises. No telemetry. Redis Enterprise and Redis Cloud offer SOC2, HIPAA-eligible deployments."
+
+knowledge:
+  entries:
+    - topic: "Semantic Caching Pattern"
+      content: |
+        Semantic caching is Redis Vector Search's killer use case in AI pipelines. The pattern:
+
+        1. When an LLM query arrives, generate an embedding of the query.
+        2. Search Redis for vectors similar to the query embedding (cosine similarity > 0.95).
+        3. If a cache hit is found, return the cached LLM response immediately.
+        4. If no cache hit, call the LLM, store the query embedding + response in Redis
+           with a TTL, and return the response.
+
+        This reduces LLM API costs by 30-70% for applications with repetitive queries
+        (customer support, FAQ bots, documentation assistants). The similarity threshold
+        controls the trade-off between cache hit rate and answer accuracy.
+
+        Redis's native TTL support automatically expires stale cache entries, and its
+        in-memory speed means cache lookups add <1ms latency. For a typical RAG application,
+        semantic caching can reduce average response time from 2-5 seconds to <100ms for
+        cache hits.
+      tags: ["semantic-caching", "pattern", "cost-optimization"]
+
+    - topic: "When to Choose Redis for Vector Search"
+      content: |
+        Redis is the right choice for vector search when:
+
+        1. You need the absolute lowest query latency. In-memory HNSW delivers sub-ms
+        queries that no disk-based vector database can match.
+
+        2. You're already using Redis and want to add vector capabilities without
+        introducing a new database. Redis Stack adds vector search to your existing
+        Redis deployment.
+
+        3. Your primary use case is semantic caching. Redis's native TTL, memory management,
+        and eviction policies make it the natural choice for caching patterns.
+
+        4. You need hybrid search combining vectors, full-text, numeric, and geo filters
+        in single queries. RediSearch supports all of these natively.
+
+        5. Your dataset fits in memory (up to tens of millions of vectors on large instances).
+
+        Redis is NOT the right choice when: your dataset exceeds available RAM (use Pinecone,
+        Milvus, or Qdrant), you need billion-vector scale (use purpose-built vector DBs),
+        you need complex analytics on vectors (use Weaviate or Elasticsearch), or cost per
+        GB is a primary concern (disk-based stores are 10x cheaper per GB).
+      tags: ["decision", "comparison"]
+
+    - topic: "Index Creation and Schema Design"
+      content: |
+        Redis vector indexes are created using the FT.CREATE command with a VECTOR field type.
+        Key design decisions:
+
+        Index algorithm choice:
+        - FLAT: Brute-force exact search. Best for <10K vectors or when recall must be 100%.
+          O(n) query time but no index build overhead.
+        - HNSW: Approximate nearest neighbor. Best for >10K vectors. Configurable trade-off
+          between recall and speed via M (connections per layer) and EF_CONSTRUCTION parameters.
+          Default M=16, EF_CONSTRUCTION=200 gives >95% recall with sub-ms queries.
+
+        Storage format:
+        - HASH: Traditional Redis hash. Each vector is a field in a hash key.
+        - JSON: Redis JSON document. Vectors stored as JSON arrays. More flexible metadata
+          but slightly higher memory usage.
+
+        Recommended HNSW parameters by dataset size:
+        - <100K vectors: M=16, EF_CONSTRUCTION=200 (default)
+        - 100K-1M vectors: M=24, EF_CONSTRUCTION=300
+        - 1M-10M vectors: M=32, EF_CONSTRUCTION=400
+        - >10M vectors: M=48, EF_CONSTRUCTION=500 (high memory cost)
+      tags: ["indexing", "schema", "configuration"]
+
+    - topic: "Hybrid Search with RediSearch"
+      content: |
+        Redis excels at hybrid search because RediSearch natively supports combining vector
+        similarity with traditional filters in a single query.
+
+        A hybrid query can combine:
+        - Vector similarity (KNN or range-based)
+        - Full-text search (inverted index with BM25 scoring)
+        - Numeric range filters
+        - Tag/categorical filters
+        - Geospatial radius filters
+
+        All filters are applied before or during the vector search, not as a post-filter.
+        This is more efficient than systems that first retrieve top-K vectors and then
+        filter, which can return fewer than K results.
+
+        Example: Find the 10 most semantically similar products that are in the "electronics"
+        category, priced between $50-$200, and within 50km of the user's location -- all
+        in a single query returning in <5ms.
+      tags: ["hybrid-search", "filtering", "query"]
+
+code_examples:
+  - title: "Create Vector Index and Search"
+    language: "python"
+    code: |
+      import redis
+      import numpy as np
+      from redis.commands.search.field import VectorField, TextField, NumericField
+      from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+      from redis.commands.search.query import Query
+
+      r = redis.Redis(host="localhost", port=6379)
+
+      # Create index with vector field
+      schema = [
+          TextField("content"),
+          NumericField("year"),
+          VectorField("embedding",
+              "HNSW", {
+                  "TYPE": "FLOAT32",
+                  "DIM": 1536,
+                  "DISTANCE_METRIC": "COSINE",
+                  "M": 16,
+                  "EF_CONSTRUCTION": 200,
+              }
+          ),
+      ]
+
+      r.ft("docs_idx").create_index(
+          schema,
+          definition=IndexDefinition(prefix=["doc:"], index_type=IndexType.HASH)
+      )
+
+      # Store vectors
+      for i, (text, embedding) in enumerate(documents):
+          r.hset(f"doc:{i}", mapping={
+              "content": text,
+              "year": 2024,
+              "embedding": np.array(embedding, dtype=np.float32).tobytes()
+          })
+
+      # Vector similarity search with filter
+      query_embedding = np.array(query_vec, dtype=np.float32).tobytes()
+      q = (Query("(@year:[2023 2025])=>[KNN 5 @embedding $vec AS score]")
+           .sort_by("score")
+           .return_fields("content", "score")
+           .dialect(2))
+
+      results = r.ft("docs_idx").search(q, query_params={"vec": query_embedding})
+
+  - title: "Semantic Cache Implementation"
+    language: "python"
+    code: |
+      import redis
+      import numpy as np
+      import hashlib
+      from openai import OpenAI
+
+      r = redis.Redis(host="localhost", port=6379)
+      openai_client = OpenAI()
+
+      SIMILARITY_THRESHOLD = 0.95
+      CACHE_TTL = 3600  # 1 hour
+
+      def get_embedding(text):
+          resp = openai_client.embeddings.create(
+              model="text-embedding-3-small", input=text
+          )
+          return resp.data[0].embedding
+
+      def semantic_cache_query(query: str) -> str:
+          query_embedding = get_embedding(query)
+          query_bytes = np.array(query_embedding, dtype=np.float32).tobytes()
+
+          # Search for similar cached queries
+          q = (Query("*=>[KNN 1 @embedding $vec AS score]")
+               .return_fields("response", "score")
+               .dialect(2))
+          results = r.ft("cache_idx").search(q, query_params={"vec": query_bytes})
+
+          if results.docs and float(results.docs[0].score) < (1 - SIMILARITY_THRESHOLD):
+              return results.docs[0].response  # Cache hit
+
+          # Cache miss: call LLM
+          llm_response = openai_client.chat.completions.create(
+              model="gpt-4o", messages=[{"role": "user", "content": query}]
+          ).choices[0].message.content
+
+          # Store in cache with TTL
+          cache_key = f"cache:{hashlib.md5(query.encode()).hexdigest()}"
+          r.hset(cache_key, mapping={
+              "query": query,
+              "response": llm_response,
+              "embedding": query_bytes,
+          })
+          r.expire(cache_key, CACHE_TTL)
+
+          return llm_response
+
+  - title: "LangChain Integration"
+    language: "python"
+    code: |
+      from langchain_community.vectorstores.redis import Redis as RedisVectorStore
+      from langchain_openai import OpenAIEmbeddings
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      # Create vector store from documents
+      vectorstore = RedisVectorStore.from_documents(
+          documents,
+          embeddings,
+          redis_url="redis://localhost:6379",
+          index_name="langchain_docs",
+      )
+
+      # Similarity search
+      results = vectorstore.similarity_search(
+          "How does semantic caching work?",
+          k=5,
+      )
+
+      # Use as retriever in RAG chain
+      retriever = vectorstore.as_retriever(
+          search_type="similarity",
+          search_kwargs={"k": 5}
+      )
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "query_latency_p50"
+      value: 0.4
+      unit: "ms"
+      context: "1536-dim, HNSW, top-k=10, 1M vectors, in-memory"
+    - name: "query_latency_p99"
+      value: 1.2
+      unit: "ms"
+      context: "1536-dim, HNSW, top-k=10, 1M vectors, in-memory"
+    - name: "insert_throughput"
+      value: 15000
+      unit: "vectors/sec"
+      context: "1536-dim, pipeline mode, single node"
+    - name: "recall_at_10"
+      value: 0.97
+      unit: "ratio"
+      context: "1536-dim, HNSW M=16, 1M vectors"
+    - name: "memory_per_million_vectors"
+      value: 7.2
+      unit: "GB"
+      context: "1536-dim, FLOAT32, with HNSW index overhead"
+    - name: "hybrid_search_p50"
+      value: 0.8
+      unit: "ms"
+      context: "Vector + numeric filter + text match, 1M vectors"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Managed vector database with serverless scaling, higher capacity"
+    - slug: "qdrant"
+      note: "Purpose-built vector database with rich filtering and disk storage"
+    - slug: "chromadb"
+      note: "Embedded vector database for development and small-scale use"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Generates embeddings stored and cached in Redis"
+    - slug: "langchain"
+      role: "Orchestration framework with native Redis vector store integration"
+    - slug: "vllm"
+      role: "Self-hosted LLM inference whose responses are cached in Redis"
+  typical_pipeline_position: "caching"
+  pipeline_predecessors: ["embeddings", "llm_generation"]
+  pipeline_successors: ["response_delivery"]

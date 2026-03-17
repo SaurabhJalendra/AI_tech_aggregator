@@ -1,0 +1,307 @@
+meta:
+  slug: "voyage_ai"
+  name: "Voyage AI"
+  version: "1.0.0"
+  category: "embeddings"
+  subcategory: "api"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "High-performance embedding models specialized for code, legal, finance, and multilingual retrieval"
+  description: |
+    Voyage AI provides a family of embedding models that consistently rank at the top of
+    retrieval benchmarks, particularly for domain-specific use cases. Their models include
+    voyage-3 (general purpose), voyage-code-3 (optimized for code retrieval), voyage-law-2
+    (legal domain), voyage-finance-2 (financial domain), and voyage-multilingual-2.
+
+    Voyage models are trained with retrieval in mind, using contrastive learning on large-scale
+    curated datasets. They support both query and document input types for asymmetric search,
+    similar to Cohere's approach. The models accept long context windows up to 32,000 tokens,
+    making them suitable for embedding entire documents without chunking.
+
+    Voyage AI was founded by researchers from Stanford and has been recognized for consistently
+    outperforming larger competitors on domain-specific benchmarks. The company was acquired by
+    Anthropic, further strengthening its position in the AI ecosystem.
+  logo_url: "/assets/modules/voyage_ai.svg"
+  website: "https://www.voyageai.com"
+  documentation: "https://docs.voyageai.com"
+  github: "https://github.com/voyage-ai/voyageai-python"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Code search and retrieval"
+    - "Legal document retrieval"
+    - "Financial document search"
+    - "General semantic search"
+    - "Multilingual retrieval"
+    - "Long-context document embedding"
+  supported_operations:
+    - "text_to_embedding"
+    - "batch_embedding"
+    - "input_type_optimization"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "qdrant"
+      type: "compatible"
+    - slug: "weaviate"
+      type: "compatible"
+
+technical_specs:
+  models:
+    - name: "voyage-3"
+      max_dimensions: 1024
+      max_input_tokens: 32000
+      domain: "general"
+    - name: "voyage-3-lite"
+      max_dimensions: 512
+      max_input_tokens: 32000
+      domain: "general"
+    - name: "voyage-code-3"
+      max_dimensions: 1024
+      max_input_tokens: 32000
+      domain: "code"
+    - name: "voyage-law-2"
+      max_dimensions: 1024
+      max_input_tokens: 16000
+      domain: "legal"
+    - name: "voyage-finance-2"
+      max_dimensions: 1024
+      max_input_tokens: 32000
+      domain: "finance"
+    - name: "voyage-multilingual-2"
+      max_dimensions: 1024
+      max_input_tokens: 32000
+      domain: "multilingual"
+  input_types:
+    - "query"
+    - "document"
+  max_batch_size: 128
+  truncation: true
+  output_format: "float32"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Consistently top-ranked on MTEB and domain-specific benchmarks. voyage-code-3 is the best code embedding model available."
+  scalability:
+    score: 7
+    justification: "Managed API with reasonable rate limits. No binary compression formats. Long context window reduces need for chunking."
+  ease_of_use:
+    score: 8
+    justification: "Simple API with clear model selection by domain. Good framework support via LangChain and LlamaIndex."
+  cost_efficiency:
+    score: 7
+    justification: "Free tier available. Competitive pricing per token. Long context window can reduce total API calls needed."
+  community:
+    score: 5
+    justification: "Smaller community than OpenAI or Cohere. Growing recognition in specialized domains. Limited third-party tutorials."
+  maturity:
+    score: 7
+    justification: "Relatively newer entrant but rapidly maturing. v3 models are production-ready. Anthropic acquisition adds stability."
+  flexibility:
+    score: 8
+    justification: "Multiple domain-specific models. Very long context window (32K tokens). Query/document input types for asymmetric search."
+  data_privacy:
+    score: 6
+    justification: "API-based service with data processed on Voyage servers. Standard enterprise security practices. Anthropic backing adds credibility."
+
+knowledge:
+  entries:
+    - topic: "Domain-Specific Model Selection"
+      content: |
+        Voyage AI's key differentiator is domain-specialized models:
+
+        voyage-3: General-purpose embedding model. Strong across all domains and a solid default
+        choice. 1024 dimensions with 32K token context.
+
+        voyage-code-3: Optimized for code retrieval, code search, and code-related documentation.
+        Trained on large-scale code corpora. Best-in-class for code search applications, outperforming
+        OpenAI and Cohere models on code retrieval benchmarks by significant margins.
+
+        voyage-law-2: Trained on legal corpora including case law, statutes, and contracts. Ideal
+        for legal research tools, contract analysis, and regulatory compliance search.
+
+        voyage-finance-2: Optimized for financial documents including earnings reports, SEC filings,
+        financial news, and analyst reports.
+
+        voyage-multilingual-2: Aligned embeddings across multiple languages, similar to Cohere's
+        multilingual model.
+
+        The domain-specific models outperform general-purpose models by 10-20% on in-domain
+        benchmarks. Always use the domain model if your data matches one of the available domains.
+      tags: ["model-selection", "domain-specific", "code"]
+
+    - topic: "Long Context Embeddings"
+      content: |
+        Voyage models support up to 32,000 tokens per input, far exceeding OpenAI's 8,191 token
+        limit. This has several practical implications:
+
+        1. Reduced chunking requirements. Many documents (articles, reports, code files) fit
+        within a single embedding, eliminating chunking artifacts and boundary issues.
+
+        2. Better document-level representation. Embedding an entire document captures
+        cross-section relationships that are lost when chunking into small pieces.
+
+        3. Simplified pipeline. Fewer chunks mean fewer vectors, less storage, and simpler
+        retrieval logic.
+
+        However, long context embeddings have trade-offs: (1) Higher API cost per embedding since
+        pricing is per token, (2) Potentially less precise retrieval if the query matches only
+        a small section of a long document, (3) Higher latency for embedding generation.
+
+        Best practice: Use long context for document-level retrieval, then use a reranker or
+        chunk-level secondary retrieval for precise passage identification.
+      tags: ["long-context", "chunking", "architecture"]
+
+    - topic: "Code Search with voyage-code-3"
+      content: |
+        voyage-code-3 is the highest-performing code embedding model available, supporting
+        retrieval across code, documentation, and natural language queries about code.
+
+        Key capabilities: (1) Natural language to code search - find functions by describing what
+        they do, (2) Code to code search - find similar implementations across repositories,
+        (3) Documentation to code linking - match documentation sections with relevant code.
+
+        The model understands multiple programming languages including Python, JavaScript,
+        TypeScript, Java, Go, Rust, C++, and more. It captures both syntactic patterns and
+        semantic meaning of code.
+
+        Use cases: IDE code search extensions, codebase knowledge bases, automated code review
+        by finding similar patterns, documentation generators, and developer onboarding tools
+        that help navigate large codebases.
+      tags: ["code", "search", "developer-tools"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of Voyage AI embeddings:
+
+        1. Smaller ecosystem. Fewer integrations and community resources compared to OpenAI.
+        Some vector databases may not have native Voyage support.
+
+        2. No compression formats. Unlike Cohere's binary/int8 options, Voyage only outputs
+        float32 embeddings. Use external quantization for compression.
+
+        3. Lower batch limits. 128 texts per batch compared to OpenAI's 2048, requiring more
+        API calls for large-scale embedding jobs.
+
+        4. Newer company. While the Anthropic acquisition provides stability, Voyage has a
+        shorter track record than OpenAI or Cohere in production deployments.
+
+        5. No fine-tuning. Domain models are pre-trained on curated data but cannot be
+        fine-tuned on custom datasets.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Embedding with Input Types"
+    language: "python"
+    code: |
+      import voyageai
+
+      vo = voyageai.Client()
+
+      # Embed documents
+      doc_result = vo.embed(
+          texts=["def quicksort(arr):\n    if len(arr) <= 1:\n        return arr"],
+          model="voyage-code-3",
+          input_type="document"
+      )
+
+      # Embed query
+      query_result = vo.embed(
+          texts=["sorting algorithm implementation"],
+          model="voyage-code-3",
+          input_type="query"
+      )
+
+      doc_embedding = doc_result.embeddings[0]
+      query_embedding = query_result.embeddings[0]
+
+  - title: "Long Document Embedding"
+    language: "python"
+    code: |
+      import voyageai
+
+      vo = voyageai.Client()
+
+      # Embed entire documents without chunking (up to 32K tokens)
+      long_documents = [
+          open("contract.txt").read(),  # full legal contract
+          open("report.txt").read(),    # full financial report
+      ]
+
+      result = vo.embed(
+          texts=long_documents,
+          model="voyage-law-2",
+          input_type="document"
+      )
+
+  - title: "Code Search with LangChain"
+    language: "python"
+    code: |
+      from langchain_voyageai import VoyageAIEmbeddings
+      from langchain_community.vectorstores import FAISS
+
+      embeddings = VoyageAIEmbeddings(
+          model="voyage-code-3",
+          voyage_api_key="your-api-key"
+      )
+
+      # Index code snippets
+      code_snippets = [
+          "def binary_search(arr, target): ...",
+          "class LinkedList: ...",
+          "async def fetch_data(url): ..."
+      ]
+
+      vectorstore = FAISS.from_texts(code_snippets, embeddings)
+
+      # Search with natural language
+      results = vectorstore.similarity_search(
+          "find a function that searches a sorted array"
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "mteb_avg_score_voyage_3"
+      value: 67.1
+      unit: "percent"
+      context: "MTEB benchmark average, voyage-3, 1024 dim"
+    - name: "code_retrieval_ndcg"
+      value: 78.4
+      unit: "percent"
+      context: "Code retrieval benchmark, voyage-code-3"
+    - name: "legal_retrieval_ndcg"
+      value: 71.2
+      unit: "percent"
+      context: "Legal retrieval benchmark, voyage-law-2"
+    - name: "embedding_latency_single"
+      value: 55
+      unit: "ms"
+      context: "Single text, voyage-3, ~100 tokens"
+
+relationships:
+  alternatives:
+    - slug: "openai_embeddings"
+      note: "Larger ecosystem but lower benchmark scores on domain-specific tasks"
+    - slug: "cohere_embed"
+      note: "Better compression options and multilingual support"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for storing and querying Voyage embeddings"
+    - slug: "qdrant"
+      role: "Open-source vector database compatible with Voyage embeddings"
+    - slug: "langchain"
+      role: "Orchestration framework with Voyage embedding integration"
+  typical_pipeline_position: "embedding"
+  pipeline_predecessors: ["chunking", "data_ingestion"]
+  pipeline_successors: ["vector_databases", "retrieval"]

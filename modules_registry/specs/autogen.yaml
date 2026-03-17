@@ -1,0 +1,404 @@
+meta:
+  slug: "autogen"
+  name: "Microsoft AutoGen"
+  version: "1.0.0"
+  category: "agent_systems"
+  subcategory: "multi_agent"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Microsoft's open-source framework for building multi-agent conversational AI systems"
+  description: |
+    AutoGen is an open-source framework from Microsoft Research for building multi-agent systems
+    where AI agents converse with each other, use tools, and collaborate with humans to solve
+    complex tasks. It pioneered the concept of conversable agents — agents that can send and
+    receive messages in flexible conversation patterns.
+
+    AutoGen 0.4 (the current generation, also called AG2 by the community fork) introduced a
+    complete architectural rewrite with an event-driven, actor-based model. The new architecture
+    features asynchronous messaging, pluggable runtimes (local and distributed), and a layered
+    API: Core (message passing primitives), AgentChat (high-level multi-agent conversations),
+    and Extensions (tool integrations and model clients).
+
+    Key strengths include native code execution capabilities (Docker-sandboxed or local),
+    flexible conversation patterns (two-agent, group chat, nested, sequential), and strong
+    support for human-in-the-loop workflows. AutoGen is particularly well-suited for
+    code-generation tasks, data analysis workflows, and research applications where agents
+    need to write and execute code iteratively.
+
+    AutoGen Studio provides a visual interface for building, testing, and debugging multi-agent
+    workflows without writing code, making the framework accessible to non-developers.
+  logo_url: "/assets/modules/autogen.svg"
+  website: "https://microsoft.github.io/autogen/"
+  documentation: "https://microsoft.github.io/autogen/docs/"
+  github: "https://github.com/microsoft/autogen"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Multi-agent code generation and debugging"
+    - "Collaborative data analysis with code execution"
+    - "Research workflows with iterative refinement"
+    - "Human-in-the-loop decision-making systems"
+    - "Group chat orchestration among specialized agents"
+    - "Complex task decomposition and delegation"
+  supported_operations:
+    - "agent_conversation"
+    - "code_execution"
+    - "tool_use"
+    - "group_chat"
+    - "nested_conversations"
+    - "human_in_the_loop"
+    - "async_messaging"
+    - "state_persistence"
+    - "function_calling"
+    - "multimodal_input"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "native"
+    - slug: "azure_openai"
+      type: "native"
+    - slug: "ollama"
+      type: "compatible"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  languages:
+    - "python"
+    - "dotnet"
+  python_min_version: "3.10"
+  core_packages:
+    - "autogen-core"
+    - "autogen-agentchat"
+    - "autogen-ext"
+    - "autogen-studio"
+  architecture: "actor-based event-driven"
+  runtime_options:
+    - "SingleThreadedAgentRuntime (local)"
+    - "WorkerAgentRuntime (distributed via gRPC)"
+  conversation_patterns:
+    - "two_agent"
+    - "sequential"
+    - "group_chat"
+    - "nested"
+    - "swarm"
+  code_execution_options:
+    - "DockerCommandLineCodeExecutor"
+    - "LocalCommandLineCodeExecutor"
+    - "JupyterCodeExecutor"
+  supported_llm_providers:
+    - "OpenAI"
+    - "Azure OpenAI"
+    - "Anthropic"
+    - "Google (Gemini)"
+    - "Mistral"
+    - "Ollama"
+    - "LiteLLM (100+ providers)"
+  multimodal_support: true
+  streaming_support: true
+  async_support: true
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Event-driven actor model enables efficient message passing. Distributed runtime supports scaling across processes. Code execution adds latency but enables powerful workflows."
+  scalability:
+    score: 8
+    justification: "Distributed runtime via gRPC allows agents to run across multiple processes and machines. Actor-based model scales better than synchronous frameworks for large agent networks."
+  ease_of_use:
+    score: 6
+    justification: "AgentChat layer provides reasonable high-level API, but the 0.4 rewrite introduced new concepts (actors, subscriptions, runtimes) with a learning curve. AutoGen Studio helps non-developers."
+  cost_efficiency:
+    score: 8
+    justification: "Fully open-source. Multi-agent conversations can be token-intensive, but caching and conversation management help control costs. No framework licensing fees."
+  community:
+    score: 8
+    justification: "35K+ GitHub stars, strong Microsoft Research backing. Active community with regular releases. AG2 community fork adds additional development velocity."
+  maturity:
+    score: 6
+    justification: "Original v0.2 was widely adopted. The v0.4 rewrite is architecturally superior but still stabilizing. Migration between versions is non-trivial."
+  flexibility:
+    score: 9
+    justification: "Most flexible multi-agent conversation patterns of any framework. Supports arbitrary topologies, nested conversations, and dynamic agent creation. Distributed runtime enables diverse deployment models."
+  data_privacy:
+    score: 8
+    justification: "Fully self-hostable. Supports local LLMs. Code execution can be sandboxed in Docker. No telemetry sent to Microsoft. Azure OpenAI integration for enterprise compliance."
+
+knowledge:
+  entries:
+    - topic: "Architecture: Core, AgentChat, and Extensions"
+      content: |
+        AutoGen 0.4 is organized into three layers:
+
+        Core Layer (autogen-core): The foundation providing the actor-based messaging system.
+        Key concepts: Agents (actors that process messages), Runtime (manages agent lifecycle
+        and message delivery), Topics and Subscriptions (pub/sub for event routing), and
+        Messages (typed data exchanged between agents). This layer is framework-agnostic and
+        can be used to build any multi-agent system.
+
+        AgentChat Layer (autogen-agentchat): High-level abstractions built on Core for common
+        multi-agent patterns. Provides AssistantAgent (LLM-powered), UserProxyAgent (human
+        interaction), and team patterns like RoundRobinGroupChat, SelectorGroupChat, Swarm,
+        and MagenticOneGroupChat. Most developers start here.
+
+        Extensions Layer (autogen-ext): Pluggable integrations for model clients (OpenAI,
+        Anthropic, Ollama), code executors (Docker, Jupyter), tools, and memory. Designed
+        for community contributions without modifying core packages.
+
+        This layered design means you can use high-level patterns for common cases and drop
+        down to the Core layer for custom agent communication patterns.
+      tags: ["architecture", "core", "layers"]
+
+    - topic: "Conversation Patterns"
+      content: |
+        AutoGen supports several multi-agent conversation patterns:
+
+        Two-Agent Chat: The simplest pattern — two agents converse until a termination
+        condition is met. Common for assistant + user proxy pairs where one agent generates
+        and another validates or executes code.
+
+        Round-Robin Group Chat: Agents take turns in a fixed order. Good for pipeline-style
+        workflows where each agent handles a specific phase.
+
+        Selector Group Chat: An LLM-based selector chooses which agent speaks next based on
+        conversation context. Enables dynamic, context-aware coordination.
+
+        Swarm: Agents hand off control to specific other agents based on tool calls. Similar
+        to OpenAI's Swarm pattern. Good for customer service routing and state machines.
+
+        Magentic-One: A sophisticated multi-agent pattern developed by Microsoft Research
+        featuring an Orchestrator agent that plans, delegates, tracks progress, and
+        recovers from errors. Includes specialized agents for web browsing, file handling,
+        code execution, and terminal commands.
+
+        Nested Conversations: Any agent can trigger a sub-conversation with other agents as
+        part of processing a message. Enables recursive decomposition of complex tasks.
+      tags: ["conversation", "patterns", "orchestration"]
+
+    - topic: "Code Execution Capabilities"
+      content: |
+        AutoGen's code execution is a distinguishing feature that sets it apart from other
+        multi-agent frameworks. Agents can generate code and execute it in sandboxed
+        environments:
+
+        DockerCommandLineCodeExecutor: Executes code inside Docker containers for full
+        isolation. Supports Python, bash, and other languages. Each execution gets a fresh
+        container or reuses one for stateful sessions. Recommended for production.
+
+        LocalCommandLineCodeExecutor: Runs code directly on the host machine. Faster but
+        less secure. Suitable for development and trusted environments.
+
+        JupyterCodeExecutor: Executes code in Jupyter kernels, maintaining state across
+        executions. Ideal for data analysis workflows where agents need to build on
+        previous computations.
+
+        The typical pattern is: an AssistantAgent generates code, sends it to a
+        UserProxyAgent with code execution enabled, the code runs, results are sent back,
+        and the assistant iterates if needed. This loop continues until the task is complete
+        or a maximum number of iterations is reached.
+
+        Code execution is particularly powerful for data analysis, visualization generation,
+        mathematical computation, and software development tasks.
+      tags: ["code-execution", "sandbox", "docker"]
+
+    - topic: "When to Choose AutoGen"
+      content: |
+        AutoGen is the right choice when: (1) Code generation and execution is central to
+        your workflow — AutoGen has the best sandboxed code execution of any multi-agent
+        framework. (2) You need flexible conversation patterns — group chat, nested
+        conversations, and swarm patterns support complex agent topologies. (3) You need
+        distributed multi-agent execution — the gRPC-based worker runtime enables agents
+        across processes and machines. (4) You want Microsoft ecosystem integration —
+        Azure OpenAI, .NET support, and enterprise tooling. (5) You're building research
+        or data analysis applications where iterative code execution is key.
+
+        AutoGen is NOT the right choice when: (1) You need a simple, quick-to-learn framework
+        for basic multi-agent tasks — CrewAI is more approachable. (2) You primarily need
+        RAG/retrieval capabilities — LlamaIndex or LangChain are more mature. (3) API
+        stability is critical — the v0.4 rewrite means the API is still settling. (4) You
+        need a production-ready deployment story — LangGraph Platform is more polished for
+        this. (5) You want a no-code solution — AutoGen Studio is available but less mature
+        than alternatives.
+      tags: ["decision", "comparison"]
+
+    - topic: "Human-in-the-Loop Patterns"
+      content: |
+        AutoGen provides robust support for human involvement in agent workflows:
+
+        UserProxyAgent: Acts as a proxy for human input. Can be configured to always request
+        human input, never request it (fully autonomous), or request it only when the agent
+        cannot proceed (TERMINATE condition).
+
+        Approval Gates: In group chats, specific transitions can require human approval before
+        proceeding. The Handoff mechanism in Swarm patterns explicitly routes to human agents.
+
+        Interactive Code Review: When code execution is enabled, the human can review generated
+        code before it executes, approve modifications, or provide feedback for the agent
+        to revise.
+
+        Termination Conditions: Multiple conditions control when agents stop: TextMentionTermination
+        (agent says "TERMINATE"), MaxMessageTermination (message count limit),
+        HandoffTermination (explicit handoff to human), and custom conditions.
+
+        The combination of flexible termination and human proxy agents enables workflows that
+        range from fully autonomous to heavily supervised, with the human's involvement
+        level configurable per agent and per task.
+      tags: ["human-in-the-loop", "interaction", "control"]
+
+code_examples:
+  - title: "Two-Agent Code Generation"
+    language: "python"
+    code: |
+      from autogen_agentchat.agents import AssistantAgent
+      from autogen_agentchat.conditions import TextMentionTermination
+      from autogen_agentchat.teams import RoundRobinGroupChat
+      from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+      model_client = OpenAIChatCompletionClient(model="gpt-4o")
+
+      # Code writer agent
+      writer = AssistantAgent(
+          name="CodeWriter",
+          model_client=model_client,
+          system_message="You are a Python developer. Write clean, efficient code. Say APPROVE when done.",
+      )
+
+      # Code reviewer agent
+      reviewer = AssistantAgent(
+          name="CodeReviewer",
+          model_client=model_client,
+          system_message="Review code for bugs, performance, and best practices. Say APPROVE when satisfied.",
+      )
+
+      termination = TextMentionTermination("APPROVE")
+      team = RoundRobinGroupChat([writer, reviewer], termination_condition=termination)
+
+      # Run the team
+      import asyncio
+      result = asyncio.run(team.run(task="Write a Python function to merge two sorted linked lists."))
+      print(result)
+
+  - title: "Group Chat with Selector"
+    language: "python"
+    code: |
+      from autogen_agentchat.agents import AssistantAgent
+      from autogen_agentchat.conditions import MaxMessageTermination
+      from autogen_agentchat.teams import SelectorGroupChat
+      from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+      model_client = OpenAIChatCompletionClient(model="gpt-4o")
+
+      planner = AssistantAgent(
+          name="Planner",
+          model_client=model_client,
+          system_message="You break down complex tasks into steps and coordinate the team.",
+      )
+
+      researcher = AssistantAgent(
+          name="Researcher",
+          model_client=model_client,
+          system_message="You gather information and data to support the team's work.",
+      )
+
+      analyst = AssistantAgent(
+          name="Analyst",
+          model_client=model_client,
+          system_message="You analyze data and produce insights from research findings.",
+      )
+
+      # Selector model chooses which agent speaks next
+      team = SelectorGroupChat(
+          [planner, researcher, analyst],
+          model_client=model_client,
+          termination_condition=MaxMessageTermination(max_messages=15),
+      )
+
+      import asyncio
+      result = asyncio.run(team.run(task="Analyze the pros and cons of serverless vector databases."))
+
+  - title: "Agent with Code Execution"
+    language: "python"
+    code: |
+      from autogen_agentchat.agents import AssistantAgent, CodeExecutorAgent
+      from autogen_agentchat.teams import RoundRobinGroupChat
+      from autogen_agentchat.conditions import MaxMessageTermination
+      from autogen_ext.models.openai import OpenAIChatCompletionClient
+      from autogen_ext.code_executors.docker import DockerCommandLineCodeExecutor
+
+      model_client = OpenAIChatCompletionClient(model="gpt-4o")
+
+      # Agent that writes code
+      coder = AssistantAgent(
+          name="Coder",
+          model_client=model_client,
+          system_message="Write Python code to solve tasks. Include code in ```python blocks.",
+      )
+
+      # Agent that executes code in Docker
+      executor = CodeExecutorAgent(
+          name="Executor",
+          code_executor=DockerCommandLineCodeExecutor(
+              image="python:3.11-slim",
+              timeout=60,
+              work_dir="/tmp/code"
+          ),
+      )
+
+      team = RoundRobinGroupChat(
+          [coder, executor],
+          termination_condition=MaxMessageTermination(max_messages=10),
+      )
+
+      import asyncio
+      result = asyncio.run(team.run(
+          task="Generate a bar chart comparing vector database query latencies using matplotlib."
+      ))
+
+benchmarks:
+  last_run: "2026-02-18"
+  results:
+    - name: "two_agent_roundtrip"
+      value: 85
+      unit: "ms"
+      context: "Message passing overhead between two agents, excludes LLM call time"
+    - name: "group_chat_selection_overhead"
+      value: 350
+      unit: "ms"
+      context: "SelectorGroupChat per-turn selection overhead including LLM selector call"
+    - name: "docker_code_execution_cold_start"
+      value: 2.5
+      unit: "seconds"
+      context: "First code execution in a new Docker container"
+    - name: "docker_code_execution_warm"
+      value: 450
+      unit: "ms"
+      context: "Subsequent code execution in existing container"
+    - name: "distributed_runtime_message_latency"
+      value: 12
+      unit: "ms"
+      context: "gRPC message passing between agents in separate processes, same machine"
+
+relationships:
+  alternatives:
+    - slug: "crewai"
+      note: "Simpler role-playing paradigm, easier to learn but less flexible conversation patterns"
+    - slug: "langchain"
+      note: "LangGraph provides graph-based agent orchestration with stronger deployment story"
+    - slug: "semantic_kernel"
+      note: "Microsoft's other agent framework, more enterprise-focused with .NET-first design"
+  complements:
+    - slug: "openai"
+      role: "Primary LLM provider for agent reasoning"
+    - slug: "langchain"
+      role: "Tool ecosystem can be used within AutoGen agents"
+    - slug: "pinecone"
+      role: "Vector store for RAG-enabled agents"
+  typical_pipeline_position: "agent_orchestration"
+  pipeline_predecessors: ["retrieval", "data_ingestion"]
+  pipeline_successors: ["evaluation", "deployment"]

@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.core.embeddings import generate_embedding
 from src.models.module import Module, ModuleCategory, ModuleKnowledge
 
 
@@ -91,7 +92,67 @@ class ModuleService:
         tags: list[str] | None = None,
         limit: int = 5,
     ) -> list[dict]:
-        """Search knowledge entries by text (basic LIKE search — vector search added later)."""
+        """Search knowledge entries — uses vector search if embeddings available, falls back to ILIKE."""
+        # Try vector search first
+        query_embedding = await generate_embedding(query)
+        if query_embedding is not None:
+            return await self._vector_search_knowledge(
+                query_embedding, module_slugs, tags, limit
+            )
+
+        # Fallback to text search
+        return await self._text_search_knowledge(query, module_slugs, tags, limit)
+
+    async def _vector_search_knowledge(
+        self,
+        query_embedding: list[float],
+        module_slugs: list[str] | None,
+        tags: list[str] | None,
+        limit: int,
+    ) -> list[dict]:
+        """Vector similarity search using pgvector cosine distance."""
+        # Build base query with cosine distance
+        embedding_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
+        stmt = (
+            select(
+                ModuleKnowledge,
+                Module.slug,
+                Module.name,
+                ModuleKnowledge.embedding.cosine_distance(query_embedding).label("distance"),
+            )
+            .join(Module)
+            .where(ModuleKnowledge.embedding.is_not(None))
+        )
+
+        if module_slugs:
+            stmt = stmt.where(Module.slug.in_(module_slugs))
+        if tags:
+            stmt = stmt.where(ModuleKnowledge.tags.overlap(tags))
+
+        stmt = stmt.order_by("distance").limit(limit)
+
+        result = await self.db.execute(stmt)
+        entries = []
+        for row in result.all():
+            knowledge = row[0]
+            entries.append({
+                "module_slug": row[1],
+                "module_name": row[2],
+                "topic": knowledge.topic,
+                "content": knowledge.content,
+                "tags": knowledge.tags,
+                "similarity": round(1 - row[3], 3),
+            })
+        return entries
+
+    async def _text_search_knowledge(
+        self,
+        query: str,
+        module_slugs: list[str] | None,
+        tags: list[str] | None,
+        limit: int,
+    ) -> list[dict]:
+        """Fallback text-based search using ILIKE."""
         stmt = (
             select(ModuleKnowledge, Module.slug, Module.name)
             .join(Module)

@@ -1,0 +1,293 @@
+meta:
+  slug: "langchain_text_splitters"
+  name: "LangChain Text Splitters"
+  version: "1.0.0"
+  category: "chunking"
+  subcategory: "framework"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Comprehensive text splitting library for chunking documents in RAG pipelines"
+  description: |
+    LangChain Text Splitters is a library of document chunking strategies provided as part of
+    the LangChain ecosystem. It offers multiple splitting approaches including character-based,
+    token-based, recursive, semantic, and code-aware splitting, all with configurable chunk
+    sizes and overlap.
+
+    The library's most popular splitter, RecursiveCharacterTextSplitter, uses a hierarchy of
+    separators (paragraphs, sentences, words) to find natural break points in text. This
+    produces more coherent chunks than naive fixed-size splitting, improving downstream
+    retrieval quality.
+
+    LangChain Text Splitters is the most widely used chunking library in the Python AI
+    ecosystem, with direct integration into LangChain's document loading and vector store
+    pipelines. It is available as the standalone langchain-text-splitters package.
+  logo_url: "/assets/modules/langchain_text_splitters.svg"
+  website: "https://python.langchain.com"
+  documentation: "https://python.langchain.com/docs/concepts/text_splitters/"
+  github: "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Document chunking for RAG pipelines"
+    - "Code splitting by language-specific syntax"
+    - "Semantic chunking using embedding similarity"
+    - "Recursive splitting with natural break points"
+    - "Token-aware splitting for LLM context windows"
+  supported_operations:
+    - "character_splitting"
+    - "recursive_splitting"
+    - "token_splitting"
+    - "semantic_splitting"
+    - "code_splitting"
+    - "markdown_splitting"
+    - "html_splitting"
+    - "latex_splitting"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "compatible"
+    - slug: "pinecone"
+      type: "compatible"
+    - slug: "chromadb"
+      type: "compatible"
+
+technical_specs:
+  splitter_types:
+    - name: "RecursiveCharacterTextSplitter"
+      description: "Splits recursively using a hierarchy of separators"
+      default_chunk_size: 1000
+      default_overlap: 200
+    - name: "CharacterTextSplitter"
+      description: "Splits on a single separator character"
+      default_chunk_size: 1000
+      default_overlap: 200
+    - name: "TokenTextSplitter"
+      description: "Splits based on token count using tiktoken"
+      default_chunk_size: 500
+      default_overlap: 50
+    - name: "SemanticChunker"
+      description: "Splits based on embedding similarity between sentences"
+      requires_embeddings: true
+    - name: "RecursiveJsonSplitter"
+      description: "Splits JSON documents while preserving structure"
+    - name: "Language-specific code splitters"
+      description: "Syntax-aware splitting for Python, JS, Go, and more"
+  supported_code_languages:
+    - "python"
+    - "javascript"
+    - "typescript"
+    - "java"
+    - "go"
+    - "rust"
+    - "cpp"
+    - "markdown"
+    - "html"
+    - "latex"
+  package: "langchain-text-splitters"
+  python_version: ">=3.9"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Good chunk quality with recursive splitting. Semantic chunker produces best results but is slower due to embedding calls."
+  scalability:
+    score: 7
+    justification: "Processes documents locally with no API limits. Performance scales linearly with document size."
+  ease_of_use:
+    score: 9
+    justification: "Simple API with sensible defaults. Extensive documentation. Seamless integration with LangChain document loaders."
+  cost_efficiency:
+    score: 9
+    justification: "Open source and free. Semantic chunker requires embedding API calls but other splitters are purely local."
+  community:
+    score: 9
+    justification: "Part of the LangChain ecosystem with the largest community. Extensive tutorials and examples."
+  maturity:
+    score: 8
+    justification: "Widely used in production. Part of the well-maintained LangChain project. Standalone package for stability."
+  flexibility:
+    score: 9
+    justification: "Multiple splitting strategies. Custom separators. Language-specific splitting. Configurable chunk size and overlap."
+  data_privacy:
+    score: 9
+    justification: "Runs locally with no data leaving the machine. Semantic chunker sends data to embedding API but all other splitters are offline."
+
+knowledge:
+  entries:
+    - topic: "Choosing the Right Splitter"
+      content: |
+        Selecting the right text splitter depends on your content type and quality requirements:
+
+        RecursiveCharacterTextSplitter: The default choice for most applications. It tries to
+        split on paragraphs first, then sentences, then words, keeping semantically related
+        text together. Use chunk_size=1000 and chunk_overlap=200 as a starting point.
+
+        TokenTextSplitter: Use when you need precise control over token counts, such as when
+        chunks will be passed directly to an LLM with a specific context window. Uses tiktoken
+        for accurate token counting.
+
+        SemanticChunker: The highest quality option. Groups sentences by embedding similarity,
+        creating chunks that are semantically coherent. Slower and requires an embedding model
+        but produces the best retrieval results.
+
+        Code splitters: Use RecursiveCharacterTextSplitter.from_language() for code. It
+        understands function and class boundaries for Python, JavaScript, and other languages.
+
+        MarkdownHeaderTextSplitter: Splits markdown by headers, preserving document structure.
+        Ideal for documentation, wikis, and knowledge base articles.
+
+        HTMLHeaderTextSplitter: Similar to markdown splitter but for HTML documents. Preserves
+        heading hierarchy.
+      tags: ["selection", "comparison", "best-practices"]
+
+    - topic: "Chunk Size and Overlap Optimization"
+      content: |
+        Chunk size and overlap are the most impactful parameters for retrieval quality:
+
+        Chunk size guidelines:
+        - 256-512 tokens: Best for precise, fact-based retrieval (QA systems)
+        - 512-1024 tokens: Good general-purpose size for RAG applications
+        - 1024-2048 tokens: Better for summarization or when context is important
+        - Larger chunks capture more context but reduce retrieval precision
+
+        Overlap guidelines:
+        - 10-20% of chunk size is typical (e.g., 200 overlap for 1000 chunk size)
+        - Overlap prevents information loss at chunk boundaries
+        - Higher overlap increases storage but improves recall for boundary information
+        - Zero overlap is acceptable when chunks are naturally delimited (e.g., by headers)
+
+        Optimization strategy: Start with chunk_size=1000, chunk_overlap=200, then evaluate
+        retrieval quality on a test set. Reduce chunk size if answers are being diluted by
+        irrelevant context. Increase chunk size if answers require more surrounding context.
+      tags: ["optimization", "chunk-size", "overlap"]
+
+    - topic: "Semantic Chunking"
+      content: |
+        The SemanticChunker splits text based on embedding similarity between consecutive
+        sentences. It groups sentences that are semantically similar into the same chunk,
+        creating more coherent chunks than character or token-based splitting.
+
+        How it works: (1) Split text into sentences, (2) Compute embeddings for each sentence,
+        (3) Calculate similarity between consecutive sentences, (4) Split at points where
+        similarity drops below a threshold.
+
+        Three breakpoint types:
+        - percentile: Split at points where similarity is below the Nth percentile
+        - standard_deviation: Split where similarity is more than N standard deviations below mean
+        - interquartile: Split using IQR-based outlier detection
+
+        Trade-offs: Semantic chunking produces the best chunks for retrieval quality but is
+        significantly slower due to embedding API calls. For a 1000-page document, semantic
+        chunking may take minutes vs seconds for recursive splitting. It also adds cost from
+        embedding API usage.
+
+        Best for: High-value documents where retrieval quality is critical (legal, medical,
+        financial). Not recommended for large-scale ingestion of low-value content.
+      tags: ["semantic", "advanced", "embeddings"]
+
+    - topic: "Integration with RAG Pipelines"
+      content: |
+        LangChain text splitters integrate directly with the broader LangChain ecosystem:
+
+        1. Document loaders produce Document objects, which text splitters consume and produce
+        smaller Document objects with preserved metadata.
+
+        2. The split documents can be passed directly to vector store from_documents() methods
+        for embedding and indexing.
+
+        3. Metadata is preserved and augmented during splitting. Each chunk retains the source
+        document's metadata, and the splitter can add chunk-specific metadata.
+
+        Common pipeline: DocumentLoader -> TextSplitter -> EmbeddingModel -> VectorStore
+
+        Best practices: (1) Always preserve source metadata for citation, (2) Add chunk index
+        metadata for ordering, (3) Consider adding overlap metadata for deduplication,
+        (4) Use add_start_index=True to track chunk positions within source documents.
+      tags: ["rag", "pipeline", "integration"]
+
+code_examples:
+  - title: "Recursive Character Splitting"
+    language: "python"
+    code: |
+      from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+      splitter = RecursiveCharacterTextSplitter(
+          chunk_size=1000,
+          chunk_overlap=200,
+          length_function=len,
+          add_start_index=True
+      )
+
+      texts = splitter.split_text(long_document)
+      # Or split LangChain Document objects
+      docs = splitter.split_documents(documents)
+
+  - title: "Code-Aware Splitting"
+    language: "python"
+    code: |
+      from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
+
+      python_splitter = RecursiveCharacterTextSplitter.from_language(
+          language=Language.PYTHON,
+          chunk_size=2000,
+          chunk_overlap=200
+      )
+
+      code_chunks = python_splitter.split_text(python_source_code)
+
+  - title: "Semantic Chunking"
+    language: "python"
+    code: |
+      from langchain_experimental.text_splitter import SemanticChunker
+      from langchain_openai import OpenAIEmbeddings
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      chunker = SemanticChunker(
+          embeddings,
+          breakpoint_threshold_type="percentile",
+          breakpoint_threshold_amount=95
+      )
+
+      chunks = chunker.split_text(long_document)
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "recursive_split_speed"
+      value: 50000
+      unit: "chars/sec"
+      context: "RecursiveCharacterTextSplitter, chunk_size=1000"
+    - name: "semantic_split_speed"
+      value: 500
+      unit: "chars/sec"
+      context: "SemanticChunker with OpenAI embeddings, includes API latency"
+    - name: "retrieval_quality_recursive"
+      value: 0.72
+      unit: "ndcg@10"
+      context: "RAG benchmark, chunk_size=1000, overlap=200"
+    - name: "retrieval_quality_semantic"
+      value: 0.79
+      unit: "ndcg@10"
+      context: "RAG benchmark, SemanticChunker, percentile=95"
+
+relationships:
+  alternatives:
+    - slug: "llamaindex_node_parsers"
+      note: "LlamaIndex equivalent with node-based architecture and hierarchical parsing"
+  complements:
+    - slug: "langchain"
+      role: "Parent framework providing document loaders and vector store integration"
+    - slug: "openai_embeddings"
+      role: "Embedding model used by SemanticChunker for similarity-based splitting"
+    - slug: "pinecone"
+      role: "Vector database for storing chunked and embedded documents"
+  typical_pipeline_position: "chunking"
+  pipeline_predecessors: ["data_ingestion"]
+  pipeline_successors: ["embeddings"]

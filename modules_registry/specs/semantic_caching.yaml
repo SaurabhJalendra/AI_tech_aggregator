@@ -1,0 +1,346 @@
+meta:
+  slug: "semantic_caching"
+  name: "Semantic Caching"
+  version: "1.0.0"
+  category: "caching"
+  subcategory: "llm_caching"
+  status: "emerging"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Cache LLM responses by semantic similarity to reduce cost and latency for repeated queries"
+  description: |
+    Semantic caching is an advanced caching strategy that stores LLM responses and retrieves
+    them for semantically similar future queries, even if the exact wording differs. Unlike
+    traditional exact-match caching, semantic caching uses vector embeddings to determine
+    whether an incoming query is similar enough to a previously cached query to return the
+    stored response.
+
+    For example, "What is the capital of France?" and "Which city is the French capital?"
+    would be a cache hit under semantic caching, despite having completely different wording.
+    This dramatically increases cache hit rates compared to exact-match approaches.
+
+    Semantic caching is particularly valuable for applications with high query volumes where
+    many queries express similar intent. Customer support chatbots, FAQ systems, and
+    educational platforms often see 30-60% of queries being semantically similar to previous
+    queries, making semantic caching a significant cost and latency optimization.
+
+    Key implementations include GPTCache, Redis with vector search, and custom solutions
+    built on vector databases. The approach requires careful threshold tuning to balance
+    cache hit rate against answer accuracy.
+  logo_url: "/assets/modules/semantic_caching.svg"
+  website: "https://redis.io/docs/latest/develop/interact/search-and-query/advanced-concepts/vectors/"
+  documentation: "https://gptcache.readthedocs.io/"
+  license: "Various"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Reducing LLM API costs for repetitive queries"
+    - "Lowering response latency for cached queries"
+    - "Scaling chatbot applications cost-effectively"
+    - "FAQ and customer support automation"
+    - "Caching RAG responses for common questions"
+  supported_operations:
+    - "semantic_lookup"
+    - "cache_store"
+    - "cache_invalidation"
+    - "similarity_threshold_tuning"
+    - "ttl_management"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "compatible"
+    - slug: "redis_vector"
+      type: "native"
+
+technical_specs:
+  cache_backends:
+    - "Redis (with vector search)"
+    - "SQLite + FAISS"
+    - "PostgreSQL + pgvector"
+    - "In-memory (development only)"
+  embedding_models_for_cache:
+    - "OpenAI text-embedding-3-small"
+    - "sentence-transformers/all-MiniLM-L6-v2"
+    - "Custom lightweight embeddings"
+  similarity_threshold_range: "0.85-0.95 (cosine similarity)"
+  recommended_threshold: 0.90
+  typical_cache_hit_rates: "20-60% depending on query distribution"
+  cache_lookup_latency: "5-20ms"
+  storage_per_entry: "~10KB (embedding + response)"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Cache hits return responses in 5-20ms vs 500-3000ms for LLM calls. Dramatic latency improvement for cached queries."
+  scalability:
+    score: 7
+    justification: "Scales well with vector database backends. Cache size management and invalidation require attention at scale."
+  ease_of_use:
+    score: 6
+    justification: "Requires embedding model setup, threshold tuning, and cache backend configuration. Threshold too low risks returning wrong answers."
+  cost_efficiency:
+    score: 9
+    justification: "Each cache hit saves a full LLM API call. At 40% hit rate, reduces LLM costs by nearly 40%. Embedding costs for cache lookup are negligible."
+  community:
+    score: 5
+    justification: "Relatively new concept with growing but still limited community. GPTCache is the most established project."
+  maturity:
+    score: 5
+    justification: "Emerging technique with limited production case studies. Threshold tuning and cache invalidation are still active research areas."
+  flexibility:
+    score: 7
+    justification: "Works with any LLM provider. Configurable similarity thresholds, TTL, and backend storage. Can be scoped per user or conversation."
+  data_privacy:
+    score: 7
+    justification: "Cached responses are stored locally. However, caching user queries raises privacy considerations that must be addressed per-domain."
+
+knowledge:
+  entries:
+    - topic: "How Semantic Caching Works"
+      content: |
+        Semantic caching works by maintaining a vector index of previously seen queries alongside
+        their LLM responses. When a new query arrives, the system:
+
+        1. Embeds the incoming query using the same embedding model used for the cache.
+        2. Searches the cache's vector index for the nearest neighbor query.
+        3. If the similarity score exceeds the configured threshold (e.g., cosine > 0.90),
+           returns the cached response without calling the LLM.
+        4. If no cache hit, forwards the query to the LLM, stores the response along with
+           the query embedding in the cache, and returns the response.
+
+        The similarity threshold is the critical parameter. Too low (e.g., 0.80) and the cache
+        returns responses for queries that are similar but not equivalent, leading to incorrect
+        answers. Too high (e.g., 0.98) and the cache rarely hits, providing minimal benefit.
+
+        A threshold of 0.90 is a good starting point for most applications. Domain-specific
+        tuning is recommended: factual Q&A systems can use lower thresholds (0.88-0.92) while
+        creative or context-dependent applications need higher thresholds (0.93-0.97).
+      tags: ["architecture", "how-it-works"]
+
+    - topic: "Cache Invalidation Strategies"
+      content: |
+        Cache invalidation is critical for semantic caching to prevent stale or incorrect
+        responses. Key strategies include:
+
+        1. TTL-based expiration: Set a time-to-live on cached entries. Short TTL (hours) for
+        rapidly changing data, longer TTL (days/weeks) for stable knowledge bases.
+
+        2. Source-change invalidation: When underlying documents are updated (e.g., knowledge
+        base refresh), invalidate cache entries that reference those documents. This requires
+        tracking which source documents influenced each cached response.
+
+        3. Scope-based invalidation: Scope caches by user, session, or context. A cache hit
+        should only return responses generated with similar context, not just similar queries.
+
+        4. Manual invalidation: Provide admin tools to clear specific cache entries when
+        incorrect responses are identified.
+
+        5. Confidence-based eviction: Evict entries where the cached response's confidence
+        was low, as these are more likely to be incorrect.
+
+        The most common approach is TTL-based with manual override capability. Source-change
+        invalidation is more sophisticated but essential for systems where the underlying
+        data changes frequently.
+      tags: ["invalidation", "best-practices"]
+
+    - topic: "Risks and Mitigation"
+      content: |
+        Semantic caching introduces several risks that must be managed:
+
+        1. False cache hits: Two queries might be semantically similar but require different
+        answers due to different context, user permissions, or time-sensitivity. Mitigation:
+        include relevant context (user role, timestamp) in the cache key computation.
+
+        2. Stale responses: Cached answers may become outdated when underlying data changes.
+        Mitigation: implement TTL and source-change invalidation.
+
+        3. Privacy leakage: One user's query/response being served to another user.
+        Mitigation: scope caches per user or per-tenant in multi-tenant applications.
+
+        4. Embedding model mismatch: If the embedding model changes, the entire cache must
+        be rebuilt. Mitigation: version the cache and include the embedding model identifier
+        in the cache metadata.
+
+        5. Threshold sensitivity: The similarity threshold requires careful calibration per
+        domain. Mitigation: start conservative (high threshold), monitor cache hit quality,
+        and gradually lower the threshold based on accuracy metrics.
+
+        For production systems, implement a monitoring layer that samples cache hits and
+        verifies response quality. Log cache hit similarity scores to detect threshold drift.
+      tags: ["risks", "production", "monitoring"]
+
+    - topic: "When to Use Semantic Caching"
+      content: |
+        Semantic caching is most effective when:
+
+        1. High query repetition: Applications where many users ask similar questions (FAQ,
+        customer support, educational platforms). A 40%+ cache hit rate makes it worthwhile.
+
+        2. Cost-sensitive deployments: When LLM API costs are a significant expense and
+        reducing calls provides meaningful savings.
+
+        3. Latency-sensitive applications: Where sub-100ms response times are desired for
+        common queries.
+
+        4. Stable knowledge bases: When the underlying information doesn't change frequently,
+        reducing invalidation complexity.
+
+        Semantic caching is NOT recommended when:
+        - Every query requires personalized or context-dependent responses
+        - The underlying data changes very frequently
+        - Query volume is low (cache infrastructure overhead outweighs savings)
+        - High accuracy is critical and false cache hits are unacceptable (e.g., medical advice)
+      tags: ["decision", "use-cases"]
+
+code_examples:
+  - title: "Semantic Cache with LangChain and Redis"
+    language: "python"
+    code: |
+      from langchain.cache import RedisSemanticCache
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain.globals import set_llm_cache
+
+      # Set up semantic cache with Redis
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+      set_llm_cache(
+          RedisSemanticCache(
+              redis_url="redis://localhost:6379",
+              embedding=embeddings,
+              score_threshold=0.90
+          )
+      )
+
+      llm = ChatOpenAI(model="gpt-4o")
+
+      # First call - cache miss, calls LLM
+      response1 = llm.invoke("What is the capital of France?")
+
+      # Second call - cache hit (semantically similar)
+      response2 = llm.invoke("Which city serves as France's capital?")
+      # Returns cached response without LLM call
+
+  - title: "Custom Semantic Cache with GPTCache"
+    language: "python"
+    code: |
+      from gptcache import Cache
+      from gptcache.adapter import openai
+      from gptcache.embedding import Onnx
+      from gptcache.manager import manager_factory
+      from gptcache.similarity_evaluation import OnnxModelEvaluation
+
+      # Initialize GPTCache
+      cache = Cache()
+      onnx = Onnx()
+
+      data_manager = manager_factory(
+          "sqlite,faiss",
+          vector_params={"dimension": onnx.dimension}
+      )
+
+      cache.init(
+          embedding_func=onnx.to_embeddings,
+          data_manager=data_manager,
+          similarity_evaluation=OnnxModelEvaluation()
+      )
+
+      # Use with OpenAI - responses are automatically cached
+      response = openai.ChatCompletion.create(
+          model="gpt-4o",
+          messages=[{"role": "user", "content": "Explain vector databases"}],
+          cache_obj=cache
+      )
+
+  - title: "Manual Semantic Cache with pgvector"
+    language: "python"
+    code: |
+      import numpy as np
+      from sqlalchemy import text
+      from openai import OpenAI
+
+      client = OpenAI()
+
+      async def semantic_cache_lookup(query: str, threshold: float = 0.90):
+          # Embed the query
+          resp = client.embeddings.create(
+              input=query,
+              model="text-embedding-3-small"
+          )
+          query_embedding = resp.data[0].embedding
+
+          # Search cache using pgvector
+          result = await db.execute(text("""
+              SELECT response, 1 - (embedding <=> :embedding) as similarity
+              FROM llm_cache
+              WHERE 1 - (embedding <=> :embedding) > :threshold
+              ORDER BY embedding <=> :embedding
+              LIMIT 1
+          """), {
+              "embedding": str(query_embedding),
+              "threshold": threshold
+          })
+
+          row = result.fetchone()
+          if row:
+              return row.response  # Cache hit
+
+          # Cache miss - call LLM
+          llm_response = client.chat.completions.create(
+              model="gpt-4o",
+              messages=[{"role": "user", "content": query}]
+          )
+          answer = llm_response.choices[0].message.content
+
+          # Store in cache
+          await db.execute(text("""
+              INSERT INTO llm_cache (query, embedding, response, created_at)
+              VALUES (:query, :embedding, :response, NOW())
+          """), {
+              "query": query,
+              "embedding": str(query_embedding),
+              "response": answer
+          })
+
+          return answer
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "cache_hit_rate_faq"
+      value: 55
+      unit: "percent"
+      context: "FAQ chatbot with 10K unique queries, threshold=0.90"
+    - name: "cache_hit_rate_general"
+      value: 25
+      unit: "percent"
+      context: "General-purpose assistant, threshold=0.90"
+    - name: "cache_lookup_latency"
+      value: 12
+      unit: "ms"
+      context: "Redis semantic cache, 100K cached entries"
+    - name: "cost_savings_faq"
+      value: 52
+      unit: "percent"
+      context: "LLM API cost reduction for FAQ application"
+    - name: "false_hit_rate"
+      value: 2.3
+      unit: "percent"
+      context: "Incorrect cache hits at threshold=0.90"
+
+relationships:
+  alternatives:
+    - slug: "prompt_caching"
+      note: "Provider-level prompt caching for identical prompt prefixes rather than semantic similarity"
+    - slug: "gptcache"
+      note: "Dedicated semantic caching library"
+  complements:
+    - slug: "redis_vector"
+      role: "Backend vector store for semantic cache with TTL support"
+    - slug: "pgvector_module"
+      role: "PostgreSQL-based backend for semantic cache storage"
+  typical_pipeline_position: "caching"
+  pipeline_predecessors: ["user_query"]
+  pipeline_successors: ["retrieval", "llm_generation"]

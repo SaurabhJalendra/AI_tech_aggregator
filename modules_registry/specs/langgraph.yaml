@@ -1,0 +1,350 @@
+meta:
+  slug: "langgraph"
+  name: "LangGraph"
+  version: "1.0.0"
+  category: "agent_systems"
+  subcategory: "orchestration"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "State machine framework for building controllable, multi-step LLM agent workflows"
+  description: |
+    LangGraph is a framework for building stateful, multi-actor applications with LLMs,
+    built on top of the LangChain ecosystem. It models agent workflows as directed graphs
+    where nodes represent computation steps (LLM calls, tool use, data processing) and edges
+    represent transitions between steps, including conditional branching.
+
+    Unlike simple chain-based approaches, LangGraph provides explicit control flow through
+    a state machine model. Developers define a graph of nodes and edges, with a shared state
+    object that flows through the graph. Conditional edges enable dynamic routing based on
+    LLM output, tool results, or custom logic.
+
+    LangGraph supports cycles (loops), which is essential for agentic behavior where an LLM
+    may need to call tools multiple times before producing a final answer. It also supports
+    human-in-the-loop patterns, streaming, persistence, and multi-agent architectures where
+    separate agents collaborate through a supervisor or peer-to-peer communication.
+
+    LangGraph Platform provides managed deployment with built-in persistence, streaming,
+    and a visual studio for debugging agent workflows.
+  logo_url: "/assets/modules/langgraph.svg"
+  website: "https://langchain-ai.github.io/langgraph/"
+  documentation: "https://langchain-ai.github.io/langgraph/tutorials/"
+  github: "https://github.com/langchain-ai/langgraph"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Multi-step agent workflows with tool use"
+    - "Human-in-the-loop approval workflows"
+    - "Multi-agent collaboration systems"
+    - "Complex RAG with iterative retrieval"
+    - "Planning and reasoning agents"
+    - "Stateful conversational agents"
+  supported_operations:
+    - "graph_definition"
+    - "state_management"
+    - "conditional_routing"
+    - "cycles_and_loops"
+    - "streaming"
+    - "persistence"
+    - "human_in_the_loop"
+    - "subgraph_composition"
+    - "parallel_execution"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "openai"
+      type: "compatible"
+    - slug: "anthropic_claude"
+      type: "compatible"
+
+technical_specs:
+  core_concepts:
+    - name: "StateGraph"
+      description: "Main class for defining a graph with typed state"
+    - name: "Nodes"
+      description: "Functions that take state and return state updates"
+    - name: "Edges"
+      description: "Connections between nodes, including conditional edges"
+    - name: "State"
+      description: "TypedDict or Pydantic model shared across all nodes"
+    - name: "Checkpointer"
+      description: "Persistence layer for state snapshots and time-travel"
+  persistence_backends:
+    - "MemorySaver (in-memory)"
+    - "SqliteSaver"
+    - "PostgresSaver"
+    - "Custom checkpointers"
+  streaming_modes:
+    - "values"
+    - "updates"
+    - "messages"
+    - "custom"
+  package: "langgraph"
+  python_version: ">=3.9"
+  js_package: "@langchain/langgraph"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Minimal overhead over raw LLM calls. Graph execution is fast; bottleneck is LLM latency. Streaming support for real-time output."
+  scalability:
+    score: 7
+    justification: "Suitable for production workloads. LangGraph Platform provides managed scaling. State persistence enables long-running workflows."
+  ease_of_use:
+    score: 7
+    justification: "Graph-based mental model is intuitive for complex workflows. Steeper learning curve than simple chains. Excellent tutorials."
+  cost_efficiency:
+    score: 8
+    justification: "Open-source core. LangGraph Platform is paid for managed deployment. No additional cost beyond LLM API calls."
+  community:
+    score: 9
+    justification: "Part of the LangChain ecosystem with the largest AI developer community. Extensive examples and tutorials."
+  maturity:
+    score: 7
+    justification: "Rapidly evolving but production-used at many companies. API has stabilized with v0.2+. LangGraph Platform adds enterprise features."
+  flexibility:
+    score: 9
+    justification: "Supports any graph topology including cycles. Custom state types. Subgraph composition. Multi-agent patterns."
+  data_privacy:
+    score: 8
+    justification: "Open-source core runs locally. State persistence is self-managed. LangGraph Platform stores state in managed infrastructure."
+
+knowledge:
+  entries:
+    - topic: "Core Architecture and Concepts"
+      content: |
+        LangGraph models agent workflows as state machines with three core components:
+
+        State: A typed dictionary (TypedDict or Pydantic model) that represents the current
+        state of the workflow. All nodes read from and write to this shared state. State
+        includes things like messages, intermediate results, and control variables.
+
+        Nodes: Python functions that receive the current state and return a partial state
+        update. Nodes can call LLMs, execute tools, process data, or make decisions. Each
+        node is registered with a name in the graph.
+
+        Edges: Connections between nodes that define the flow. Regular edges always transition
+        to a specific node. Conditional edges use a function to determine the next node based
+        on the current state. This enables dynamic routing.
+
+        The graph execution model: START -> Node A -> (conditional) -> Node B or Node C -> END.
+        Cycles are supported, allowing a node to loop back to a previous node (essential for
+        iterative tool use). The graph compiles into an executable Runnable.
+      tags: ["architecture", "concepts", "state-machine"]
+
+    - topic: "Building a ReAct Agent"
+      content: |
+        The most common LangGraph pattern is the ReAct (Reasoning + Acting) agent, which
+        iteratively calls tools until it has enough information to answer:
+
+        1. LLM Node: Takes the current messages and decides whether to call a tool or respond.
+        2. Tool Node: Executes the selected tool and adds the result to messages.
+        3. Conditional Edge: Routes back to LLM Node if a tool was called, or to END if the
+        LLM produced a final response.
+
+        This creates a loop: LLM -> Tool -> LLM -> Tool -> ... -> LLM -> END.
+
+        LangGraph provides create_react_agent() as a prebuilt helper, but building it manually
+        gives full control over the loop logic, error handling, and maximum iterations.
+
+        Key advantages over LangChain AgentExecutor: explicit control flow, state persistence
+        between turns, human-in-the-loop capability, and streaming of intermediate steps.
+      tags: ["react", "agent", "tool-use", "pattern"]
+
+    - topic: "Multi-Agent Architectures"
+      content: |
+        LangGraph supports several multi-agent patterns:
+
+        Supervisor pattern: A supervisor agent routes tasks to specialized worker agents. The
+        supervisor decides which agent to invoke based on the task and aggregates results. Each
+        worker agent is a subgraph with its own tools and state.
+
+        Hierarchical pattern: Multiple levels of supervisors, where a top-level supervisor
+        delegates to mid-level supervisors, who in turn delegate to workers. Useful for
+        complex workflows with many specialized capabilities.
+
+        Peer-to-peer pattern: Agents communicate through shared state without a central
+        supervisor. Each agent decides when to hand off to another agent. More flexible but
+        harder to debug.
+
+        Subgraph composition: Each agent can be defined as a separate StateGraph and composed
+        into a larger graph. This enables modular development and testing of individual agents.
+
+        State handoff: When transitioning between agents, state can be filtered or transformed
+        to limit each agent's context to what it needs, improving focus and reducing token usage.
+      tags: ["multi-agent", "supervisor", "architecture"]
+
+    - topic: "Persistence and Human-in-the-Loop"
+      content: |
+        LangGraph's checkpointing system enables two critical features: persistence and
+        human-in-the-loop workflows.
+
+        Persistence: Every state transition is saved to a checkpointer. This means workflows
+        can be interrupted and resumed, the system can recover from crashes, and you can
+        inspect or replay any previous state. Checkpointers are available for SQLite,
+        PostgreSQL, and in-memory storage.
+
+        Human-in-the-loop: Use interrupt_before or interrupt_after on specific nodes to pause
+        execution and wait for human input. The workflow state is persisted, and execution
+        resumes when the human provides input. This is essential for approval workflows,
+        content review, and supervised agent actions.
+
+        Time-travel debugging: Because all states are checkpointed, you can rewind a workflow
+        to any previous state and replay from there with different inputs. This is invaluable
+        for debugging agent failures.
+
+        Thread management: Each conversation or workflow run gets a unique thread_id. Multiple
+        threads can run concurrently with independent state. This enables multi-user
+        applications with isolated workflow state.
+      tags: ["persistence", "human-in-the-loop", "checkpointing"]
+
+    - topic: "Comparison with Other Agent Frameworks"
+      content: |
+        LangGraph vs CrewAI: CrewAI is higher-level and role-based, making it easier to set up
+        simple multi-agent systems. LangGraph provides lower-level control and is better for
+        complex, custom workflows. Choose CrewAI for rapid prototyping, LangGraph for
+        production systems needing precise control.
+
+        LangGraph vs AutoGen: AutoGen focuses on conversational multi-agent patterns. LangGraph
+        is more general, supporting any graph topology. LangGraph has better streaming and
+        persistence. AutoGen is easier for chat-based multi-agent scenarios.
+
+        LangGraph vs custom code: LangGraph adds structure (state management, persistence,
+        streaming) that would take significant effort to build from scratch. The trade-off
+        is framework dependency. For simple sequential workflows, custom code may be simpler.
+
+        LangGraph vs Semantic Kernel: Semantic Kernel is Microsoft's agent framework with
+        strong Azure integration. LangGraph is more flexible and framework-agnostic but lacks
+        native Microsoft ecosystem integration.
+      tags: ["comparison", "decision", "crewai", "autogen"]
+
+code_examples:
+  - title: "Basic ReAct Agent"
+    language: "python"
+    code: |
+      from langgraph.graph import StateGraph, MessagesState, START, END
+      from langgraph.prebuilt import ToolNode, tools_condition
+      from langchain_openai import ChatOpenAI
+      from langchain_core.tools import tool
+
+      @tool
+      def search(query: str) -> str:
+          """Search the web for information."""
+          return f"Results for: {query}"
+
+      model = ChatOpenAI(model="gpt-4o").bind_tools([search])
+
+      def call_model(state: MessagesState):
+          return {"messages": [model.invoke(state["messages"])]}
+
+      graph = StateGraph(MessagesState)
+      graph.add_node("agent", call_model)
+      graph.add_node("tools", ToolNode([search]))
+      graph.add_edge(START, "agent")
+      graph.add_conditional_edges("agent", tools_condition)
+      graph.add_edge("tools", "agent")
+
+      app = graph.compile()
+      result = app.invoke({"messages": [("user", "What is LangGraph?")]})
+
+  - title: "Agent with Persistence and Human-in-the-Loop"
+    language: "python"
+    code: |
+      from langgraph.graph import StateGraph, MessagesState, START, END
+      from langgraph.checkpoint.sqlite import SqliteSaver
+
+      graph = StateGraph(MessagesState)
+      # ... add nodes and edges ...
+
+      # Compile with persistence
+      checkpointer = SqliteSaver.from_conn_string("agent.db")
+      app = graph.compile(
+          checkpointer=checkpointer,
+          interrupt_before=["sensitive_action"]  # pause for approval
+      )
+
+      # Run with thread
+      config = {"configurable": {"thread_id": "user-123"}}
+      result = app.invoke({"messages": [("user", "Delete the file")]}, config)
+
+      # Resume after human approval
+      app.invoke(None, config)  # continues from checkpoint
+
+  - title: "Multi-Agent Supervisor"
+    language: "python"
+    code: |
+      from langgraph.graph import StateGraph, MessagesState, START, END
+
+      def supervisor(state: MessagesState):
+          # Route to appropriate specialist agent
+          last_message = state["messages"][-1].content
+          if "code" in last_message.lower():
+              return {"next": "coder"}
+          elif "research" in last_message.lower():
+              return {"next": "researcher"}
+          return {"next": "responder"}
+
+      def coder(state: MessagesState):
+          # Code generation agent logic
+          return {"messages": [...]}
+
+      def researcher(state: MessagesState):
+          # Research agent logic
+          return {"messages": [...]}
+
+      graph = StateGraph(MessagesState)
+      graph.add_node("supervisor", supervisor)
+      graph.add_node("coder", coder)
+      graph.add_node("researcher", researcher)
+      graph.add_edge(START, "supervisor")
+      graph.add_conditional_edges("supervisor",
+          lambda s: s["next"],
+          {"coder": "coder", "researcher": "researcher", "responder": END}
+      )
+      graph.add_edge("coder", END)
+      graph.add_edge("researcher", END)
+
+      app = graph.compile()
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "graph_compilation_time"
+      value: 5
+      unit: "ms"
+      context: "10-node graph with conditional edges"
+    - name: "state_checkpoint_overhead"
+      value: 2
+      unit: "ms"
+      context: "SQLite checkpointer, per-step overhead"
+    - name: "agent_task_completion"
+      value: 87
+      unit: "percent"
+      context: "ReAct agent on standard tool-use benchmark"
+    - name: "streaming_first_token"
+      value: 150
+      unit: "ms"
+      context: "Time to first streamed token including graph overhead"
+
+relationships:
+  alternatives:
+    - slug: "crewai"
+      note: "Higher-level role-based multi-agent framework, easier setup but less control"
+    - slug: "autogen"
+      note: "Microsoft's conversational multi-agent framework"
+    - slug: "semantic_kernel"
+      note: "Microsoft's agent framework with strong Azure integration"
+  complements:
+    - slug: "langchain"
+      role: "Foundation framework providing LLM interfaces, tools, and chains"
+    - slug: "openai"
+      role: "LLM provider for agent reasoning and tool calling"
+    - slug: "anthropic_claude"
+      role: "LLM provider with strong tool use capabilities for agent workflows"
+  typical_pipeline_position: "agent_orchestration"
+  pipeline_predecessors: ["retrieval", "llm_layer"]
+  pipeline_successors: ["evaluation"]

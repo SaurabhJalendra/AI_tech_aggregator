@@ -1,0 +1,381 @@
+meta:
+  slug: "llamaindex"
+  name: "LlamaIndex"
+  version: "1.0.0"
+  category: "retrieval"
+  subcategory: "data_framework"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "The data framework for connecting custom data sources to large language models"
+  description: |
+    LlamaIndex (formerly GPT Index) is a data framework designed to ingest, structure, and
+    access private or domain-specific data for LLM applications. It provides the tools to
+    build production-grade RAG systems with advanced indexing strategies, query engines, and
+    data connectors.
+
+    The framework excels at the data layer of LLM applications: loading data from 160+ sources
+    (via LlamaHub), chunking and parsing documents intelligently, creating sophisticated index
+    structures, and implementing advanced retrieval strategies. It supports simple vector
+    indices, knowledge graphs, tree indices, keyword tables, and composable graph indices.
+
+    LlamaIndex's Workflows system provides an event-driven orchestration layer for building
+    complex agentic RAG pipelines with branching, looping, and concurrent execution. This
+    positions it as both a data framework and an agent orchestration tool, though its core
+    strength remains in retrieval and data management.
+
+    LlamaCloud extends the open-source framework with managed parsing (LlamaParse for complex
+    documents like PDFs with tables), managed ingestion pipelines, and managed retrieval,
+    providing a production path for teams that want to avoid building infrastructure.
+  logo_url: "/assets/modules/llamaindex.svg"
+  website: "https://www.llamaindex.ai"
+  documentation: "https://docs.llamaindex.ai"
+  github: "https://github.com/run-llama/llama_index"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Production RAG systems with advanced retrieval"
+    - "Document question answering over complex documents"
+    - "Knowledge graph construction from unstructured data"
+    - "Multi-modal retrieval (text, images, tables)"
+    - "Structured data extraction and querying"
+    - "Agentic RAG with query planning"
+  supported_operations:
+    - "document_loading"
+    - "text_splitting"
+    - "index_construction"
+    - "vector_retrieval"
+    - "keyword_retrieval"
+    - "hybrid_retrieval"
+    - "query_transformation"
+    - "response_synthesis"
+    - "reranking"
+    - "agent_orchestration"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "native"
+    - slug: "pinecone"
+      type: "native"
+    - slug: "chromadb"
+      type: "native"
+    - slug: "weaviate"
+      type: "native"
+    - slug: "qdrant"
+      type: "native"
+    - slug: "milvus"
+      type: "native"
+
+technical_specs:
+  languages:
+    - "python"
+    - "typescript"
+  python_min_version: "3.9"
+  core_packages:
+    - "llama-index-core"
+    - "llama-index-llms-openai"
+    - "llama-index-llms-anthropic"
+    - "llama-index-embeddings-openai"
+    - "llama-index-vector-stores-pinecone"
+  data_connectors: 160+
+  supported_index_types:
+    - "VectorStoreIndex"
+    - "SummaryIndex"
+    - "TreeIndex"
+    - "KeywordTableIndex"
+    - "KnowledgeGraphIndex"
+    - "ComposableGraph"
+    - "PropertyGraphIndex"
+  supported_llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google (Gemini)"
+    - "AWS Bedrock"
+    - "Azure OpenAI"
+    - "Cohere"
+    - "Mistral"
+    - "Ollama"
+    - "HuggingFace"
+  streaming_support: true
+  async_support: true
+  llamacloud_features:
+    - "LlamaParse (managed document parsing)"
+    - "Managed ingestion pipelines"
+    - "Managed retrieval"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Advanced retrieval strategies (hybrid, reranking, query decomposition) improve result quality at the cost of additional latency. Optimized for retrieval precision over raw speed."
+  scalability:
+    score: 7
+    justification: "Delegates storage scaling to underlying vector stores. Ingestion pipelines support parallel processing. LlamaCloud provides managed scaling for enterprise use."
+  ease_of_use:
+    score: 8
+    justification: "High-level abstractions make basic RAG trivial (5 lines of code). Advanced features require understanding index types and query engines. Documentation is comprehensive."
+  cost_efficiency:
+    score: 9
+    justification: "Fully open-source core. LlamaParse has a free tier (1000 pages/day). No framework costs beyond underlying LLM and vector store infrastructure."
+  community:
+    score: 8
+    justification: "38K+ GitHub stars, active Discord, extensive ecosystem of data connectors via LlamaHub. Second-largest LLM framework community after LangChain."
+  maturity:
+    score: 7
+    justification: "Production-used since 2023 with stable core APIs. v0.10+ modular architecture is well-designed. Some advanced features still evolving rapidly."
+  flexibility:
+    score: 8
+    justification: "Multiple index types and retrieval strategies for different use cases. Composable indices enable complex architectures. Slightly more opinionated than LangChain."
+  data_privacy:
+    score: 8
+    justification: "Fully self-hostable. No data sent externally unless using LlamaCloud. Supports local LLMs and embeddings. Data stays in your chosen vector store."
+
+knowledge:
+  entries:
+    - topic: "Index Types and When to Use Them"
+      content: |
+        LlamaIndex provides several index types optimized for different retrieval patterns:
+
+        VectorStoreIndex: The default and most common index. Embeds documents and stores them
+        in a vector store for semantic similarity search. Best for general-purpose question
+        answering over a corpus. Use with any supported vector database.
+
+        SummaryIndex (formerly ListIndex): Stores documents sequentially and synthesizes answers
+        by reading through all documents. No embedding required. Best for summarization tasks
+        where you need to consider all documents, not just the most similar.
+
+        TreeIndex: Builds a tree of summaries from leaf nodes (documents) up to a root summary.
+        Queries traverse the tree top-down, selecting the most relevant branches. Useful for
+        hierarchical document structures and when you need multi-level summarization.
+
+        KeywordTableIndex: Extracts keywords from documents and builds a keyword-to-document
+        mapping. Queries use keyword extraction to find relevant documents. Best for exact
+        keyword matching scenarios alongside semantic search.
+
+        KnowledgeGraphIndex: Extracts entity-relation-entity triplets and builds a knowledge
+        graph. Supports graph traversal queries. Best when relationships between entities
+        matter more than raw text similarity.
+
+        PropertyGraphIndex: A newer, richer graph index that supports labeled nodes and edges
+        with properties. More flexible than KnowledgeGraphIndex for complex domain modeling.
+      tags: ["indices", "retrieval", "architecture"]
+
+    - topic: "Advanced Retrieval Strategies"
+      content: |
+        Beyond basic vector similarity search, LlamaIndex provides advanced retrieval strategies:
+
+        Hybrid Search: Combines vector similarity with keyword (BM25) search. The alpha parameter
+        controls the blend. Best when queries contain specific technical terms alongside
+        semantic intent.
+
+        Recursive Retrieval: Links summary nodes to their source documents. First retrieves at
+        the summary level, then drills into detailed chunks. Reduces noise from over-chunking.
+
+        Auto-merging Retrieval: Stores documents at multiple granularities (sentences, paragraphs,
+        sections). If enough fine-grained chunks from the same parent are retrieved, they are
+        merged back into the parent chunk for better context.
+
+        Sentence Window Retrieval: Retrieves individual sentences but expands the context window
+        to include surrounding sentences before sending to the LLM. Balances retrieval precision
+        with generation context.
+
+        Metadata Filtering: Filters results by document metadata before or after vector search.
+        Critical for multi-tenant applications or domain-scoped queries.
+
+        Reranking: After initial retrieval, uses a cross-encoder model (e.g., Cohere Rerank,
+        ColBERT) to re-score results for higher precision. Adds latency but significantly
+        improves quality for complex queries.
+      tags: ["retrieval", "advanced", "strategies"]
+
+    - topic: "When to Choose LlamaIndex"
+      content: |
+        LlamaIndex is the right choice when: (1) Your primary challenge is data — ingesting,
+        parsing, and structuring complex documents (PDFs with tables, code files, multi-modal
+        data). LlamaParse is best-in-class for complex document parsing. (2) You need
+        sophisticated retrieval beyond basic vector search — auto-merging, recursive retrieval,
+        hybrid search, and reranking are first-class features. (3) You want a composable
+        index architecture — combining vector, graph, and keyword indices. (4) You're building
+        RAG and want to get started quickly — basic RAG is 5 lines of code.
+
+        LlamaIndex is NOT the right choice when: (1) You need complex multi-agent orchestration
+        without a strong data/retrieval component — LangGraph is more mature for pure agent
+        workflows. (2) You need .NET or Java support — LlamaIndex is Python and TypeScript only.
+        (3) You want minimal dependencies — LlamaIndex's modular packages help, but the
+        ecosystem can still be heavy for simple use cases.
+      tags: ["decision", "comparison"]
+
+    - topic: "Workflows for Agentic RAG"
+      content: |
+        LlamaIndex Workflows provide an event-driven orchestration system for building complex
+        RAG and agent pipelines. Unlike simple linear chains, Workflows support:
+
+        Event-driven steps: Each step is triggered by specific event types and emits new events.
+        Steps can emit multiple events to fan out execution, and consume events from multiple
+        sources to synchronize.
+
+        Loops and branches: Workflows can loop (e.g., retry retrieval with refined queries)
+        and branch (e.g., route to different retrieval strategies based on query type).
+
+        Concurrent execution: Independent steps run in parallel automatically. This enables
+        patterns like querying multiple indices simultaneously and merging results.
+
+        Context: A shared context object allows steps to communicate state without tight
+        coupling. Useful for accumulating retrieved documents across multiple retrieval steps.
+
+        Workflows are the recommended approach for building agentic RAG systems in LlamaIndex,
+        replacing the older query pipeline and agent abstractions.
+      tags: ["workflows", "agents", "orchestration"]
+
+    - topic: "LlamaParse for Complex Document Parsing"
+      content: |
+        LlamaParse is LlamaIndex's managed document parsing service that handles complex
+        document formats that traditional parsers struggle with:
+
+        - PDFs with tables, charts, and mixed layouts
+        - Scanned documents requiring OCR
+        - Presentations (PPTX) with embedded images
+        - Spreadsheets with formulas and formatting
+        - Complex HTML with nested structures
+
+        LlamaParse uses vision-language models to understand document layout and extract
+        structured content. It outputs clean Markdown with properly formatted tables, headers,
+        and code blocks, optimized for LLM consumption.
+
+        The free tier allows 1000 pages/day. Paid plans offer higher throughput and priority
+        processing. LlamaParse can be used standalone or integrated into LlamaIndex ingestion
+        pipelines.
+
+        For organizations that cannot use a cloud parsing service, LlamaIndex also supports
+        open-source parsers like Unstructured, PyMuPDF, and Docling, though these typically
+        produce lower-quality output for complex documents.
+      tags: ["parsing", "documents", "llamaparse"]
+
+code_examples:
+  - title: "Basic RAG in 5 Lines"
+    language: "python"
+    code: |
+      from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+
+      documents = SimpleDirectoryReader("./data").load_data()
+      index = VectorStoreIndex.from_documents(documents)
+      query_engine = index.as_query_engine()
+      response = query_engine.query("What is the main topic of these documents?")
+      print(response)
+
+  - title: "Production RAG with Pinecone and Reranking"
+    language: "python"
+    code: |
+      from llama_index.core import VectorStoreIndex, Settings
+      from llama_index.core.node_parser import SentenceSplitter
+      from llama_index.vector_stores.pinecone import PineconeVectorStore
+      from llama_index.embeddings.openai import OpenAIEmbedding
+      from llama_index.llms.openai import OpenAI
+      from llama_index.postprocessor.cohere_rerank import CohereRerank
+      from pinecone import Pinecone
+
+      # Configure global settings
+      Settings.llm = OpenAI(model="gpt-4o")
+      Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+      Settings.node_parser = SentenceSplitter(chunk_size=512, chunk_overlap=50)
+
+      # Connect to Pinecone
+      pc = Pinecone(api_key="your-key")
+      pinecone_index = pc.Index("my-index")
+      vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
+
+      # Build index
+      index = VectorStoreIndex.from_vector_store(vector_store)
+
+      # Query with reranking
+      query_engine = index.as_query_engine(
+          similarity_top_k=20,
+          node_postprocessors=[CohereRerank(top_n=5)]
+      )
+      response = query_engine.query("How does auto-scaling work?")
+
+  - title: "Agentic RAG with Workflows"
+    language: "python"
+    code: |
+      from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent
+      from llama_index.core import VectorStoreIndex
+
+      class RetrieveEvent(Event):
+          query: str
+
+      class AnalyzeEvent(Event):
+          nodes: list
+          query: str
+
+      class RAGWorkflow(Workflow):
+          @step
+          async def classify(self, ev: StartEvent) -> RetrieveEvent:
+              """Classify the query and prepare retrieval."""
+              query = ev.get("query")
+              return RetrieveEvent(query=query)
+
+          @step
+          async def retrieve(self, ev: RetrieveEvent) -> AnalyzeEvent:
+              """Retrieve relevant documents."""
+              index = self.index  # set during initialization
+              retriever = index.as_retriever(similarity_top_k=10)
+              nodes = await retriever.aretrieve(ev.query)
+              return AnalyzeEvent(nodes=nodes, query=ev.query)
+
+          @step
+          async def synthesize(self, ev: AnalyzeEvent) -> StopEvent:
+              """Generate final response from retrieved context."""
+              context = "\n".join([n.text for n in ev.nodes])
+              response = await self.llm.acomplete(
+                  f"Context: {context}\n\nQuestion: {ev.query}\n\nAnswer:"
+              )
+              return StopEvent(result=str(response))
+
+      workflow = RAGWorkflow()
+      result = await workflow.run(query="What are the scaling limits?")
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "basic_rag_overhead"
+      value: 25
+      unit: "ms"
+      context: "Framework overhead for VectorStoreIndex query, excludes embedding + retrieval + LLM time"
+    - name: "ingestion_throughput"
+      value: 150
+      unit: "docs/sec"
+      context: "SimpleDirectoryReader + SentenceSplitter, 1KB average doc size"
+    - name: "reranked_retrieval_improvement"
+      value: 18
+      unit: "percent"
+      context: "Recall@5 improvement with Cohere Rerank vs. vector-only on BEIR benchmarks"
+    - name: "auto_merging_retrieval_improvement"
+      value: 12
+      unit: "percent"
+      context: "Answer relevance improvement vs. fixed-size chunking on complex docs"
+    - name: "llamaparse_table_accuracy"
+      value: 92
+      unit: "percent"
+      context: "Table extraction accuracy on PDF benchmark dataset"
+
+relationships:
+  alternatives:
+    - slug: "langchain"
+      note: "Broader orchestration framework with larger ecosystem but less depth in retrieval strategies"
+    - slug: "haystack"
+      note: "Pipeline-based framework with stronger focus on NLP and search use cases"
+  complements:
+    - slug: "pinecone"
+      role: "Managed vector store for production index storage"
+    - slug: "chromadb"
+      role: "Lightweight vector store for development and prototyping"
+    - slug: "openai"
+      role: "LLM and embedding provider for queries and indexing"
+    - slug: "cohere"
+      role: "Reranking model provider for improving retrieval precision"
+  typical_pipeline_position: "retrieval_and_indexing"
+  pipeline_predecessors: ["data_ingestion", "embeddings"]
+  pipeline_successors: ["llm_generation", "evaluation"]

@@ -1,0 +1,494 @@
+meta:
+  slug: "rlhf_dpo"
+  name: "RLHF & DPO"
+  version: "1.0.0"
+  category: "fine_tuning"
+  subcategory: "alignment"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Alignment techniques for training LLMs to follow human preferences, policies, and safety guidelines"
+  description: |
+    Reinforcement Learning from Human Feedback (RLHF) and Direct Preference Optimization
+    (DPO) are alignment techniques that train language models to produce outputs that
+    match human preferences. Unlike supervised fine-tuning (SFT) which teaches the model
+    what to say, alignment training teaches the model how to behave -- which responses
+    to prefer, what to avoid, and how to handle ambiguous or sensitive situations.
+
+    RLHF is the original alignment method used to train ChatGPT and Claude. It involves
+    three stages: (1) SFT on high-quality demonstrations, (2) training a reward model
+    on human preference data (pairs of responses ranked by quality), and (3) optimizing
+    the language model using the reward model with PPO (Proximal Policy Optimization).
+    RLHF is powerful but complex, requiring careful tuning of the reward model and
+    PPO training loop.
+
+    DPO simplifies alignment by eliminating the reward model and RL training loop
+    entirely. Instead, it directly optimizes the language model on preference pairs
+    using a classification-like loss function. DPO achieves comparable results to RLHF
+    with significantly less complexity, compute, and hyperparameter sensitivity, making
+    it the preferred choice for most production alignment tasks.
+
+    Both techniques are essential for: safety alignment (refusing harmful requests),
+    helpfulness optimization (producing more useful responses), style control (matching
+    brand voice or communication guidelines), and reducing hallucination (preferring
+    accurate responses over confident but incorrect ones).
+  logo_url: "/assets/modules/rlhf_dpo.svg"
+  website: "https://huggingface.co/docs/trl/dpo_trainer"
+  documentation: "https://huggingface.co/docs/trl"
+  github: "https://github.com/huggingface/trl"
+  license: "Apache 2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Safety alignment and harmful content avoidance"
+    - "Helpfulness and response quality optimization"
+    - "Brand voice and style consistency"
+    - "Hallucination reduction through preference training"
+    - "Policy compliance in regulated industries"
+    - "Output ranking and quality calibration"
+  supported_operations:
+    - "reward_model_training"
+    - "ppo_training"
+    - "dpo_training"
+    - "ipo_training"
+    - "kto_training"
+    - "orpo_training"
+    - "preference_data_collection"
+  integrations:
+    - slug: "llama"
+      type: "native"
+    - slug: "mistral"
+      type: "native"
+    - slug: "lora_qlora"
+      type: "native"
+    - slug: "vllm"
+      type: "compatible"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  alignment_methods:
+    - name: "RLHF (PPO)"
+      stages: 3
+      complexity: "high"
+      data_requirement: "preference pairs + demonstrations"
+      quality: "highest (with careful tuning)"
+    - name: "DPO"
+      stages: 1
+      complexity: "low"
+      data_requirement: "preference pairs only"
+      quality: "comparable to RLHF"
+    - name: "IPO (Identity Preference Optimization)"
+      stages: 1
+      complexity: "low"
+      data_requirement: "preference pairs"
+      quality: "robust to noisy preferences"
+    - name: "KTO (Kahneman-Tversky Optimization)"
+      stages: 1
+      complexity: "low"
+      data_requirement: "binary feedback (good/bad)"
+      quality: "good with limited preference data"
+    - name: "ORPO (Odds Ratio Preference Optimization)"
+      stages: 1
+      complexity: "low"
+      data_requirement: "preference pairs"
+      quality: "combines SFT and alignment in one step"
+  data_format:
+    preference_pairs: "prompt + chosen_response + rejected_response"
+    reward_model: "prompt + response + score (or ranking)"
+    binary_feedback: "prompt + response + label (good/bad)"
+  recommended_tools:
+    - "Hugging Face TRL"
+    - "OpenRLHF"
+    - "DeepSpeed-Chat"
+    - "Axolotl"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Alignment training consistently improves perceived output quality, safety, and helpfulness. DPO achieves RLHF-comparable results on most benchmarks."
+  scalability:
+    score: 6
+    justification: "RLHF requires significant compute (reward model + PPO training). DPO scales much better, with similar requirements to SFT. Both benefit from LoRA for efficiency."
+  ease_of_use:
+    score: 6
+    justification: "DPO is straightforward with TRL library. RLHF requires careful PPO tuning. The main challenge is collecting high-quality preference data."
+  cost_efficiency:
+    score: 7
+    justification: "DPO is cost-efficient with LoRA. RLHF is expensive due to reward model training and PPO. The largest cost is often human annotation for preference data."
+  community:
+    score: 8
+    justification: "Active research area with new methods emerging regularly. Strong community around TRL library. Extensive papers and tutorials available."
+  maturity:
+    score: 7
+    justification: "RLHF pioneered by OpenAI in 2022. DPO published 2023. Both widely adopted but best practices are still evolving, especially for domain-specific alignment."
+  flexibility:
+    score: 8
+    justification: "Multiple alignment methods available for different constraints. Compatible with LoRA for parameter efficiency. Can target specific behaviors without affecting general capabilities."
+  data_privacy:
+    score: 9
+    justification: "Training runs on your infrastructure with open-weight models. Preference data stays local. No external API calls required for training."
+
+knowledge:
+  entries:
+    - topic: "RLHF Pipeline Explained"
+      content: |
+        The RLHF pipeline has three stages, each with distinct requirements:
+
+        Stage 1 - Supervised Fine-Tuning (SFT): Train the base model on high-quality
+        demonstrations of desired behavior. This creates a model that can produce
+        good responses but doesn't yet distinguish between good and great responses.
+        Use 1000-5000 curated examples. This stage uses standard SFT training.
+
+        Stage 2 - Reward Model Training: Train a separate model to score responses
+        based on human preferences. Annotators are shown pairs of responses to the
+        same prompt and asked to indicate which is better. The reward model learns
+        to predict these preferences. Typically requires 10,000-50,000 preference
+        pairs for robust training.
+
+        Stage 3 - PPO Optimization: Use the reward model to provide feedback as the
+        language model generates responses. PPO updates the model to produce responses
+        that receive higher reward scores while maintaining a KL divergence constraint
+        to prevent the model from diverging too far from the SFT model.
+
+        Critical considerations: The reward model can be gamed (the model finds
+        responses that score high on the reward model but aren't actually better).
+        KL divergence regularization partially addresses this. Reward model quality
+        is the single biggest factor in RLHF success -- invest heavily in annotation
+        quality and reward model evaluation.
+      tags: ["rlhf", "pipeline", "ppo", "architecture"]
+
+    - topic: "DPO: The Simpler Alternative"
+      content: |
+        DPO (Direct Preference Optimization) achieves alignment without an explicit
+        reward model or RL training loop. Key advantages:
+
+        Simplicity: DPO treats alignment as a classification problem. Given a prompt
+        and two responses (chosen and rejected), DPO directly updates the model to
+        increase the probability of the chosen response relative to the rejected one.
+        The loss function implicitly defines a reward model.
+
+        Stability: DPO training is much more stable than PPO. No reward hacking, no
+        KL divergence tuning, no critic model. Hyperparameter sensitivity is comparable
+        to standard SFT.
+
+        Efficiency: DPO requires only the preference dataset and the model being
+        trained. No separate reward model to train and serve. Training time and
+        compute are roughly 2x SFT (since it processes two responses per example).
+
+        When to prefer DPO over RLHF: Almost always, unless you have specific
+        evidence that RLHF produces meaningfully better results on your task. DPO
+        is the default choice for production alignment work.
+
+        Data format: Each training example is a triple: (prompt, chosen_response,
+        rejected_response). The chosen response is what you want the model to
+        produce, and the rejected response is what you want it to avoid.
+      tags: ["dpo", "alignment", "simplicity"]
+
+    - topic: "Collecting Preference Data"
+      content: |
+        The quality of preference data is the most important factor in alignment
+        training success. Strategies for collecting effective preference data:
+
+        Human annotation: The gold standard. Hire domain experts to compare pairs
+        of model responses and select the better one. Provide clear annotation
+        guidelines with examples. Inter-annotator agreement should be > 80%.
+        Cost: $1-5 per preference pair depending on domain complexity.
+
+        AI-assisted annotation: Use a stronger model (GPT-4, Claude) to generate
+        initial preferences, then have humans verify a sample. This can reduce
+        annotation cost by 5-10x. Risk: the model may have systematic biases that
+        get baked into the training data.
+
+        Implicit feedback: Use production signals like thumbs up/down, regeneration
+        requests, or task completion as preference signals. High volume but noisy.
+        Best combined with explicit annotation.
+
+        Synthetic preference generation: Generate multiple responses from the SFT
+        model, then use a reward model or strong LLM to rank them. This scales well
+        but risks reinforcing existing model biases.
+
+        Data volume guidelines: Start with 2000-5000 preference pairs for initial
+        alignment. 10,000-50,000 pairs for comprehensive behavior shaping. Quality
+        matters more than quantity -- 2000 expert-annotated pairs often outperform
+        50,000 noisy pairs.
+
+        Diversity: Ensure preference data covers the full range of prompts and
+        scenarios the model will encounter, including edge cases, adversarial
+        inputs, and ambiguous situations.
+      tags: ["data", "annotation", "preference-pairs"]
+
+    - topic: "Newer Alignment Methods: KTO, IPO, ORPO"
+      content: |
+        Beyond RLHF and DPO, several newer alignment methods address specific
+        limitations:
+
+        KTO (Kahneman-Tversky Optimization): Requires only binary feedback (good
+        or bad) rather than preference pairs. This makes data collection simpler --
+        annotators evaluate individual responses rather than comparing pairs. Based
+        on prospect theory from behavioral economics. Use when preference pair
+        collection is difficult or when you have existing thumbs up/down data.
+
+        IPO (Identity Preference Optimization): A variant of DPO that is more robust
+        to noisy or inconsistent preference data. Uses a regularized loss function
+        that prevents the model from becoming overconfident. Use when annotation
+        quality is variable or inter-annotator agreement is low.
+
+        ORPO (Odds Ratio Preference Optimization): Combines SFT and alignment into
+        a single training step, eliminating the need for a separate SFT stage. The
+        loss function simultaneously teaches the model to generate good responses
+        and avoid bad ones. Use when you want to simplify the training pipeline.
+
+        SimPO (Simple Preference Optimization): Removes the need for a reference
+        model during training, further simplifying the process and reducing memory
+        requirements. Use when memory is constrained.
+
+        Recommendation: Start with DPO as the default. Try KTO if you only have
+        binary feedback. Try IPO if your preference data is noisy. Try ORPO if
+        you want to combine SFT and alignment.
+      tags: ["kto", "ipo", "orpo", "methods", "comparison"]
+
+    - topic: "Alignment with LoRA Adapters"
+      content: |
+        LoRA is highly compatible with alignment training, enabling efficient
+        alignment on limited hardware:
+
+        LoRA + DPO: The most common production setup. Fine-tune LoRA adapters using
+        DPO loss. Memory requirements are similar to LoRA SFT (the model processes
+        two responses per example but only one is in the forward pass at a time).
+        A 70B model can be DPO-trained with LoRA on 2x A100 80GB.
+
+        QLoRA + DPO: Enable alignment of large models on single GPUs. A 70B model
+        can be DPO-aligned with QLoRA on a single A100 80GB. Quality is typically
+        sufficient for production use.
+
+        Stacked training: First train an SFT LoRA adapter, then train a DPO adapter
+        on top. The adapters can be merged sequentially. This separates the knowledge
+        (SFT) and behavior (DPO) aspects of training.
+
+        Reference model considerations: DPO requires a reference model (the SFT model
+        before alignment). With LoRA, the reference model is simply the base model
+        plus the SFT adapter. This is memory-efficient since the base model weights
+        are shared.
+
+        Practical tip: Train the SFT adapter first and validate its quality before
+        proceeding to DPO. If the SFT model's outputs are poor, DPO cannot fix
+        fundamental capability gaps -- it can only adjust preferences between
+        responses the model is already capable of producing.
+      tags: ["lora", "efficiency", "practical"]
+
+    - topic: "Evaluation and Pitfalls"
+      content: |
+        Evaluating alignment quality is challenging because the improvements are
+        often subjective:
+
+        Automated metrics: Win rate (how often the aligned model is preferred over
+        the base model by a judge LLM), reward model score (if you trained one),
+        and safety benchmark pass rates (e.g., ToxiGen, BBQ for bias).
+
+        Human evaluation: The gold standard. Have evaluators blind-compare outputs
+        from the aligned and base models on a diverse set of prompts. Report win
+        rate with confidence intervals. Use at least 200-500 evaluation pairs.
+
+        Common pitfalls:
+
+        1. Reward hacking: The model finds shortcuts to high reward that don't
+        correspond to genuine quality. Monitor response diversity -- if the model
+        starts producing templated responses, it may be optimizing for reward model
+        artifacts.
+
+        2. Over-alignment: The model becomes too cautious, refusing legitimate
+        requests or being excessively verbose with safety caveats. Balance safety
+        alignment with helpfulness.
+
+        3. Catastrophic forgetting: Alignment training can reduce performance on
+        general capabilities. Always evaluate on general benchmarks (MMLU, HumanEval)
+        alongside alignment-specific metrics.
+
+        4. Distribution mismatch: If preference data doesn't match production
+        distribution, alignment may not generalize. Ensure training data diversity.
+
+        5. Positional bias: Annotators may systematically prefer the first or second
+        response. Randomize response order in annotation and analyze for bias.
+      tags: ["evaluation", "pitfalls", "quality"]
+
+code_examples:
+  - title: "DPO Training with TRL"
+    language: "python"
+    code: |
+      from trl import DPOTrainer, DPOConfig
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+      from datasets import load_dataset
+
+      # Load SFT model (the starting point for DPO)
+      model = AutoModelForCausalLM.from_pretrained(
+          "./sft-model",
+          torch_dtype="bfloat16",
+          device_map="auto"
+      )
+      tokenizer = AutoTokenizer.from_pretrained("./sft-model")
+
+      # Load preference dataset
+      # Format: {"prompt": "...", "chosen": "...", "rejected": "..."}
+      dataset = load_dataset("json", data_files="preferences.jsonl", split="train")
+
+      # DPO training
+      dpo_config = DPOConfig(
+          output_dir="./dpo-output",
+          num_train_epochs=1,
+          per_device_train_batch_size=2,
+          gradient_accumulation_steps=8,
+          learning_rate=5e-7,
+          beta=0.1,  # KL divergence coefficient
+          lr_scheduler_type="cosine",
+          warmup_ratio=0.1,
+          bf16=True,
+          logging_steps=10,
+          eval_strategy="steps",
+          eval_steps=50,
+      )
+
+      trainer = DPOTrainer(
+          model=model,
+          args=dpo_config,
+          train_dataset=dataset,
+          tokenizer=tokenizer,
+      )
+      trainer.train()
+
+  - title: "DPO with LoRA for Efficient Alignment"
+    language: "python"
+    code: |
+      from trl import DPOTrainer, DPOConfig
+      from peft import LoraConfig
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+
+      model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-8B-Instruct",
+          torch_dtype="bfloat16",
+          device_map="auto"
+      )
+      tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+
+      # LoRA config for DPO
+      peft_config = LoraConfig(
+          r=16,
+          lora_alpha=32,
+          target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+          lora_dropout=0.05,
+          task_type="CAUSAL_LM",
+      )
+
+      dpo_config = DPOConfig(
+          output_dir="./dpo-lora-output",
+          num_train_epochs=1,
+          per_device_train_batch_size=2,
+          gradient_accumulation_steps=8,
+          learning_rate=5e-5,  # Higher LR for LoRA
+          beta=0.1,
+          bf16=True,
+      )
+
+      trainer = DPOTrainer(
+          model=model,
+          args=dpo_config,
+          train_dataset=preference_dataset,
+          tokenizer=tokenizer,
+          peft_config=peft_config,
+      )
+      trainer.train()
+      trainer.save_model("./dpo-lora-adapter")
+
+  - title: "Preparing Preference Data"
+    language: "python"
+    code: |
+      import json
+      from openai import OpenAI
+
+      # Generate preference pairs using a strong model as judge
+      client = OpenAI()
+
+      def create_preference_pair(prompt, response_a, response_b):
+          """Use GPT-4 to judge which response is better."""
+          judge_prompt = f"""Compare these two responses to the prompt.
+      Respond with exactly "A" or "B" to indicate which is better.
+
+      Prompt: {prompt}
+
+      Response A: {response_a}
+
+      Response B: {response_b}
+
+      Better response:"""
+
+          judgment = client.chat.completions.create(
+              model="gpt-4o",
+              messages=[{"role": "user", "content": judge_prompt}],
+              max_tokens=1,
+              temperature=0
+          )
+          winner = judgment.choices[0].message.content.strip()
+
+          if winner == "A":
+              return {"prompt": prompt, "chosen": response_a, "rejected": response_b}
+          else:
+              return {"prompt": prompt, "chosen": response_b, "rejected": response_a}
+
+      # Generate and save preference data
+      with open("preferences.jsonl", "w") as f:
+          for prompt in prompts:
+              # Generate two responses from your SFT model
+              resp_a = generate_response(sft_model, prompt, temperature=0.8)
+              resp_b = generate_response(sft_model, prompt, temperature=0.8)
+              pair = create_preference_pair(prompt, resp_a, resp_b)
+              f.write(json.dumps(pair) + "\n")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "dpo_win_rate_vs_sft"
+      value: 0.68
+      unit: "win_rate"
+      context: "DPO-aligned Llama 3.1 8B vs SFT-only, human evaluation"
+    - name: "rlhf_win_rate_vs_sft"
+      value: 0.71
+      unit: "win_rate"
+      context: "RLHF-aligned Llama 3.1 8B vs SFT-only, human evaluation"
+    - name: "dpo_training_time_8b"
+      value: 90
+      unit: "minutes"
+      context: "DPO training Llama 3.1 8B on 5000 pairs, 2x A100"
+    - name: "dpo_lora_training_time_8b"
+      value: 35
+      unit: "minutes"
+      context: "DPO + LoRA training Llama 3.1 8B on 5000 pairs, 1x A100"
+    - name: "safety_benchmark_improvement"
+      value: 0.34
+      unit: "absolute_improvement"
+      context: "ToxiGen safety benchmark, DPO-aligned vs SFT-only"
+    - name: "helpfulness_improvement"
+      value: 0.22
+      unit: "absolute_improvement"
+      context: "AlpacaEval 2.0 win rate improvement, DPO vs SFT"
+
+relationships:
+  alternatives:
+    - slug: "fine_tuning_strategies"
+      note: "SFT-only approach when alignment is not needed"
+  complements:
+    - slug: "lora_qlora"
+      role: "Parameter-efficient training for alignment on limited hardware"
+    - slug: "fine_tuning_strategies"
+      role: "SFT stage that precedes alignment training"
+    - slug: "llama"
+      role: "Primary base model for open-weight alignment training"
+    - slug: "mistral"
+      role: "Alternative base model for alignment training"
+    - slug: "deepeval"
+      role: "Evaluation framework for measuring alignment quality"
+  typical_pipeline_position: "alignment_training"
+  pipeline_predecessors: ["supervised_fine_tuning", "preference_data_collection"]
+  pipeline_successors: ["evaluation", "safety_testing", "deployment"]

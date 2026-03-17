@@ -1,0 +1,458 @@
+meta:
+  slug: "milvus"
+  name: "Milvus"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "self-hosted"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source distributed vector database built for billion-scale similarity search"
+  description: |
+    Milvus is an open-source vector database designed from the ground up for massive-scale
+    vector similarity search. Developed by Zilliz and graduated as a Linux Foundation AI
+    project, Milvus is engineered to handle billion-vector datasets with consistent
+    performance through its cloud-native, distributed architecture.
+
+    Milvus separates storage and compute, using a shared-storage architecture built on
+    object storage (S3, MinIO) with a message queue (Pulsar, Kafka) for write-ahead logging.
+    This design enables independent scaling of query nodes, data nodes, and index nodes,
+    making it suitable for enterprise deployments where data volume and query load can
+    vary independently.
+
+    The database supports multiple index types including IVF, HNSW, DiskANN, and GPU-based
+    indexes (GPU-IVF, GPU-CAGRA), providing flexibility to optimize for different
+    latency-throughput-recall tradeoffs. Milvus also supports hybrid search combining
+    dense vectors, sparse vectors, and scalar filtering in a single query.
+
+    Zilliz Cloud offers a fully managed Milvus service, while Milvus Lite provides an
+    embedded version for development and edge deployment.
+  logo_url: "/assets/modules/milvus.svg"
+  website: "https://milvus.io"
+  documentation: "https://milvus.io/docs"
+  github: "https://github.com/milvus-io/milvus"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Billion-scale similarity search"
+    - "RAG knowledge retrieval"
+    - "Image and video search"
+    - "Recommendation systems"
+    - "Drug discovery and molecular similarity"
+    - "Fraud detection"
+  supported_operations:
+    - "insert"
+    - "upsert"
+    - "search"
+    - "hybrid_search"
+    - "query (scalar filter)"
+    - "delete"
+    - "get"
+    - "bulk_insert"
+    - "compact"
+    - "create_index"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "compatible"
+    - slug: "cohere_embeddings"
+      type: "compatible"
+    - slug: "haystack"
+      type: "community"
+    - slug: "huggingface"
+      type: "compatible"
+
+technical_specs:
+  max_dimensions: 32768
+  max_vectors_per_collection: "billions (distributed)"
+  supported_distance_metrics:
+    - "L2 (euclidean)"
+    - "IP (inner product)"
+    - "COSINE"
+    - "JACCARD"
+    - "HAMMING"
+  supported_index_types:
+    - "FLAT"
+    - "IVF_FLAT"
+    - "IVF_SQ8"
+    - "IVF_PQ"
+    - "HNSW"
+    - "DISKANN"
+    - "GPU_IVF_FLAT"
+    - "GPU_IVF_PQ"
+    - "GPU_CAGRA"
+    - "SPARSE_INVERTED_INDEX"
+    - "SPARSE_WAND"
+    - "AUTOINDEX"
+  metadata_filtering: true
+  hybrid_search: true
+  multi_tenancy: true
+  dynamic_schema: true
+  partition_key: true
+  gpu_acceleration: true
+  time_travel: true
+  bulk_import: true
+  rest_api: true
+  grpc_api: true
+  sdk_languages:
+    - "python"
+    - "java"
+    - "go"
+    - "node"
+    - "csharp"
+    - "rust"
+  deployment_options:
+    - "Docker Compose"
+    - "Kubernetes (Helm/Operator)"
+    - "Zilliz Cloud (managed)"
+    - "Milvus Lite (embedded)"
+  dependencies:
+    - "etcd (metadata)"
+    - "MinIO or S3 (storage)"
+    - "Pulsar or Kafka (message queue)"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Strong throughput for batch operations and large-scale search. GPU indexes deliver exceptional performance. Higher baseline latency than Qdrant for single queries due to distributed architecture overhead."
+  scalability:
+    score: 10
+    justification: "Purpose-built for billion-scale deployments. Separated storage/compute enables independent scaling. Proven at massive scale by companies like Salesforce and PayPal."
+  ease_of_use:
+    score: 6
+    justification: "Distributed architecture requires multiple dependencies (etcd, MinIO, Pulsar). Complex to deploy and operate. Milvus Lite simplifies development. Schema management has a learning curve."
+  cost_efficiency:
+    score: 7
+    justification: "Open-source but resource-intensive due to multiple required services. Object storage backend is cost-effective for large datasets. GPU indexes add hardware cost but improve throughput."
+  community:
+    score: 9
+    justification: "30K+ GitHub stars, Linux Foundation AI project. Large contributor community. Active Slack and forum. Extensive documentation and tutorials. Backed by Zilliz."
+  maturity:
+    score: 9
+    justification: "Original release in 2019, one of the earliest purpose-built vector databases. Production-proven at massive scale. Stable API with 2.x series. Used by Fortune 500 companies."
+  flexibility:
+    score: 9
+    justification: "Widest range of index types including GPU-accelerated options. Multiple distance metrics. Dynamic schemas. Partition keys for multi-tenancy. Supports both embedded and distributed modes."
+  data_privacy:
+    score: 9
+    justification: "Fully self-hostable with no external dependencies. Can run air-gapped. No telemetry. Enterprise deployments keep all data on-premises."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        Milvus uses a cloud-native architecture with four layers:
+
+        Access Layer: Stateless proxy nodes that handle client connections, request routing,
+        and result aggregation. Multiple proxies can run behind a load balancer.
+
+        Coordinator Layer: Four coordinator services manage cluster state:
+        - Root Coordinator: manages collection metadata and timestamps
+        - Data Coordinator: manages data node assignments and segment lifecycle
+        - Query Coordinator: manages query node assignments and load balancing
+        - Index Coordinator: manages index building tasks
+
+        Worker Layer: Three types of worker nodes:
+        - Data Nodes: consume insert/delete logs and flush segments to object storage
+        - Query Nodes: load segments and execute search/query requests
+        - Index Nodes: build vector indexes for sealed segments
+
+        Storage Layer: Uses object storage (S3, MinIO, Azure Blob) for persistent data and
+        a message queue (Pulsar, Kafka) as the WAL. etcd stores metadata.
+
+        This separation of concerns enables independent scaling: add more query nodes for
+        read throughput, more data nodes for write throughput, and more index nodes for
+        faster index building.
+      tags: ["architecture", "internals", "distributed"]
+
+    - topic: "When to Choose Milvus"
+      content: |
+        Milvus is the right choice when:
+
+        1. You need to handle billion-scale vector datasets. Milvus's distributed architecture
+        is designed for this scale, with proven deployments at companies like Salesforce.
+
+        2. You need GPU-accelerated search. Milvus supports GPU indexes (GPU_IVF_FLAT,
+        GPU_IVF_PQ, GPU_CAGRA) that deliver 5-10x throughput improvements for batch queries.
+
+        3. You need the widest range of index types. Milvus supports IVF, HNSW, DiskANN,
+        and GPU indexes, allowing optimization for different workloads.
+
+        4. You're building an enterprise platform that needs independent scaling of reads,
+        writes, and index building.
+
+        5. You need time-travel queries to access historical data states.
+
+        Milvus is NOT the right choice when: you need a simple, lightweight database for
+        prototyping (use ChromaDB or Milvus Lite), you want minimal operational complexity
+        (consider Pinecone or Qdrant), you need built-in vectorization (consider Weaviate),
+        or your dataset is under 10M vectors and a single node suffices.
+      tags: ["decision", "comparison"]
+
+    - topic: "Index Types and Selection Guide"
+      content: |
+        Milvus offers the most comprehensive set of vector indexes:
+
+        FLAT: Brute-force exact search. 100% recall but O(n) latency. Use for small
+        collections (< 100K vectors) or as a baseline.
+
+        IVF_FLAT: Inverted file index with flat quantization. Good balance of speed and
+        recall. Configure nlist (cluster count) and nprobe (clusters to search).
+
+        IVF_SQ8: IVF with scalar quantization. 4x less memory than IVF_FLAT with minimal
+        recall loss. Good for memory-constrained environments.
+
+        IVF_PQ: IVF with product quantization. Most memory-efficient IVF variant.
+        Higher recall loss but dramatically reduced memory footprint.
+
+        HNSW: Graph-based index with excellent recall-speed tradeoff. Higher memory usage
+        but best latency for single queries. Configure M and efConstruction.
+
+        DISKANN: Graph-based index optimized for SSD storage. Enables searching datasets
+        larger than memory. Good latency with minimal memory footprint.
+
+        GPU indexes: GPU_IVF_FLAT, GPU_IVF_PQ, and GPU_CAGRA leverage GPU parallelism
+        for 5-10x throughput on batch queries. CAGRA is the fastest for high-recall search.
+
+        AUTOINDEX: Milvus automatically selects the best index type based on data
+        characteristics. Recommended for users who don't want to tune index parameters.
+      tags: ["indexes", "tuning", "performance"]
+
+    - topic: "Milvus Lite for Development"
+      content: |
+        Milvus Lite is a lightweight, embedded version of Milvus that runs in-process
+        within a Python application. It provides the same API as distributed Milvus but
+        stores data locally, eliminating the need for etcd, MinIO, and Pulsar.
+
+        Milvus Lite is ideal for: local development and testing, CI/CD pipelines,
+        Jupyter notebook prototyping, and edge deployments where a full cluster is
+        impractical.
+
+        Install with pip: pip install pymilvus (Milvus Lite is bundled with the Python SDK).
+        Connect with: connections.connect(uri="./milvus_lite.db")
+
+        Milvus Lite supports most features of distributed Milvus, including multiple
+        index types, filtering, and hybrid search. It does not support distributed
+        features like sharding, replication, or GPU indexes.
+
+        The migration path from Milvus Lite to distributed Milvus is straightforward:
+        change the connection URI from a local path to a Milvus server address. The
+        API and data model are identical.
+      tags: ["milvus-lite", "development", "embedded"]
+
+    - topic: "Hybrid Search with Multi-Vector"
+      content: |
+        Milvus supports hybrid search by combining multiple vector searches with different
+        ranking strategies. A single hybrid search request can include:
+
+        - Dense vector search (from embedding models)
+        - Sparse vector search (from BM25 or SPLADE)
+        - Multiple dense searches against different vector fields
+
+        Results are fused using configurable rankers:
+        - WeightedRanker: assigns weights to each search and combines scores
+        - RRFRanker: Reciprocal Rank Fusion, a robust parameter-free method
+
+        For RAG applications, combining dense (semantic) and sparse (keyword) search
+        typically improves retrieval quality. Milvus's sparse vector support uses
+        dedicated sparse indexes (SPARSE_INVERTED_INDEX, SPARSE_WAND) optimized for
+        high-dimensional sparse data.
+
+        Scalar filtering can be applied on top of hybrid search to further narrow results
+        based on metadata fields like category, date, or source.
+      tags: ["hybrid-search", "multi-vector", "sparse"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of Milvus:
+
+        1. Operational complexity. A full Milvus deployment requires etcd, MinIO/S3, and
+        Pulsar/Kafka. This is significant overhead compared to single-binary databases
+        like Qdrant.
+
+        2. Higher baseline latency. The distributed architecture adds overhead for single
+        queries. For low-latency single-query workloads under 10M vectors, simpler
+        databases may perform better.
+
+        3. Resource requirements. The coordinator services and dependencies consume
+        substantial memory and CPU even at small scale. Minimum recommended: 8GB RAM
+        for a basic deployment.
+
+        4. Cold start time. Starting a Milvus cluster takes longer than single-node
+        databases due to coordination between services.
+
+        5. Schema changes are limited. You cannot modify the schema of existing collections.
+        Dynamic fields provide some flexibility but with performance trade-offs.
+
+        6. Learning curve. Understanding segments, sealed/growing segments, compaction,
+        and the various index parameters requires investment.
+
+        7. Data consistency model. Milvus uses eventual consistency by default. Strong
+        consistency is available but impacts performance.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Collection and Search"
+    language: "python"
+    code: |
+      from pymilvus import MilvusClient
+
+      client = MilvusClient(uri="http://localhost:19530")
+
+      # Create collection with auto-index
+      client.create_collection(
+          collection_name="documents",
+          dimension=1536,
+      )
+
+      # Insert vectors with metadata
+      data = [
+          {
+              "id": 1,
+              "vector": [0.1, 0.2, ...],  # 1536-dim
+              "title": "RAG Architecture Guide",
+              "category": "ai",
+              "year": 2024
+          }
+      ]
+      client.insert(collection_name="documents", data=data)
+
+      # Search with filter
+      results = client.search(
+          collection_name="documents",
+          data=[[0.1, 0.2, ...]],
+          filter='category == "ai" and year >= 2023',
+          limit=5,
+          output_fields=["title", "category", "year"]
+      )
+
+  - title: "Hybrid Dense + Sparse Search"
+    language: "python"
+    code: |
+      from pymilvus import (
+          MilvusClient, DataType, AnnSearchRequest,
+          RRFRanker, WeightedRanker
+      )
+
+      client = MilvusClient(uri="http://localhost:19530")
+
+      # Create collection with dense + sparse vectors
+      schema = client.create_schema()
+      schema.add_field("id", DataType.INT64, is_primary=True, auto_id=True)
+      schema.add_field("dense_vector", DataType.FLOAT_VECTOR, dim=1536)
+      schema.add_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
+      schema.add_field("text", DataType.VARCHAR, max_length=65535)
+
+      client.create_collection(
+          collection_name="hybrid_docs",
+          schema=schema
+      )
+
+      # Hybrid search with RRF fusion
+      dense_req = AnnSearchRequest(
+          data=[dense_query_vector],
+          anns_field="dense_vector",
+          param={"metric_type": "COSINE"},
+          limit=20
+      )
+
+      sparse_req = AnnSearchRequest(
+          data=[sparse_query_vector],
+          anns_field="sparse_vector",
+          param={"metric_type": "IP"},
+          limit=20
+      )
+
+      results = client.hybrid_search(
+          collection_name="hybrid_docs",
+          reqs=[dense_req, sparse_req],
+          ranker=RRFRanker(k=60),
+          limit=10,
+          output_fields=["text"]
+      )
+
+  - title: "RAG Pipeline with LangChain"
+    language: "python"
+    code: |
+      from langchain_milvus import Milvus
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain_core.prompts import ChatPromptTemplate
+
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      vectorstore = Milvus(
+          embedding_function=embeddings,
+          collection_name="knowledge_base",
+          connection_args={"uri": "http://localhost:19530"},
+      )
+
+      # Add documents
+      vectorstore.add_documents(documents)
+
+      # Create retriever
+      retriever = vectorstore.as_retriever(
+          search_type="mmr",
+          search_kwargs={"k": 5, "fetch_k": 20}
+      )
+
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on context:\n{context}\n\nQuestion: {question}"
+      )
+      llm = ChatOpenAI(model="gpt-4o")
+      chain = prompt | llm
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "insert_throughput"
+      value: 12000
+      unit: "vectors/sec"
+      context: "1536-dim, batch size 1000, distributed mode, 3 data nodes"
+    - name: "query_latency_p50"
+      value: 10
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "query_latency_p99"
+      value: 38
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "query_latency_p99_10m"
+      value: 52
+      unit: "ms"
+      context: "1536-dim, top-k=10, 10M vectors, HNSW, 2 query nodes"
+    - name: "recall_at_10"
+      value: 0.96
+      unit: "ratio"
+      context: "1536-dim, 1M vectors, HNSW ef=256"
+    - name: "gpu_search_throughput"
+      value: 5000
+      unit: "queries/sec"
+      context: "1536-dim, top-k=10, 10M vectors, GPU_CAGRA, A100"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Fully managed alternative, simpler but proprietary and less flexible"
+    - slug: "weaviate"
+      note: "Open-source alternative with built-in vectorization and GraphQL"
+    - slug: "qdrant"
+      note: "Rust-based alternative, faster single-query latency, simpler to operate"
+    - slug: "chromadb"
+      note: "Lightweight embedded alternative for prototyping and small datasets"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Generates dense embeddings stored in Milvus collections"
+    - slug: "langchain"
+      role: "Orchestration framework with native Milvus integration"
+    - slug: "llamaindex"
+      role: "Data framework with Milvus vector store integration"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

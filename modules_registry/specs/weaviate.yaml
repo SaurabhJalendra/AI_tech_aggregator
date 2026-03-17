@@ -1,0 +1,396 @@
+meta:
+  slug: "weaviate"
+  name: "Weaviate"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "self-hosted"
+  status: "stable"
+  last_updated: "2026-02-24"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source AI-native vector database with built-in vectorization and hybrid search"
+  description: |
+    Weaviate is an open-source vector database that stores both objects and vectors, allowing
+    for combining vector search with structured filtering. What sets Weaviate apart is its
+    modular vectorizer architecture: it can automatically generate embeddings at ingestion
+    time using built-in modules for OpenAI, Cohere, Hugging Face, and other providers,
+    eliminating the need to manage embedding pipelines separately.
+
+    Weaviate offers a GraphQL API alongside REST, enabling expressive queries that combine
+    vector similarity search, keyword (BM25) search, and hybrid search in a single query.
+    Its schema-aware design means objects have defined classes with properties, providing
+    structure that pure key-value vector stores lack.
+
+    Available as both self-hosted (Docker, Kubernetes) and managed cloud (Weaviate Cloud
+    Services), Weaviate supports multi-tenancy, replication, horizontal scaling via sharding,
+    and RBAC. It uses a custom HNSW index implementation written in Go for high-performance
+    approximate nearest neighbor search, with flat indexes available for filtered search
+    on smaller datasets.
+  logo_url: "/assets/modules/weaviate.svg"
+  website: "https://weaviate.io"
+  documentation: "https://weaviate.io/developers/weaviate"
+  github: "https://github.com/weaviate/weaviate"
+  license: "BSD-3-Clause"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Semantic search with automatic vectorization"
+    - "RAG knowledge retrieval"
+    - "Hybrid search (vector + keyword)"
+    - "Multi-modal search (text, image, video)"
+    - "Recommendation systems"
+    - "Classification and clustering"
+  supported_operations:
+    - "insert"
+    - "batch_insert"
+    - "query (nearVector, nearText, nearObject)"
+    - "hybrid_search"
+    - "bm25_search"
+    - "aggregate"
+    - "delete"
+    - "update"
+    - "cross-reference"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_embeddings"
+      type: "native"
+    - slug: "cohere_embeddings"
+      type: "native"
+    - slug: "haystack"
+      type: "native"
+    - slug: "huggingface"
+      type: "native"
+
+technical_specs:
+  max_dimensions: 65535
+  max_vectors_per_index: "billions (with sharding)"
+  supported_distance_metrics:
+    - "cosine"
+    - "euclidean"
+    - "dot"
+    - "hamming"
+    - "manhattan"
+  supported_index_types:
+    - "hnsw"
+    - "flat"
+    - "dynamic"
+  metadata_filtering: true
+  hybrid_search: true
+  multi_tenancy: true
+  built_in_vectorizers: true
+  generative_modules: true
+  graphql_api: true
+  rest_api: true
+  grpc_api: true
+  replication: true
+  sharding: true
+  sdk_languages:
+    - "python"
+    - "javascript"
+    - "go"
+    - "java"
+  deployment_options:
+    - "Docker"
+    - "Kubernetes"
+    - "Weaviate Cloud Services"
+    - "Embedded (experimental)"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Custom HNSW implementation in Go provides strong query performance. Built-in vectorization adds latency at ingestion but simplifies the pipeline."
+  scalability:
+    score: 8
+    justification: "Supports horizontal scaling via sharding and replication. Can handle billions of vectors across a cluster, though requires manual cluster management when self-hosted."
+  ease_of_use:
+    score: 8
+    justification: "Built-in vectorization modules eliminate embedding pipeline management. GraphQL API is expressive but has a learning curve. Excellent documentation and tutorials."
+  cost_efficiency:
+    score: 8
+    justification: "Open-source and self-hostable. No per-vector pricing. Weaviate Cloud Services available for managed deployments at additional cost."
+  community:
+    score: 8
+    justification: "Active open-source community with 12K+ GitHub stars. Strong contributor base, regular releases, and community Slack with responsive maintainers."
+  maturity:
+    score: 8
+    justification: "Production-ready since 2021. Used by major companies. Stable API with backward compatibility commitments. Active development with regular feature releases."
+  flexibility:
+    score: 9
+    justification: "Modular architecture supports pluggable vectorizers, generative modules, and custom modules. Self-hosted or managed. GraphQL and REST APIs. Multi-modal support."
+  data_privacy:
+    score: 9
+    justification: "Fully self-hostable with no data leaving your infrastructure. RBAC support. Can run air-gapped with local vectorizer models."
+
+knowledge:
+  entries:
+    - topic: "Architecture Overview"
+      content: |
+        Weaviate is written in Go and uses a custom HNSW (Hierarchical Navigable Small World)
+        index for approximate nearest neighbor search. Unlike libraries like FAISS, Weaviate's
+        HNSW implementation is designed for a database context: it supports CRUD operations,
+        meaning vectors can be added, updated, and deleted without rebuilding the entire index.
+
+        Data is organized into classes (collections), each with a defined schema of properties.
+        Each object in a class has a vector and optional properties (metadata). Classes can
+        have cross-references to objects in other classes, enabling graph-like relationships.
+
+        The modular architecture allows plugging in different vectorization, generative, and
+        reranking modules. For example, the text2vec-openai module sends text to OpenAI's
+        embedding API at ingestion time, while text2vec-transformers runs a local transformer
+        model in a sidecar container.
+
+        Sharding distributes data across nodes in a cluster. Replication creates copies of
+        shards for fault tolerance and read throughput. Multi-tenancy isolates tenant data
+        at the class level, supporting thousands of tenants per cluster.
+      tags: ["architecture", "internals"]
+
+    - topic: "When to Choose Weaviate"
+      content: |
+        Weaviate is the right choice when:
+
+        1. You want built-in vectorization. Weaviate can generate embeddings automatically
+        using configured modules, eliminating the need for a separate embedding service.
+
+        2. You need hybrid search combining vector similarity with keyword (BM25) search
+        in a single query with fusion algorithms to blend results.
+
+        3. You want multi-modal search. Weaviate supports text, image, and other modalities
+        through its module system (e.g., multi2vec-clip for image+text search).
+
+        4. You need a self-hosted solution with strong data privacy controls and the ability
+        to run air-gapped with local models.
+
+        5. You want a schema-aware database with typed properties, cross-references, and
+        aggregate queries, not just a flat vector store.
+
+        Weaviate is NOT the right choice when: you need the simplest possible API with zero
+        setup (consider ChromaDB), you need maximum raw query throughput and want a Rust-based
+        engine (consider Qdrant), or you want a fully managed service with zero ops (consider
+        Pinecone, though Weaviate Cloud Services is an option).
+      tags: ["decision", "comparison"]
+
+    - topic: "Built-in Vectorization Modules"
+      content: |
+        Weaviate's killer feature is its modular vectorizer system. Instead of generating
+        embeddings externally and uploading them, you configure a vectorizer module on a
+        class, and Weaviate handles embedding generation automatically.
+
+        Available vectorizer modules include:
+        - text2vec-openai: Uses OpenAI's embedding API
+        - text2vec-cohere: Uses Cohere's embedding API
+        - text2vec-huggingface: Uses Hugging Face Inference API
+        - text2vec-transformers: Runs a local transformer model in a sidecar container
+        - multi2vec-clip: Supports multi-modal (text + image) vectorization
+        - text2vec-contextionary: Weaviate's built-in contextual dictionary model
+
+        With a vectorizer configured, you can perform nearText searches using natural language
+        queries without ever handling raw vectors. The vectorizer generates the query embedding
+        on the fly.
+
+        You can also bring your own vectors by setting the vectorizer to "none" and providing
+        vectors directly, giving full flexibility.
+      tags: ["vectorization", "modules", "features"]
+
+    - topic: "Hybrid Search Implementation"
+      content: |
+        Weaviate's hybrid search combines BM25 keyword search with vector similarity search,
+        producing a fused ranking using either Ranked Fusion or Relative Score Fusion.
+
+        In a hybrid query, Weaviate runs both a BM25 search and a vector search in parallel,
+        then merges the results. The alpha parameter controls the balance: 0 = pure keyword,
+        1 = pure vector, 0.5 = equal weight.
+
+        This is especially useful for RAG applications where queries might contain specific
+        terms (product names, error codes, technical jargon) that benefit from exact matching,
+        combined with the semantic understanding of vector search.
+
+        Unlike Pinecone's hybrid search which requires you to generate sparse vectors externally,
+        Weaviate handles BM25 scoring internally using its inverted index, making hybrid
+        search simpler to implement.
+      tags: ["hybrid-search", "bm25", "features"]
+
+    - topic: "Multi-tenancy Architecture"
+      content: |
+        Weaviate supports native multi-tenancy, where each tenant's data is stored in a
+        separate shard within a class. This provides data isolation without the overhead
+        of creating separate classes or clusters per tenant.
+
+        Tenants can be individually activated or deactivated. Inactive tenants' data is
+        offloaded to cold storage, reducing memory and compute usage. This makes it feasible
+        to support thousands of tenants on a single cluster, with only active tenants
+        consuming resources.
+
+        Each tenant has its own HNSW index, ensuring that one tenant's data size doesn't
+        affect another tenant's query performance. Queries are automatically scoped to
+        the specified tenant.
+
+        This architecture is ideal for SaaS applications where each customer's knowledge
+        base or document collection should be isolated. Combined with RBAC, it provides
+        both data separation and access control.
+      tags: ["multi-tenancy", "architecture", "saas"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations of Weaviate:
+
+        1. Memory consumption. HNSW indexes are memory-resident, meaning large datasets
+        require significant RAM. The flat index is more memory-efficient but slower for
+        large collections.
+
+        2. Vectorizer module latency. Built-in vectorization adds latency to ingestion and
+        queries that use nearText. For high-throughput pipelines, pre-computing vectors
+        externally may be faster.
+
+        3. GraphQL complexity. While powerful, the GraphQL API has a steeper learning curve
+        than simple REST endpoints. The Python client abstracts most of this.
+
+        4. Schema migrations can be complex. Adding or removing properties from existing
+        classes has limitations. Plan your schema carefully.
+
+        5. Cluster management overhead when self-hosting. Running a multi-node Weaviate
+        cluster on Kubernetes requires operational expertise.
+
+        6. No built-in backup to object storage in earlier versions. Backups are now
+        supported but require configuration.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Collection and Search"
+    language: "python"
+    code: |
+      import weaviate
+      from weaviate.classes.config import Configure, Property, DataType
+
+      client = weaviate.connect_to_local()  # or connect_to_wcs() for cloud
+
+      # Create collection with vectorizer
+      collection = client.collections.create(
+          name="Article",
+          vectorizer_config=Configure.Vectorizer.text2vec_openai(),
+          properties=[
+              Property(name="title", data_type=DataType.TEXT),
+              Property(name="content", data_type=DataType.TEXT),
+              Property(name="category", data_type=DataType.TEXT),
+          ]
+      )
+
+      # Insert objects (vectors generated automatically)
+      articles = client.collections.get("Article")
+      articles.data.insert(
+          properties={
+              "title": "Introduction to RAG",
+              "content": "Retrieval-Augmented Generation combines...",
+              "category": "ai"
+          }
+      )
+
+      # Semantic search using natural language
+      response = articles.query.near_text(
+          query="how does retrieval augmented generation work",
+          limit=5
+      )
+
+  - title: "Hybrid Search with Filters"
+    language: "python"
+    code: |
+      import weaviate
+      from weaviate.classes.query import Filter, HybridFusion
+
+      client = weaviate.connect_to_local()
+      articles = client.collections.get("Article")
+
+      # Hybrid search combining BM25 + vector
+      response = articles.query.hybrid(
+          query="kubernetes deployment strategies",
+          alpha=0.7,  # favor vector search
+          fusion_type=HybridFusion.RELATIVE_SCORE,
+          filters=Filter.by_property("category").equal("devops"),
+          limit=10,
+          return_metadata=["score", "explain_score"]
+      )
+
+      for obj in response.objects:
+          print(f"{obj.properties['title']} (score: {obj.metadata.score})")
+
+  - title: "RAG Pipeline with LangChain"
+    language: "python"
+    code: |
+      from langchain_weaviate import WeaviateVectorStore
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain_core.prompts import ChatPromptTemplate
+      import weaviate
+
+      client = weaviate.connect_to_local()
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      vectorstore = WeaviateVectorStore(
+          client=client,
+          index_name="KnowledgeBase",
+          text_key="content",
+          embedding=embeddings,
+      )
+
+      retriever = vectorstore.as_retriever(
+          search_type="mmr",
+          search_kwargs={"k": 5, "fetch_k": 20}
+      )
+
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on context:\n{context}\n\nQuestion: {question}"
+      )
+      llm = ChatOpenAI(model="gpt-4o")
+      chain = prompt | llm
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "insert_throughput"
+      value: 7000
+      unit: "vectors/sec"
+      context: "1536-dim, batch size 200, single node, pre-computed vectors"
+    - name: "query_latency_p50"
+      value: 8
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "query_latency_p99"
+      value: 35
+      unit: "ms"
+      context: "1536-dim, top-k=10, 1M vectors, HNSW"
+    - name: "query_latency_p99_10m"
+      value: 55
+      unit: "ms"
+      context: "1536-dim, top-k=10, 10M vectors, HNSW"
+    - name: "recall_at_10"
+      value: 0.96
+      unit: "ratio"
+      context: "1536-dim, 1M vectors, HNSW ef=256"
+    - name: "hybrid_search_p50"
+      value: 15
+      unit: "ms"
+      context: "1536-dim BM25+vector, top-k=10, 1M vectors"
+
+relationships:
+  alternatives:
+    - slug: "pinecone"
+      note: "Fully managed alternative with simpler API but no self-hosting"
+    - slug: "qdrant"
+      note: "Rust-based alternative with strong filtering, no built-in vectorization"
+    - slug: "chromadb"
+      note: "Simpler embedded alternative for prototyping and small datasets"
+    - slug: "milvus"
+      note: "Distributed alternative focused on massive-scale deployments"
+  complements:
+    - slug: "openai_embeddings"
+      role: "Provides embeddings via text2vec-openai vectorizer module"
+    - slug: "langchain"
+      role: "Orchestration framework with native Weaviate integration"
+    - slug: "llamaindex"
+      role: "Data framework with Weaviate vector store integration"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]

@@ -1,0 +1,433 @@
+meta:
+  slug: "agentic_rag"
+  name: "Agentic RAG"
+  version: "1.0.0"
+  category: "rag_architectures"
+  subcategory: "agent_driven"
+  status: "emerging"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Agent-driven RAG patterns that dynamically plan, retrieve, and reason over multiple sources"
+  description: |
+    Agentic RAG represents a paradigm shift from static retrieve-then-generate pipelines to
+    dynamic, agent-driven retrieval workflows. Instead of a fixed sequence of retrieval steps,
+    an LLM agent decides what to retrieve, when to retrieve, and whether the retrieved
+    information is sufficient to answer the question - iterating as needed.
+
+    In traditional RAG, the pipeline is predetermined: embed query, retrieve top-k chunks,
+    generate answer. Agentic RAG replaces this with an intelligent agent that can decompose
+    complex questions, query multiple data sources, evaluate retrieval quality, perform
+    follow-up searches, and synthesize information from multiple retrieval rounds.
+
+    Key patterns include: (1) Routing agents that direct queries to the most appropriate
+    data source, (2) Multi-step agents that break complex queries into sub-questions and
+    retrieve iteratively, (3) Self-reflective agents that evaluate their own answers and
+    re-retrieve if quality is insufficient, and (4) Tool-using agents that combine retrieval
+    with computation, API calls, or database queries.
+
+    Agentic RAG is particularly valuable for complex enterprise queries that span multiple
+    knowledge bases, require reasoning across documents, or need real-time data augmentation.
+    The trade-off is higher latency, cost, and complexity compared to simple RAG pipelines.
+  logo_url: "/assets/modules/agentic_rag.svg"
+  website: "https://www.llamaindex.ai/blog/agentic-rag"
+  documentation: "https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/agents/"
+  github: "https://github.com/run-llama/llama_index"
+  license: "Various"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Complex multi-source question answering"
+    - "Dynamic query routing across knowledge bases"
+    - "Self-correcting retrieval pipelines"
+    - "Multi-hop reasoning with iterative retrieval"
+    - "Research and analysis tasks over large corpora"
+    - "Enterprise knowledge assistants"
+  supported_operations:
+    - "query_routing"
+    - "query_decomposition"
+    - "iterative_retrieval"
+    - "self_reflection"
+    - "tool_use"
+    - "multi_source_synthesis"
+    - "retrieval_evaluation"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "crewai"
+      type: "compatible"
+    - slug: "autogen"
+      type: "compatible"
+    - slug: "openai"
+      type: "compatible"
+    - slug: "anthropic_claude"
+      type: "compatible"
+
+technical_specs:
+  agent_patterns:
+    - name: "Router Agent"
+      description: "Routes queries to the most appropriate retriever or data source based on query analysis"
+      complexity: "low"
+      typical_llm_calls: "1-2"
+    - name: "Sub-Question Agent"
+      description: "Decomposes complex queries into sub-questions, retrieves for each, synthesizes"
+      complexity: "medium"
+      typical_llm_calls: "3-8"
+    - name: "Self-Reflective Agent (Corrective RAG)"
+      description: "Retrieves, evaluates relevance, re-retrieves or reformulates if quality is low"
+      complexity: "medium"
+      typical_llm_calls: "2-5"
+    - name: "Multi-Step Research Agent"
+      description: "Performs iterative research with planning, retrieval, analysis, and follow-up"
+      complexity: "high"
+      typical_llm_calls: "5-20"
+    - name: "Tool-Augmented RAG Agent"
+      description: "Combines retrieval with tools (calculators, APIs, databases) for comprehensive answers"
+      complexity: "high"
+      typical_llm_calls: "3-10"
+  supported_llms:
+    - "GPT-4o (recommended for complex reasoning)"
+    - "Claude 3.5 Sonnet / Claude 4 Opus"
+    - "Gemini 1.5 Pro"
+    - "Llama 3 70B+ (for self-hosted)"
+  framework_support:
+    - "LlamaIndex (AgentRunner, QueryPipeline)"
+    - "LangChain (AgentExecutor, LangGraph)"
+    - "LangGraph (stateful agent workflows)"
+    - "CrewAI (multi-agent research)"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Significantly outperforms static RAG on complex, multi-hop, and multi-source queries. Self-correction reduces hallucination and incomplete answers."
+  scalability:
+    score: 5
+    justification: "Multiple LLM calls per query increase cost and latency linearly with query complexity. Not suitable for high-throughput simple queries."
+  ease_of_use:
+    score: 5
+    justification: "Requires understanding of agent patterns, prompt engineering for agent behavior, and careful error handling for multi-step workflows."
+  cost_efficiency:
+    score: 4
+    justification: "3-20x more LLM calls per query compared to standard RAG. Cost-effective only when query complexity justifies the additional computation."
+  community:
+    score: 7
+    justification: "Rapidly growing interest with active research and framework development. LlamaIndex and LangChain provide strong foundations."
+  maturity:
+    score: 5
+    justification: "Emerging pattern with limited production case studies. Agent reliability and predictability are active challenges."
+  flexibility:
+    score: 9
+    justification: "Highly adaptable to different domains and query types. Agent behavior can be customized through prompting and tool configuration."
+  data_privacy:
+    score: 6
+    justification: "Multiple LLM calls increase the surface area for data exposure. Can use self-hosted LLMs but with increased infrastructure complexity."
+
+knowledge:
+  entries:
+    - topic: "Agentic RAG Patterns"
+      content: |
+        Agentic RAG encompasses several distinct patterns, each suited to different use cases:
+
+        1. Router Pattern: The simplest agentic pattern. An LLM analyzes the incoming query
+        and routes it to the most appropriate retriever or data source. For example, routing
+        technical questions to a code documentation index and business questions to a policy
+        document index. This adds one LLM call but significantly improves retrieval relevance
+        for multi-domain applications.
+
+        2. Sub-Question Decomposition: For complex queries like "Compare the cost and
+        performance of Pinecone vs Weaviate for a 10M vector deployment," the agent decomposes
+        this into sub-questions: "What is Pinecone's pricing for 10M vectors?", "What is
+        Weaviate's pricing at that scale?", "Pinecone performance benchmarks?", etc. Each
+        sub-question is retrieved independently, and results are synthesized.
+
+        3. Corrective RAG (CRAG): After initial retrieval, the agent evaluates whether the
+        retrieved documents are relevant and sufficient. If relevance is low, the agent
+        reformulates the query or searches alternative sources. This self-correction loop
+        significantly reduces hallucination from irrelevant context.
+
+        4. Adaptive RAG: Combines routing, retrieval, and self-reflection. The agent first
+        classifies the query complexity, then selects the appropriate strategy: direct LLM
+        response for simple questions, single retrieval for factual questions, or multi-step
+        retrieval for complex questions.
+      tags: ["patterns", "architecture", "core"]
+
+    - topic: "When to Use Agentic RAG"
+      content: |
+        Agentic RAG provides the most value in these scenarios:
+
+        1. Multi-source queries: When the answer requires information from multiple knowledge
+        bases, databases, or APIs. Example: "What is our current AWS spend on ML infrastructure,
+        and how does it compare to industry benchmarks?"
+
+        2. Complex reasoning: When the query requires multi-step reasoning, comparison, or
+        analysis that a single retrieval cannot satisfy. Example: "Which of our microservices
+        are most at risk of failure based on recent incident patterns and dependency analysis?"
+
+        3. Variable query complexity: When queries range from simple fact lookup to complex
+        analysis. An adaptive agent can match response effort to query complexity.
+
+        4. Quality-critical applications: When hallucination or incomplete answers are
+        unacceptable. Self-reflective agents that verify their own answers before responding
+        provide higher answer quality.
+
+        Agentic RAG is NOT recommended when:
+        - Query volume is very high and latency must be under 1 second
+        - Queries are uniformly simple and well-served by standard RAG
+        - Budget is constrained (agent workflows cost 3-20x standard RAG)
+        - Deterministic, reproducible responses are required (agents introduce non-determinism)
+      tags: ["decision", "when-to-use"]
+
+    - topic: "Implementation with LangGraph"
+      content: |
+        LangGraph is particularly well-suited for agentic RAG because it provides stateful,
+        graph-based agent workflows with explicit control flow.
+
+        A typical LangGraph agentic RAG workflow:
+        1. START node: Receives user query
+        2. Classify node: Determines query complexity and type
+        3. Route node: Directs to appropriate retrieval strategy
+        4. Retrieve node: Performs retrieval from selected source(s)
+        5. Evaluate node: Assesses retrieval quality (relevance, completeness)
+        6. Decision node: If quality is sufficient, proceed to generate; otherwise, loop back
+           to retrieve with reformulated query
+        7. Generate node: Produces final answer from retrieved context
+        8. END node: Returns response
+
+        LangGraph advantages for agentic RAG:
+        - Explicit state management across retrieval rounds
+        - Conditional edges for dynamic routing
+        - Built-in retry and error handling
+        - Visualization of agent workflow for debugging
+        - Streaming support for real-time feedback
+
+        The graph-based approach makes the agent behavior more predictable and debuggable
+        compared to freeform agent loops, which is critical for production deployments.
+      tags: ["langgraph", "implementation", "workflow"]
+
+    - topic: "Challenges and Best Practices"
+      content: |
+        Key challenges when building agentic RAG systems:
+
+        1. Agent reliability: Agents can enter infinite loops, make poor routing decisions,
+        or fail to converge on an answer. Mitigate with maximum iteration limits, timeout
+        mechanisms, and fallback strategies (e.g., fall back to standard RAG after 3 failed
+        agent iterations).
+
+        2. Latency management: Multi-step retrieval adds significant latency. Mitigate with
+        parallel sub-question retrieval, streaming intermediate results to the user, and
+        caching frequently used agent decisions.
+
+        3. Cost control: Implement token budgets per query to prevent runaway costs. Log
+        and monitor per-query LLM call counts. Use cheaper models for routing and evaluation
+        steps, reserving expensive models for final generation.
+
+        4. Observability: Agentic workflows are harder to debug than linear pipelines. Use
+        tracing tools (LangSmith, Phoenix, Weights & Biases) to log every agent decision,
+        retrieval result, and evaluation score.
+
+        5. Testing: Test agent behavior with a diverse set of queries covering simple,
+        complex, multi-source, and adversarial cases. Evaluate not just answer quality but
+        also the efficiency of the agent's retrieval strategy.
+
+        Best practice: Start with the simplest agent pattern that solves your problem (router),
+        and add complexity (sub-questions, self-reflection) only when evaluation shows the
+        need.
+      tags: ["challenges", "best-practices", "production"]
+
+code_examples:
+  - title: "Router Agent with LlamaIndex"
+    language: "python"
+    code: |
+      from llama_index.core.query_engine import RouterQueryEngine
+      from llama_index.core.selectors import LLMSingleSelector
+      from llama_index.core.tools import QueryEngineTool
+
+      # Create query engines for different data sources
+      tech_tool = QueryEngineTool.from_defaults(
+          query_engine=tech_docs_engine,
+          description="Technical documentation about infrastructure and code"
+      )
+      policy_tool = QueryEngineTool.from_defaults(
+          query_engine=policy_docs_engine,
+          description="Company policies, compliance, and business processes"
+      )
+      metrics_tool = QueryEngineTool.from_defaults(
+          query_engine=metrics_engine,
+          description="Performance metrics, dashboards, and monitoring data"
+      )
+
+      # Router automatically selects the right source
+      router_engine = RouterQueryEngine(
+          selector=LLMSingleSelector.from_defaults(),
+          query_engine_tools=[tech_tool, policy_tool, metrics_tool]
+      )
+
+      response = router_engine.query(
+          "What is our SLA for API response times?"
+      )  # Routes to policy_docs_engine
+
+  - title: "Corrective RAG with LangGraph"
+    language: "python"
+    code: |
+      from langgraph.graph import StateGraph, END
+      from typing import TypedDict, List
+
+      class AgentState(TypedDict):
+          query: str
+          documents: List[str]
+          generation: str
+          relevance_score: float
+          attempts: int
+
+      def retrieve(state: AgentState):
+          docs = retriever.invoke(state["query"])
+          return {"documents": [d.page_content for d in docs]}
+
+      def evaluate_relevance(state: AgentState):
+          # LLM evaluates if retrieved docs are relevant
+          score = relevance_evaluator.invoke({
+              "query": state["query"],
+              "documents": state["documents"]
+          })
+          return {"relevance_score": score}
+
+      def should_retry(state: AgentState):
+          if state["relevance_score"] > 0.7:
+              return "generate"
+          if state["attempts"] >= 3:
+              return "generate"  # Fallback after max attempts
+          return "reformulate"
+
+      def reformulate_query(state: AgentState):
+          new_query = query_rewriter.invoke(state["query"])
+          return {"query": new_query, "attempts": state["attempts"] + 1}
+
+      def generate(state: AgentState):
+          answer = llm.invoke({
+              "context": state["documents"],
+              "query": state["query"]
+          })
+          return {"generation": answer}
+
+      # Build the graph
+      graph = StateGraph(AgentState)
+      graph.add_node("retrieve", retrieve)
+      graph.add_node("evaluate", evaluate_relevance)
+      graph.add_node("reformulate", reformulate_query)
+      graph.add_node("generate", generate)
+
+      graph.set_entry_point("retrieve")
+      graph.add_edge("retrieve", "evaluate")
+      graph.add_conditional_edges("evaluate", should_retry)
+      graph.add_edge("reformulate", "retrieve")
+      graph.add_edge("generate", END)
+
+      app = graph.compile()
+      result = app.invoke({"query": "...", "attempts": 0})
+
+  - title: "Sub-Question Agent with LlamaIndex"
+    language: "python"
+    code: |
+      from llama_index.core.query_engine import SubQuestionQueryEngine
+      from llama_index.core.tools import QueryEngineTool, ToolMetadata
+
+      # Define tools for different knowledge domains
+      tools = [
+          QueryEngineTool(
+              query_engine=vector_db_engine,
+              metadata=ToolMetadata(
+                  name="vector_databases",
+                  description="Information about vector databases: "
+                  "Pinecone, Weaviate, Qdrant, Milvus, ChromaDB"
+              )
+          ),
+          QueryEngineTool(
+              query_engine=embedding_engine,
+              metadata=ToolMetadata(
+                  name="embeddings",
+                  description="Information about embedding models "
+                  "and techniques"
+              )
+          ),
+          QueryEngineTool(
+              query_engine=deployment_engine,
+              metadata=ToolMetadata(
+                  name="deployment",
+                  description="ML deployment, infrastructure, "
+                  "and operations"
+              )
+          )
+      ]
+
+      # Agent decomposes complex queries into sub-questions
+      agent = SubQuestionQueryEngine.from_defaults(
+          query_engine_tools=tools,
+          llm=llm
+      )
+
+      # Complex query gets decomposed automatically
+      response = agent.query(
+          "Design a production RAG system for a 10M document "
+          "knowledge base with sub-second latency requirements. "
+          "What vector database, embedding model, and deployment "
+          "architecture should I use?"
+      )
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "complex_query_accuracy"
+      value: 78
+      unit: "percent"
+      context: "Agentic RAG on multi-hop questions, HotpotQA subset"
+    - name: "standard_rag_accuracy"
+      value: 52
+      unit: "percent"
+      context: "Standard RAG on same multi-hop questions for comparison"
+    - name: "simple_query_accuracy"
+      value: 88
+      unit: "percent"
+      context: "Agentic RAG on simple factual queries (minimal improvement over standard RAG)"
+    - name: "avg_llm_calls_per_query"
+      value: 4.2
+      unit: "calls"
+      context: "Average LLM calls for corrective RAG pattern"
+    - name: "avg_latency_router"
+      value: 2200
+      unit: "ms"
+      context: "Router pattern end-to-end latency"
+    - name: "avg_latency_corrective"
+      value: 5500
+      unit: "ms"
+      context: "Corrective RAG with up to 3 retrieval rounds"
+    - name: "avg_latency_sub_question"
+      value: 8000
+      unit: "ms"
+      context: "Sub-question decomposition with 3-4 sub-queries"
+
+relationships:
+  alternatives:
+    - slug: "rag_architectures"
+      note: "Standard RAG is simpler and faster; sufficient for single-hop factual queries"
+    - slug: "graph_rag"
+      note: "GraphRAG uses pre-built knowledge graphs rather than agent-driven retrieval"
+  complements:
+    - slug: "reranking_models"
+      role: "Reranking within each retrieval step of the agent workflow"
+    - slug: "hybrid_search"
+      role: "Hybrid retrieval as the base retriever used by the agent"
+    - slug: "query_transformation"
+      role: "Query transformation techniques used within agent reformulation steps"
+    - slug: "langchain"
+      role: "Agent framework with LangGraph for stateful agentic workflows"
+    - slug: "llamaindex"
+      role: "Framework with native agent query engines and routing"
+    - slug: "crewai"
+      role: "Multi-agent framework for research-oriented agentic RAG"
+  typical_pipeline_position: "rag_architecture"
+  pipeline_predecessors: ["data_ingestion", "chunking", "embeddings", "vector_store"]
+  pipeline_successors: ["llm_generation"]

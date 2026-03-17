@@ -1,0 +1,448 @@
+meta:
+  slug: "anthropic_claude"
+  name: "Anthropic Claude"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "cloud_api"
+  status: "stable"
+  last_updated: "2026-03-01"
+  maintainer: "system"
+
+identity:
+  tagline: "Frontier AI models built for safety, reliability, and extended context understanding"
+  description: |
+    Anthropic's Claude family of large language models includes Claude Opus 4, Claude
+    Sonnet 4, and Claude Haiku 3.5. These models are designed with a focus on safety,
+    steerability, and honest behavior while delivering frontier-level performance on
+    reasoning, analysis, code generation, and creative tasks.
+
+    Claude models are accessible via the Anthropic API, Amazon Bedrock, and Google Cloud
+    Vertex AI. The API supports streaming, tool use (function calling), vision (image
+    analysis), structured JSON output, extended thinking for complex reasoning, and
+    computer use capabilities for GUI automation.
+
+    A distinguishing feature of Claude is its very large context window of 200K tokens
+    across all models, enabling processing of entire codebases, long legal documents, or
+    extensive conversation histories in a single request. Claude models are also known for
+    nuanced instruction following, lower hallucination rates on factual tasks, and
+    thoughtful handling of ambiguous or sensitive requests.
+  logo_url: "/assets/modules/anthropic_claude.svg"
+  website: "https://www.anthropic.com"
+  documentation: "https://docs.anthropic.com"
+  github: "https://github.com/anthropics/anthropic-sdk-python"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Long document analysis and summarization"
+    - "Code generation, review, and debugging"
+    - "Complex reasoning and multi-step analysis"
+    - "Agentic tool use and computer interaction"
+    - "Content generation with nuanced tone control"
+    - "Data extraction from unstructured text"
+  supported_operations:
+    - "messages"
+    - "streaming"
+    - "tool_use"
+    - "vision"
+    - "extended_thinking"
+    - "structured_output"
+    - "batch_api"
+    - "computer_use"
+    - "prompt_caching"
+    - "citations"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "amazon_bedrock"
+      type: "native"
+    - slug: "vertex_ai"
+      type: "native"
+    - slug: "vercel_ai_sdk"
+      type: "native"
+
+technical_specs:
+  models:
+    - name: "claude-opus-4"
+      context_window: 200000
+      max_output_tokens: 32000
+      training_cutoff: "2025-03"
+      modalities: ["text", "image"]
+    - name: "claude-sonnet-4"
+      context_window: 200000
+      max_output_tokens: 16000
+      training_cutoff: "2025-03"
+      modalities: ["text", "image"]
+    - name: "claude-haiku-3.5"
+      context_window: 200000
+      max_output_tokens: 8192
+      training_cutoff: "2025-03"
+      modalities: ["text", "image"]
+  tool_use: true
+  extended_thinking: true
+  computer_use: true
+  prompt_caching: true
+  streaming: true
+  vision: true
+  citations: true
+  batch_api: true
+  sdk_languages:
+    - "python"
+    - "typescript"
+    - "java"
+    - "go"
+  hosted_regions:
+    - "US"
+    - "EU (via Bedrock/Vertex)"
+  cloud_partners:
+    - "Amazon Bedrock"
+    - "Google Cloud Vertex AI"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "Claude Opus 4 is a frontier model competitive with GPT-4o and Gemini Ultra on major benchmarks. Particularly strong on analysis, writing, and code tasks."
+  scalability:
+    score: 8
+    justification: "Fully managed API with automatic scaling. Available on AWS Bedrock and GCP Vertex for enterprise-grade throughput. Batch API for high-volume workloads."
+  ease_of_use:
+    score: 8
+    justification: "Clean API design, strong documentation, and growing SDK ecosystem. Slightly smaller community than OpenAI but rapidly expanding integrations."
+  cost_efficiency:
+    score: 6
+    justification: "Sonnet 4 at $3/$15 per 1M tokens offers strong quality/cost ratio. Haiku 3.5 at $0.80/$4 is competitive for lighter tasks. Prompt caching gives 90% discount on cached tokens."
+  community:
+    score: 8
+    justification: "Rapidly growing developer community. Strong presence in LangChain, LlamaIndex, and major frameworks. Active developer relations and cookbook examples."
+  maturity:
+    score: 8
+    justification: "Production-ready since 2023. Major enterprise customers including Notion, DuckDuckGo, and Bridgewater. SOC2 Type II certified."
+  flexibility:
+    score: 6
+    justification: "Cloud-only API with no self-hosting. Available on three cloud platforms (direct, Bedrock, Vertex). No fine-tuning API currently available to the public."
+  data_privacy:
+    score: 7
+    justification: "API inputs are not used for training. Zero data retention available. Enterprise plans with custom data handling agreements. Available on private cloud via Bedrock/Vertex."
+
+knowledge:
+  entries:
+    - topic: "Model Selection Guide"
+      content: |
+        Anthropic offers three model tiers optimized for different use cases:
+
+        Claude Opus 4: The most capable model, excelling at complex analysis, nuanced
+        writing, advanced math, coding, and agentic multi-step tasks. Use Opus for tasks
+        where quality is paramount: legal analysis, scientific research, complex code
+        architecture, and long-running agent workflows. Extended thinking mode makes it
+        particularly strong for problems requiring deep reasoning.
+
+        Claude Sonnet 4: The best balance of capability and cost for most production
+        workloads. Sonnet 4 handles the vast majority of tasks with quality close to
+        Opus at a fraction of the cost. Ideal for: customer-facing chatbots, code
+        generation, document summarization, data extraction, and standard RAG pipelines.
+        This should be your default choice.
+
+        Claude Haiku 3.5: Optimized for speed and cost. Best for high-volume, lower-
+        complexity tasks like classification, entity extraction, simple Q&A, content
+        moderation, and routing decisions. At $0.80/1M input tokens, it is economical for
+        high-throughput pipelines.
+
+        General guidance: Start with Sonnet 4 for most tasks. Upgrade to Opus 4 for complex
+        reasoning or long-running agents. Use Haiku 3.5 for classification, extraction, and
+        high-volume simple tasks.
+      tags: ["model-selection", "decision"]
+
+    - topic: "Extended Thinking for Complex Reasoning"
+      content: |
+        Extended thinking is a Claude feature that enables the model to perform internal
+        chain-of-thought reasoning before producing its final response. When enabled, Claude
+        generates a thinking block (visible to the developer but presented separately from the
+        response) where it works through the problem step by step.
+
+        This is particularly effective for: math and logic problems, multi-step coding tasks,
+        complex analysis requiring weighing multiple factors, and planning in agentic workflows.
+
+        To use extended thinking, set the thinking parameter in your API request with a
+        budget_tokens value that controls how many tokens Claude can use for its internal
+        reasoning. Higher budgets allow deeper reasoning on harder problems.
+
+        Key considerations: Extended thinking increases latency and token usage (you pay for
+        thinking tokens). The thinking content is returned separately from the response content.
+        For simple tasks, extended thinking is unnecessary overhead. Reserve it for problems
+        where you observe quality improvements from deeper reasoning.
+
+        Extended thinking pairs well with tool use for complex agentic workflows where the
+        model needs to reason about which tools to call and how to interpret results.
+      tags: ["extended-thinking", "reasoning", "advanced"]
+
+    - topic: "Prompt Caching for Cost Reduction"
+      content: |
+        Anthropic's prompt caching feature allows you to mark portions of your prompt as
+        cacheable using cache_control breakpoints. When subsequent requests share the same
+        cached prefix, you receive a 90% discount on those input tokens after a small
+        initial write cost.
+
+        The cache has a 5-minute TTL that refreshes on each cache hit, making it effective
+        for repeated conversations with the same system prompt, RAG pipelines where the
+        retrieved context is appended to a large static prompt, or batch processing where
+        many items share the same instructions.
+
+        To use caching, add cache_control: {"type": "ephemeral"} to system messages or
+        specific content blocks. The minimum cacheable prefix is 1024 tokens for Haiku and
+        2048 tokens for Sonnet/Opus.
+
+        Cost breakdown: Cache writes cost 25% more than base input tokens. Cache reads cost
+        90% less than base input tokens. For any prompt repeated more than 2-3 times within
+        the TTL window, caching saves money.
+
+        Best practice: Place stable content (system prompt, few-shot examples, reference
+        documents) at the beginning of the prompt with cache breakpoints, and variable
+        content (user query, conversation history) at the end.
+      tags: ["prompt-caching", "cost", "optimization"]
+
+    - topic: "Tool Use and Agentic Patterns"
+      content: |
+        Claude supports tool use (function calling) through the tools parameter in the Messages
+        API. You define tools with names, descriptions, and JSON Schema input specifications.
+        Claude decides when to call tools and generates structured arguments.
+
+        Claude's tool use has several distinctive features:
+        - Parallel tool calls: Claude can request multiple tool invocations in a single turn
+        - Chained reasoning: Claude can use tool results to decide on subsequent tool calls
+        - Computer use: A specialized tool type that allows Claude to interact with desktop
+          GUIs by generating mouse clicks, keyboard inputs, and screenshot analysis
+
+        For agentic architectures, Claude works well in a loop pattern:
+        1. Send the user request with available tools
+        2. Claude responds with tool_use content blocks
+        3. Your application executes the tools and returns tool_result blocks
+        4. Claude processes the results and either calls more tools or produces a final answer
+        5. Repeat until Claude produces a text-only response (no tool calls)
+
+        Best practices: Keep tool descriptions concise but precise. Include parameter
+        descriptions and examples. Use enums to constrain parameter values. For complex
+        agents, provide a system prompt that explains the overall workflow and when to use
+        each tool.
+      tags: ["tool-use", "agents", "function-calling"]
+
+    - topic: "When to Choose Claude vs Alternatives"
+      content: |
+        Choose Claude when:
+        - You need to process very long documents (200K token context window across all tiers)
+        - Analysis, writing quality, and nuanced instruction following are priorities
+        - Safety and thoughtful handling of edge cases matter to your application
+        - You want prompt caching for cost-effective repeated large prompts
+        - You need extended thinking for complex reasoning tasks
+        - Multi-cloud availability (direct API + Bedrock + Vertex) is important
+
+        Consider OpenAI GPT when:
+        - You need the largest ecosystem of third-party integrations and tutorials
+        - Audio input/output (native multimodal) is required
+        - Fine-tuning API access is needed
+        - You want the broadest range of model sizes and specializations
+
+        Consider Google Gemini when:
+        - You need context windows beyond 200K tokens (Gemini supports up to 2M)
+        - Google Search grounding for factual accuracy is important
+        - You are heavily invested in Google Cloud Platform
+        - Lowest cost for long-context tasks is the priority
+
+        Consider Ollama / local models when:
+        - Data must never leave your infrastructure
+        - You need offline or air-gapped inference
+        - Cost predictability with no per-token charges is essential
+      tags: ["decision", "comparison"]
+
+    - topic: "Limitations and Trade-offs"
+      content: |
+        Key limitations to consider when adopting Claude:
+
+        1. No fine-tuning API: Unlike OpenAI, Anthropic does not offer a public fine-tuning
+        service. You must rely on prompt engineering, few-shot examples, and prompt caching
+        to customize behavior.
+
+        2. No audio modality: Claude processes text and images but does not support audio
+        input or text-to-speech output natively. Use a separate speech service if needed.
+
+        3. No self-hosted option: Claude is available only via API (direct, Bedrock, or
+        Vertex). For fully air-gapped environments, consider open-weight models via Ollama.
+
+        4. Rate limits: Default rate limits are lower than some competitors. Enterprise
+        agreements or Bedrock provisioned throughput can address this.
+
+        5. Output length: Maximum output varies by model (8K-32K tokens). For very long
+        generation tasks, you may need to implement continuation logic.
+
+        6. Regional availability: Direct API is US-hosted. For EU data residency, use
+        Amazon Bedrock or Google Vertex AI in EU regions.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Basic Message with System Prompt"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY env var
+
+      message = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=1024,
+          system="You are a senior software architect. Be concise and practical.",
+          messages=[
+              {"role": "user", "content": "What are the key differences between REST and gRPC?"}
+          ]
+      )
+
+      print(message.content[0].text)
+
+  - title: "Tool Use (Function Calling)"
+    language: "python"
+    code: |
+      import anthropic
+      import json
+
+      client = anthropic.Anthropic()
+
+      tools = [
+          {
+              "name": "query_database",
+              "description": "Execute a SQL query against the analytics database",
+              "input_schema": {
+                  "type": "object",
+                  "properties": {
+                      "query": {"type": "string", "description": "SQL query to execute"},
+                      "limit": {"type": "integer", "description": "Max rows to return"}
+                  },
+                  "required": ["query"]
+              }
+          }
+      ]
+
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=1024,
+          tools=tools,
+          messages=[
+              {"role": "user", "content": "How many users signed up last month?"}
+          ]
+      )
+
+      # Process tool use blocks
+      for block in response.content:
+          if block.type == "tool_use":
+              print(f"Tool: {block.name}")
+              print(f"Input: {json.dumps(block.input, indent=2)}")
+
+  - title: "Streaming with Extended Thinking"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      with client.messages.stream(
+          model="claude-sonnet-4-20250514",
+          max_tokens=16000,
+          thinking={
+              "type": "enabled",
+              "budget_tokens": 10000
+          },
+          messages=[
+              {
+                  "role": "user",
+                  "content": "Solve this step by step: If a train travels at 60mph for "
+                             "2.5 hours, then 80mph for 1.75 hours, what is the average "
+                             "speed for the entire journey?"
+              }
+          ]
+      ) as stream:
+          for event in stream:
+              if event.type == "content_block_delta":
+                  if hasattr(event.delta, "thinking"):
+                      print(f"[Thinking] {event.delta.thinking}", end="")
+                  elif hasattr(event.delta, "text"):
+                      print(event.delta.text, end="")
+
+  - title: "Prompt Caching with RAG Context"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      # Large reference document is cached across requests
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=1024,
+          system=[
+              {
+                  "type": "text",
+                  "text": "You are a legal assistant. Use the reference document to answer questions.",
+              },
+              {
+                  "type": "text",
+                  "text": large_legal_document,  # 50K+ tokens, cached after first call
+                  "cache_control": {"type": "ephemeral"}
+              }
+          ],
+          messages=[
+              {"role": "user", "content": "What are the termination clauses?"}
+          ]
+      )
+
+      # Subsequent calls with the same system prompt get 90% input discount
+      print(f"Cache read tokens: {response.usage.cache_read_input_tokens}")
+      print(f"Cache creation tokens: {response.usage.cache_creation_input_tokens}")
+
+benchmarks:
+  last_run: "2026-02-25"
+  results:
+    - name: "mmlu_pro"
+      value: 78.0
+      unit: "percent"
+      context: "Claude Opus 4 on MMLU-Pro benchmark"
+    - name: "humaneval"
+      value: 92.0
+      unit: "percent"
+      context: "Claude Opus 4 pass@1 on HumanEval coding benchmark"
+    - name: "gpqa_diamond"
+      value: 74.9
+      unit: "percent"
+      context: "Claude Opus 4 on GPQA Diamond graduate-level reasoning"
+    - name: "latency_first_token_p50"
+      value: 400
+      unit: "ms"
+      context: "Claude Sonnet 4 streaming, short prompt"
+    - name: "latency_full_response_p50"
+      value: 1500
+      unit: "ms"
+      context: "Claude Sonnet 4, ~200 output tokens"
+    - name: "context_window"
+      value: 200000
+      unit: "tokens"
+      context: "All Claude models support 200K context"
+
+relationships:
+  alternatives:
+    - slug: "openai"
+      note: "Largest ecosystem and broadest model range with strong general performance"
+    - slug: "google_gemini"
+      note: "Very large context windows up to 2M tokens and deep Google Cloud integration"
+    - slug: "ollama"
+      note: "Self-hosted open-weight models for full data control"
+    - slug: "mistral"
+      note: "European AI lab with competitive models and open-weight options"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for RAG retrieval pipelines with Claude"
+    - slug: "langchain"
+      role: "Orchestration framework with native Claude integration"
+    - slug: "llamaindex"
+      role: "Data framework for building RAG applications with Claude"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation", "caching"]

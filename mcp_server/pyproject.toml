@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-advisor-mcp"
+version = "0.1.0"
+description = "MCP server for the AI Infrastructure Advisor"
+requires-python = ">=3.10"
+dependencies = ["ai-advisor-sdk>=0.1.0"]
+
+[project.scripts]
+ai-advisor-mcp = "ai_advisor_mcp.server:main"

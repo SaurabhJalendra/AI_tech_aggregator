@@ -1,0 +1,376 @@
+meta:
+  slug: "mistral"
+  name: "Mistral AI"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "hybrid"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "European AI lab offering both open-weight and proprietary models with strong multilingual capabilities"
+  description: |
+    Mistral AI is a Paris-based AI company offering a spectrum of models from fully
+    open-weight (Mistral 7B, Mixtral 8x7B, Mixtral 8x22B) to proprietary frontier
+    models (Mistral Large, Mistral Medium). This dual approach gives teams flexibility
+    to start with open-weight models for experimentation and self-hosting, then
+    optionally use Mistral's API for higher-capability proprietary models.
+
+    Mistral pioneered the Mixture of Experts (MoE) architecture for production LLMs
+    with Mixtral, which activates only a subset of parameters per token, achieving
+    strong performance at lower inference cost than comparably capable dense models.
+    Mixtral 8x7B offers 70B-class performance with the inference cost of a 13B model.
+
+    Mistral models are particularly strong in European languages and multilingual
+    tasks, reflecting the company's European origin and training data emphasis. The
+    models also excel at code generation, function calling, and structured output.
+
+    Mistral's open-weight models are released under the Apache 2.0 license, the most
+    permissive among major open-weight LLMs, with no usage restrictions or registration
+    requirements. This makes them attractive for embedded applications, on-device
+    deployment, and scenarios where licensing simplicity matters.
+  logo_url: "/assets/modules/mistral.svg"
+  website: "https://mistral.ai"
+  documentation: "https://docs.mistral.ai"
+  github: "https://github.com/mistralai"
+  license: "Apache 2.0 (open-weight models) / Proprietary (Large)"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Multilingual text generation and understanding"
+    - "Cost-efficient inference with MoE architecture"
+    - "Self-hosted deployment with permissive licensing"
+    - "Code generation and technical documentation"
+    - "Function calling and structured output"
+    - "European data sovereignty requirements"
+  supported_operations:
+    - "text_generation"
+    - "chat_completion"
+    - "function_calling"
+    - "json_mode"
+    - "fine_tuning"
+    - "streaming"
+    - "embeddings"
+    - "fill_in_the_middle"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "vllm"
+      type: "native"
+    - slug: "ollama"
+      type: "native"
+    - slug: "haystack"
+      type: "compatible"
+
+technical_specs:
+  model_variants:
+    - name: "Mistral Large"
+      parameters: "proprietary"
+      context_window: 128000
+      type: "proprietary"
+      strengths: "Frontier reasoning, multilingual, function calling"
+    - name: "Mixtral 8x22B"
+      parameters: "141B total, 39B active"
+      context_window: 65536
+      type: "open-weight"
+      strengths: "MoE efficiency, strong multilingual"
+    - name: "Mixtral 8x7B"
+      parameters: "46.7B total, 12.9B active"
+      context_window: 32768
+      type: "open-weight"
+      strengths: "70B-class performance at 13B inference cost"
+    - name: "Mistral 7B"
+      parameters: "7.3B"
+      context_window: 32768
+      type: "open-weight"
+      strengths: "Compact, fast, strong base for fine-tuning"
+    - name: "Codestral"
+      parameters: "22B"
+      context_window: 32768
+      type: "open-weight"
+      strengths: "Specialized code generation, 80+ languages"
+  moe_architecture: true
+  supported_quantization:
+    - "FP16"
+    - "BF16"
+    - "INT8"
+    - "INT4 (GPTQ, AWQ)"
+    - "GGUF"
+  api_providers:
+    - "Mistral API (La Plateforme)"
+    - "AWS Bedrock"
+    - "Azure AI"
+    - "Google Cloud Vertex AI"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Mistral Large competes with GPT-4o on multilingual and code benchmarks. Mixtral 8x22B punches above its active parameter count. Strong function calling accuracy."
+  scalability:
+    score: 8
+    justification: "MoE architecture provides inherent efficiency scaling. Available on major cloud providers for managed deployment. Self-hosted options scale with vLLM."
+  ease_of_use:
+    score: 7
+    justification: "Clean API design. Good documentation. Smaller ecosystem than OpenAI but growing. La Plateforme provides a straightforward developer experience."
+  cost_efficiency:
+    score: 9
+    justification: "MoE architecture means lower inference cost per capability level. Open-weight models under Apache 2.0 have zero licensing cost. Self-hosted Mixtral is very cost-effective."
+  community:
+    score: 7
+    justification: "Active open-source community around Mistral models. Strong European developer community. Growing framework support but smaller than Llama's ecosystem."
+  maturity:
+    score: 7
+    justification: "Mistral 7B launched September 2023. Rapid model releases since. Production adoption growing, especially in European enterprises."
+  flexibility:
+    score: 9
+    justification: "Open-weight models with Apache 2.0 license -- the most permissive among major LLMs. MoE and dense architectures available. Full fine-tuning and quantization supported."
+  data_privacy:
+    score: 9
+    justification: "European company subject to GDPR. Open-weight models enable full self-hosting. API data processed in EU by default. Strong fit for European data sovereignty."
+
+knowledge:
+  entries:
+    - topic: "Mixture of Experts Architecture"
+      content: |
+        Mistral's MoE (Mixture of Experts) models are a key architectural innovation.
+        Instead of a single dense network where every parameter activates for every
+        token, MoE models have multiple expert sub-networks. A router network selects
+        a subset of experts for each token.
+
+        Mixtral 8x7B has 8 expert networks of ~7B parameters each, but only activates
+        2 experts per token. Total parameter count is 46.7B, but active parameters
+        per forward pass are only ~12.9B. This means inference cost is similar to a
+        13B dense model while capability approaches a 70B dense model.
+
+        Practical implications: MoE models require more memory (all parameters must
+        be loaded) but less compute per token. A Mixtral 8x7B needs roughly 90GB of
+        GPU memory at FP16 (similar to a 46B dense model) but runs at the speed of
+        a 13B model. With INT4 quantization, it fits on a single A100 80GB.
+
+        When to choose MoE vs dense: MoE is ideal when you need high capability
+        with high throughput. Dense models (like Llama 70B) are better when memory
+        is more constrained than compute, or when you need more predictable per-token
+        latency.
+      tags: ["architecture", "moe", "efficiency"]
+
+    - topic: "Mistral for Multilingual Applications"
+      content: |
+        Mistral models have a distinct advantage in multilingual applications,
+        particularly for European languages. Key considerations:
+
+        Language coverage: Mistral models perform strongly across French, German,
+        Spanish, Italian, Portuguese, Dutch, and other European languages. Performance
+        on Asian languages (Chinese, Japanese, Korean) is competitive but Llama and
+        GPT-4 may have slight edges.
+
+        Training data balance: Mistral's European origin means more balanced
+        representation of European languages in training data compared to
+        predominantly English-trained models.
+
+        Multilingual function calling: Mistral Large handles function calling
+        reliably across languages -- the function descriptions and arguments can
+        be in any supported language without degradation.
+
+        Production recommendation: For applications serving primarily European
+        markets, Mistral often provides the best quality-per-cost ratio. For
+        global applications spanning many language families, benchmark against
+        GPT-4o and Gemini on your specific language mix.
+      tags: ["multilingual", "european", "language"]
+
+    - topic: "Apache 2.0 Licensing Advantage"
+      content: |
+        Mistral's open-weight models use the Apache 2.0 license, which is the most
+        permissive among major open-weight LLMs:
+
+        Llama: Uses the Llama Community License, which includes usage restrictions
+        (e.g., companies with 700M+ monthly users need a special license) and
+        requires accepting Meta's terms.
+
+        Mistral (Apache 2.0): No usage restrictions, no registration required, full
+        commercial use, modification, and redistribution rights. The only requirement
+        is preserving the license notice.
+
+        This matters for: embedded applications where license compliance is audited,
+        products that redistribute model weights to customers, on-device deployments
+        where tracking license acceptance is impractical, and organizations with
+        strict legal review processes.
+
+        Note: Only Mistral's open-weight models (Mistral 7B, Mixtral 8x7B, Mixtral
+        8x22B, Codestral) use Apache 2.0. Mistral Large and other proprietary models
+        use standard commercial API terms.
+      tags: ["licensing", "open-source", "legal"]
+
+    - topic: "Codestral for Code Generation"
+      content: |
+        Codestral is Mistral's specialized code generation model, trained specifically
+        for programming tasks. Key capabilities:
+
+        Language support: Over 80 programming languages including Python, JavaScript,
+        TypeScript, Java, C++, Rust, Go, and more. Strong performance on less common
+        languages compared to general-purpose models.
+
+        Fill-in-the-middle (FIM): Codestral supports FIM, where the model generates
+        code to fill a gap between a prefix and suffix. This is critical for IDE
+        integration and code completion, providing context-aware suggestions that
+        account for surrounding code.
+
+        Code review and explanation: Beyond generation, Codestral excels at
+        explaining complex code, identifying bugs, suggesting refactoring, and
+        generating documentation.
+
+        Deployment: Available via Mistral API or self-hosted. At 22B parameters,
+        it fits on a single A100 40GB at FP16 or a consumer GPU with INT4
+        quantization. Integration with VS Code and JetBrains via the Continue
+        extension.
+      tags: ["code", "codestral", "programming"]
+
+    - topic: "Limitations and Considerations"
+      content: |
+        Key limitations when building with Mistral models:
+
+        1. Smaller context windows than competitors. Mixtral models support 32K-65K
+        tokens, compared to 128K+ from Llama, GPT-4, and Claude. For long-document
+        tasks, this may require chunking strategies.
+
+        2. Mistral Large is proprietary and API-only. If you need frontier reasoning
+        with self-hosting, consider Llama 3.1 405B instead.
+
+        3. The ecosystem is smaller than OpenAI's or Meta's. Fewer fine-tuned
+        variants available on Hugging Face, fewer tutorials and examples.
+
+        4. MoE models have higher memory requirements than their active parameter
+        count suggests. Plan GPU memory based on total parameters, not active.
+
+        5. Mistral API rate limits and availability may be more constrained than
+        major cloud provider endpoints. For high-throughput production, consider
+        Bedrock or Azure deployments.
+
+        6. Vision and audio capabilities are not yet available in Mistral models.
+        For multimodal needs, consider Gemini, GPT-4o, or Llama 3.2 Vision.
+      tags: ["limitations", "trade-offs"]
+
+code_examples:
+  - title: "Mistral API with Function Calling"
+    language: "python"
+    code: |
+      from mistralai import Mistral
+
+      client = Mistral(api_key="your-api-key")
+
+      tools = [
+          {
+              "type": "function",
+              "function": {
+                  "name": "get_flight_status",
+                  "description": "Get status of a flight by flight number",
+                  "parameters": {
+                      "type": "object",
+                      "properties": {
+                          "flight_number": {"type": "string"},
+                          "date": {"type": "string", "format": "date"}
+                      },
+                      "required": ["flight_number"]
+                  }
+              }
+          }
+      ]
+
+      response = client.chat.complete(
+          model="mistral-large-latest",
+          messages=[{"role": "user", "content": "What's the status of AF123?"}],
+          tools=tools,
+          tool_choice="auto"
+      )
+
+      # Process tool calls
+      for tc in response.choices[0].message.tool_calls:
+          print(f"Call: {tc.function.name}({tc.function.arguments})")
+
+  - title: "Self-Hosted Mixtral with vLLM"
+    language: "bash"
+    code: |
+      # Serve Mixtral 8x7B with vLLM
+      vllm serve mistralai/Mixtral-8x7B-Instruct-v0.1 \
+        --tensor-parallel-size 2 \
+        --max-model-len 32768 \
+        --quantization awq
+
+      # Query via OpenAI-compatible API
+      curl http://localhost:8000/v1/chat/completions \
+        -H "Content-Type: application/json" \
+        -d '{
+          "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+          "messages": [
+            {"role": "user", "content": "Explain the MoE architecture."}
+          ],
+          "max_tokens": 1024
+        }'
+
+  - title: "Codestral Fill-in-the-Middle"
+    language: "python"
+    code: |
+      from mistralai import Mistral
+
+      client = Mistral(api_key="your-api-key")
+
+      response = client.fim.complete(
+          model="codestral-latest",
+          prompt="def fibonacci(n):\n    ",
+          suffix="\n    return result",
+          max_tokens=256,
+          temperature=0
+      )
+      print(response.choices[0].message.content)
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "mmlu_pro"
+      value: 0.81
+      unit: "accuracy"
+      context: "Mistral Large, 5-shot"
+    - name: "mmlu_pro_mixtral"
+      value: 0.60
+      unit: "accuracy"
+      context: "Mixtral 8x22B, 5-shot"
+    - name: "humaneval_plus"
+      value: 0.82
+      unit: "pass@1"
+      context: "Codestral 22B"
+    - name: "multilingual_mmlu_avg"
+      value: 0.78
+      unit: "accuracy"
+      context: "Mistral Large, average across 10 European languages"
+    - name: "tokens_per_second_mixtral"
+      value: 140
+      unit: "tokens/sec"
+      context: "Mixtral 8x7B, vLLM, 2x A100, FP16"
+    - name: "function_calling_accuracy"
+      value: 0.91
+      unit: "accuracy"
+      context: "Mistral Large, Berkeley Function Calling Benchmark"
+
+relationships:
+  alternatives:
+    - slug: "llama"
+      note: "Meta's open-weight models with larger community and more size options"
+    - slug: "claude"
+      note: "Proprietary model with stronger reasoning and 200K context"
+    - slug: "gpt4"
+      note: "Proprietary model with broadest ecosystem and fine-tuning"
+    - slug: "gemini"
+      note: "Google's model with native multimodal and 2M context"
+  complements:
+    - slug: "vllm"
+      role: "Production serving engine for self-hosted Mistral/Mixtral models"
+    - slug: "ollama"
+      role: "Local development runtime for Mistral models"
+    - slug: "langchain"
+      role: "Orchestration framework with native Mistral support"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation", "caching"]

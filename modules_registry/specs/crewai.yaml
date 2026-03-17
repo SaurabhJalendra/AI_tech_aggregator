@@ -1,0 +1,413 @@
+meta:
+  slug: "crewai"
+  name: "CrewAI"
+  version: "1.0.0"
+  category: "agent_systems"
+  subcategory: "multi_agent"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Framework for orchestrating role-playing autonomous AI agents that collaborate on complex tasks"
+  description: |
+    CrewAI is an open-source framework for building multi-agent systems where specialized AI
+    agents collaborate to accomplish complex tasks. It uses a role-playing paradigm where each
+    agent has a defined role, goal, and backstory, enabling natural division of labor across
+    agents with different expertise.
+
+    The framework introduces three core abstractions: Agents (autonomous entities with roles
+    and tools), Tasks (specific assignments with expected outputs), and Crews (teams of agents
+    working together on a process). Crews can operate in sequential mode (agents work one after
+    another) or hierarchical mode (a manager agent delegates and coordinates).
+
+    CrewAI focuses on developer experience with a simple, intuitive API that makes multi-agent
+    orchestration accessible without deep knowledge of agent architectures. It supports tool
+    integration via LangChain tools and its own CrewAI Tools library, which includes web
+    search, file operations, code execution, and RAG tools out of the box.
+
+    CrewAI Enterprise (CrewAI+) adds a deployment platform with agent monitoring, versioning,
+    and a visual workflow builder. The open-source framework supports any LLM provider through
+    LiteLLM integration, enabling both cloud and local model deployment.
+  logo_url: "/assets/modules/crewai.svg"
+  website: "https://www.crewai.com"
+  documentation: "https://docs.crewai.com"
+  github: "https://github.com/crewAIInc/crewAI"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Multi-agent research and analysis workflows"
+    - "Content generation with editorial review pipelines"
+    - "Automated code review and development tasks"
+    - "Customer support triage and resolution"
+    - "Data analysis with multiple specialist agents"
+    - "Competitive intelligence gathering"
+  supported_operations:
+    - "agent_creation"
+    - "task_definition"
+    - "crew_orchestration"
+    - "sequential_process"
+    - "hierarchical_process"
+    - "tool_integration"
+    - "memory_management"
+    - "output_parsing"
+    - "callback_hooks"
+    - "async_execution"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "compatible"
+    - slug: "ollama"
+      type: "compatible"
+    - slug: "huggingface"
+      type: "compatible"
+
+technical_specs:
+  languages:
+    - "python"
+  python_min_version: "3.10"
+  core_packages:
+    - "crewai"
+    - "crewai-tools"
+  llm_integration: "LiteLLM (supports 100+ providers)"
+  supported_llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google (Gemini)"
+    - "AWS Bedrock"
+    - "Azure OpenAI"
+    - "Ollama"
+    - "Groq"
+    - "Mistral"
+  process_types:
+    - "sequential"
+    - "hierarchical"
+  memory_types:
+    - "short_term"
+    - "long_term"
+    - "entity"
+  built_in_tools:
+    - "SerperDevTool (web search)"
+    - "ScrapeWebsiteTool"
+    - "FileReadTool"
+    - "DirectoryReadTool"
+    - "CodeInterpreterTool"
+    - "RAGTool"
+    - "PDFSearchTool"
+    - "YoutubeVideoSearchTool"
+  streaming_support: true
+  async_support: true
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Multi-agent coordination adds overhead from inter-agent communication. Performance depends heavily on the underlying LLM's ability to follow role-playing instructions."
+  scalability:
+    score: 5
+    justification: "Designed for small-to-medium crews (2-10 agents). No built-in distributed execution. Large crews can hit token limits and latency issues."
+  ease_of_use:
+    score: 9
+    justification: "Exceptionally intuitive API with role-playing metaphor. Getting a multi-agent crew running takes minutes. YAML-based configuration option further simplifies setup."
+  cost_efficiency:
+    score: 8
+    justification: "Open-source with no framework costs. However, multi-agent workflows multiply LLM API costs since each agent makes independent LLM calls."
+  community:
+    score: 8
+    justification: "22K+ GitHub stars, rapidly growing community. Active Discord with helpful community. Growing ecosystem of community-built tools and examples."
+  maturity:
+    score: 5
+    justification: "Released in late 2023, production adoption growing but API still evolving. Less battle-tested than LangChain or LlamaIndex for enterprise workloads."
+  flexibility:
+    score: 7
+    justification: "Role-playing paradigm is flexible for many use cases but prescriptive in structure. Custom tools are easy to add. Limited support for non-LLM agents."
+  data_privacy:
+    score: 7
+    justification: "Fully self-hostable. Supports local LLMs via Ollama. No data sent to CrewAI servers unless using CrewAI+ platform. Memory can be configured for local storage."
+
+knowledge:
+  entries:
+    - topic: "Core Concepts: Agents, Tasks, and Crews"
+      content: |
+        CrewAI's architecture is built around three primary abstractions:
+
+        Agents represent autonomous AI entities with specific characteristics:
+        - Role: defines the agent's function (e.g., "Senior Research Analyst")
+        - Goal: the agent's objective (e.g., "Find comprehensive data on market trends")
+        - Backstory: context that shapes the agent's behavior and expertise
+        - Tools: the set of capabilities available to the agent
+        - LLM: the language model powering the agent (can differ per agent)
+
+        Tasks are specific assignments given to agents:
+        - Description: what needs to be done
+        - Expected output: the format and content of the result
+        - Agent: which agent is responsible
+        - Context: other tasks whose output should be provided as input
+        - Output format: can enforce JSON, Pydantic models, or file output
+
+        Crews bring agents and tasks together:
+        - Agents: the team members
+        - Tasks: the work to be done
+        - Process: sequential (linear) or hierarchical (manager delegates)
+        - Memory: optional short-term, long-term, and entity memory
+        - Verbose: logging level for debugging
+      tags: ["core", "architecture", "concepts"]
+
+    - topic: "Sequential vs Hierarchical Process"
+      content: |
+        CrewAI supports two process types for crew execution:
+
+        Sequential Process: Tasks execute one after another in the order defined. Each task's
+        output is available as context for subsequent tasks. This is the simplest model and
+        works well when tasks have clear dependencies: research -> analyze -> write -> review.
+
+        Hierarchical Process: A manager agent (automatically created or explicitly defined)
+        coordinates the crew. The manager receives the overall goal, decomposes it into
+        subtasks, delegates to appropriate agents, reviews outputs, and requests revisions.
+        This mimics a real team with a project manager.
+
+        Choosing between them:
+        - Sequential: when the workflow is linear and predictable, when you want deterministic
+          task ordering, when agent outputs directly feed the next step
+        - Hierarchical: when tasks can be parallelized, when dynamic delegation is needed,
+          when quality requires manager review and iteration, when the workflow is complex
+          and benefits from a coordinator
+
+        Hierarchical processes use more LLM tokens (the manager agent adds overhead) but
+        produce higher-quality results for complex, multi-faceted tasks.
+      tags: ["process", "orchestration", "workflow"]
+
+    - topic: "When to Choose CrewAI"
+      content: |
+        CrewAI is the right choice when: (1) You need multiple AI agents with distinct
+        specializations collaborating on a task. The role-playing paradigm maps naturally to
+        team-based workflows like research, writing, and review. (2) Developer experience is
+        a priority — CrewAI has the simplest API for multi-agent systems. (3) You want
+        pre-built tools for common operations (web search, file handling, RAG) without building
+        infrastructure. (4) Your use case involves content generation, analysis, or research
+        workflows with clear role divisions.
+
+        CrewAI is NOT the right choice when: (1) You need fine-grained control over agent
+        communication patterns — LangGraph or AutoGen offer more flexibility. (2) You need
+        real-time, low-latency interactions — multi-agent overhead adds significant latency.
+        (3) You need to orchestrate non-LLM agents (traditional code, ML models) — CrewAI
+        is LLM-centric. (4) You need production-grade reliability with complex error handling
+        and retry logic — LangGraph is more mature for this. (5) You're building a simple
+        single-agent application — CrewAI's multi-agent model adds unnecessary complexity.
+      tags: ["decision", "comparison"]
+
+    - topic: "Memory Systems"
+      content: |
+        CrewAI provides three memory systems that help agents maintain context:
+
+        Short-term Memory: Stores recent interactions and intermediate results within a single
+        crew execution. Automatically managed — agents can reference earlier task outputs and
+        their own previous reasoning. Cleared after crew execution completes.
+
+        Long-term Memory: Persists across crew executions. Stores lessons learned, successful
+        strategies, and factual knowledge. Backed by a local SQLite database by default.
+        Enables agents to improve over time by recalling past experiences.
+
+        Entity Memory: Tracks information about specific entities (people, companies, concepts)
+        encountered during execution. Helps agents maintain consistent understanding of
+        entities across tasks and conversations.
+
+        Memory is optional and disabled by default. Enable it with memory=True in the Crew
+        constructor. For production use, long-term memory can be configured with custom
+        storage backends.
+      tags: ["memory", "context", "persistence"]
+
+    - topic: "Tool Integration and Custom Tools"
+      content: |
+        CrewAI supports tools from multiple sources:
+
+        CrewAI Tools (crewai-tools package): Purpose-built tools including SerperDevTool for
+        web search, ScrapeWebsiteTool for web scraping, FileReadTool and DirectoryReadTool
+        for file operations, CodeInterpreterTool for executing code, PDFSearchTool for
+        RAG over PDFs, and more.
+
+        LangChain Tools: Any LangChain tool can be used directly in CrewAI agents. This
+        provides access to LangChain's vast tool ecosystem without conversion.
+
+        Custom Tools: Create custom tools using the @tool decorator or by subclassing BaseTool.
+        Custom tools need a name, description (used by the LLM to decide when to use it),
+        and an implementation function.
+
+        Tool best practices: (1) Give tools clear, descriptive names and descriptions — the
+        LLM uses these to decide tool selection. (2) Limit each agent to 3-5 relevant tools —
+        too many tools confuse the LLM. (3) Handle errors gracefully in tool implementations —
+        return error messages as strings rather than raising exceptions.
+      tags: ["tools", "integration", "custom"]
+
+code_examples:
+  - title: "Basic Research Crew"
+    language: "python"
+    code: |
+      from crewai import Agent, Task, Crew, Process
+      from crewai_tools import SerperDevTool, ScrapeWebsiteTool
+
+      # Create agents with roles
+      researcher = Agent(
+          role="Senior Research Analyst",
+          goal="Find comprehensive information about AI infrastructure trends",
+          backstory="You are an expert analyst with 10 years of experience in AI/ML infrastructure.",
+          tools=[SerperDevTool(), ScrapeWebsiteTool()],
+          verbose=True
+      )
+
+      writer = Agent(
+          role="Technical Writer",
+          goal="Create clear, actionable reports from research findings",
+          backstory="You are a technical writer who transforms complex analysis into readable reports.",
+          verbose=True
+      )
+
+      # Define tasks
+      research_task = Task(
+          description="Research the current state of vector databases in 2026. Focus on performance, cost, and adoption trends.",
+          expected_output="A detailed research summary with key findings and data points.",
+          agent=researcher
+      )
+
+      write_task = Task(
+          description="Write an executive summary based on the research findings.",
+          expected_output="A polished 500-word executive summary with key recommendations.",
+          agent=writer,
+          context=[research_task]
+      )
+
+      # Create and run the crew
+      crew = Crew(
+          agents=[researcher, writer],
+          tasks=[research_task, write_task],
+          process=Process.sequential,
+          verbose=True
+      )
+
+      result = crew.kickoff()
+
+  - title: "Hierarchical Crew with Manager"
+    language: "python"
+    code: |
+      from crewai import Agent, Task, Crew, Process
+      from langchain_openai import ChatOpenAI
+
+      analyst = Agent(
+          role="Data Analyst",
+          goal="Analyze datasets and extract insights",
+          backstory="Expert in statistical analysis and data visualization."
+      )
+
+      developer = Agent(
+          role="Python Developer",
+          goal="Write clean, efficient code to process data",
+          backstory="Senior developer specializing in data pipelines."
+      )
+
+      reviewer = Agent(
+          role="Quality Reviewer",
+          goal="Ensure accuracy and completeness of deliverables",
+          backstory="Detail-oriented QA specialist."
+      )
+
+      task = Task(
+          description="Analyze the Q4 sales data, build a processing pipeline, and produce a quality-checked report.",
+          expected_output="A verified analysis report with supporting code."
+      )
+
+      crew = Crew(
+          agents=[analyst, developer, reviewer],
+          tasks=[task],
+          process=Process.hierarchical,
+          manager_llm=ChatOpenAI(model="gpt-4o"),
+          memory=True,
+          verbose=True
+      )
+
+      result = crew.kickoff()
+
+  - title: "Custom Tool with Structured Output"
+    language: "python"
+    code: |
+      from crewai import Agent, Task, Crew
+      from crewai.tools import tool
+      from pydantic import BaseModel
+
+      class AnalysisReport(BaseModel):
+          title: str
+          key_findings: list[str]
+          recommendation: str
+          confidence_score: float
+
+      @tool("Database Query Tool")
+      def query_database(sql_query: str) -> str:
+          """Execute a SQL query against the analytics database and return results."""
+          # Your database logic here
+          import sqlite3
+          conn = sqlite3.connect("analytics.db")
+          result = conn.execute(sql_query).fetchall()
+          conn.close()
+          return str(result)
+
+      analyst = Agent(
+          role="Database Analyst",
+          goal="Query databases and produce structured analysis",
+          backstory="Expert SQL analyst with deep domain knowledge.",
+          tools=[query_database]
+      )
+
+      task = Task(
+          description="Analyze user engagement metrics for the last quarter.",
+          expected_output="A structured analysis report.",
+          agent=analyst,
+          output_pydantic=AnalysisReport
+      )
+
+      crew = Crew(agents=[analyst], tasks=[task])
+      result = crew.kickoff()
+      # result.pydantic contains the structured AnalysisReport
+
+benchmarks:
+  last_run: "2026-02-12"
+  results:
+    - name: "two_agent_sequential_overhead"
+      value: 2.1
+      unit: "seconds"
+      context: "Framework overhead for 2-agent sequential crew, excludes LLM call time"
+    - name: "hierarchical_manager_overhead"
+      value: 3.5
+      unit: "seconds"
+      context: "Additional overhead from manager agent coordination per task cycle"
+    - name: "tool_execution_overhead"
+      value: 50
+      unit: "ms"
+      context: "Per-tool-call framework overhead, excludes tool execution time"
+    - name: "memory_retrieval_latency"
+      value: 120
+      unit: "ms"
+      context: "Long-term memory lookup with SQLite backend, 10K stored memories"
+    - name: "avg_llm_calls_per_task"
+      value: 3.2
+      unit: "calls"
+      context: "Average LLM calls per task in sequential process with 1-2 tools"
+
+relationships:
+  alternatives:
+    - slug: "autogen"
+      note: "Microsoft's multi-agent framework with more flexible conversation patterns and code execution"
+    - slug: "langchain"
+      note: "LangGraph provides lower-level multi-agent control with more customization options"
+  complements:
+    - slug: "langchain"
+      role: "Provides tool ecosystem and LLM integrations used by CrewAI agents"
+    - slug: "pinecone"
+      role: "Vector store backend for CrewAI's RAG tools"
+    - slug: "openai"
+      role: "Primary LLM provider powering agent reasoning"
+  typical_pipeline_position: "agent_orchestration"
+  pipeline_predecessors: ["retrieval", "data_ingestion"]
+  pipeline_successors: ["evaluation", "deployment"]

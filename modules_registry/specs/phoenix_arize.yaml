@@ -1,0 +1,315 @@
+meta:
+  slug: "phoenix_arize"
+  name: "Phoenix by Arize"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "observability"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source AI observability platform for LLM tracing, evaluation, and debugging"
+  description: |
+    Phoenix is an open-source AI observability platform developed by Arize AI. It provides
+    real-time tracing, evaluation, and debugging capabilities for LLM applications, RAG
+    pipelines, and agent systems. Phoenix captures detailed traces of LLM calls, retrieval
+    steps, and tool invocations, allowing developers to understand exactly how their AI
+    applications behave in production.
+
+    Phoenix supports OpenTelemetry-based instrumentation, making it compatible with any
+    LLM framework including LangChain, LlamaIndex, OpenAI, and Anthropic. Traces capture
+    input/output pairs, latency, token usage, and custom metadata at every step of a pipeline.
+
+    Beyond tracing, Phoenix provides built-in evaluation capabilities using LLM-as-judge
+    patterns for measuring relevance, hallucination, toxicity, and custom metrics. It also
+    includes embedding visualization for understanding retrieval quality, dataset management
+    for experimentation, and prompt versioning.
+
+    Phoenix can run locally as a notebook-friendly tool for development or be deployed as
+    a persistent server for production monitoring.
+  logo_url: "/assets/modules/phoenix_arize.svg"
+  website: "https://phoenix.arize.com"
+  documentation: "https://docs.arize.com/phoenix"
+  github: "https://github.com/Arize-ai/phoenix"
+  license: "Elastic License 2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "LLM application tracing and debugging"
+    - "RAG pipeline evaluation and optimization"
+    - "Agent system observability"
+    - "LLM response quality evaluation"
+    - "Embedding analysis and visualization"
+    - "Prompt experimentation and versioning"
+  supported_operations:
+    - "trace_collection"
+    - "span_analysis"
+    - "llm_evaluation"
+    - "embedding_visualization"
+    - "dataset_management"
+    - "experiment_tracking"
+    - "prompt_management"
+    - "custom_metrics"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "native"
+
+technical_specs:
+  tracing_standard: "OpenTelemetry"
+  instrumentation_libraries:
+    - "openinference-instrumentation-openai"
+    - "openinference-instrumentation-langchain"
+    - "openinference-instrumentation-llama-index"
+    - "openinference-instrumentation-anthropic"
+    - "openinference-instrumentation-mistralai"
+    - "openinference-instrumentation-bedrock"
+  evaluation_metrics:
+    - "relevance"
+    - "hallucination"
+    - "qa_correctness"
+    - "toxicity"
+    - "summarization_quality"
+    - "custom_evaluators"
+  deployment_modes:
+    - "notebook (in-process)"
+    - "local server"
+    - "docker"
+    - "kubernetes"
+    - "Arize cloud (managed)"
+  storage_backends:
+    - "SQLite (default)"
+    - "PostgreSQL"
+  ui_type: "web dashboard"
+  package: "arize-phoenix"
+  python_version: ">=3.9"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Minimal overhead for trace collection. UI dashboard responsive for moderate trace volumes. May need PostgreSQL for very high volumes."
+  scalability:
+    score: 7
+    justification: "Suitable for production workloads with PostgreSQL backend. Arize cloud option for enterprise scale. Trace storage grows with usage."
+  ease_of_use:
+    score: 9
+    justification: "One-line instrumentation for major frameworks. Notebook-friendly for development. Intuitive web UI for trace exploration."
+  cost_efficiency:
+    score: 9
+    justification: "Open-source core is free. Self-hosted with no per-trace pricing. Arize cloud is paid for managed hosting."
+  community:
+    score: 7
+    justification: "Growing community with active development. Part of the OpenInference/OpenTelemetry ecosystem. Regular releases."
+  maturity:
+    score: 7
+    justification: "Rapidly maturing with production adoption. OpenTelemetry foundation provides stability. Active development may mean API changes."
+  flexibility:
+    score: 8
+    justification: "OpenTelemetry-based, framework-agnostic. Custom evaluators supported. Multiple deployment modes from notebook to Kubernetes."
+  data_privacy:
+    score: 9
+    justification: "Self-hosted by default. All data stays on your infrastructure. Arize cloud is optional for managed hosting."
+
+knowledge:
+  entries:
+    - topic: "Setting Up Tracing"
+      content: |
+        Phoenix tracing works through OpenTelemetry-based auto-instrumentation. Adding tracing
+        to an existing LLM application requires minimal code changes:
+
+        1. Install Phoenix and the appropriate instrumentation package
+        2. Start Phoenix (either in-notebook or as a server)
+        3. Register the instrumentor for your framework
+        4. Run your application normally - traces are captured automatically
+
+        Traces capture: LLM calls (model, input, output, tokens, latency), retrieval steps
+        (query, retrieved documents, scores), tool invocations (name, input, output), and
+        custom spans for any operation you want to track.
+
+        Each trace represents a complete request through your pipeline. Traces contain spans,
+        where each span represents a single operation (LLM call, retrieval, etc.). Spans are
+        nested to show the call hierarchy.
+
+        For production, run Phoenix as a persistent server with docker-compose and point your
+        application to it using the PHOENIX_COLLECTOR_ENDPOINT environment variable.
+      tags: ["tracing", "setup", "instrumentation"]
+
+    - topic: "LLM Evaluation with Phoenix"
+      content: |
+        Phoenix provides built-in evaluators for common LLM quality metrics:
+
+        Relevance: Measures whether retrieved documents are relevant to the query. Uses an LLM
+        judge to score each retrieved document. Essential for RAG quality monitoring.
+
+        Hallucination: Detects whether the LLM response contains information not grounded in
+        the retrieved context. Compares response claims against provided documents.
+
+        QA Correctness: Evaluates whether the response correctly answers the question. Requires
+        ground truth labels for comparison.
+
+        Toxicity: Checks responses for toxic, harmful, or inappropriate content.
+
+        Custom evaluators: Define your own evaluation criteria using LLM-as-judge prompts or
+        code-based metrics. Phoenix provides a template system for custom evaluators.
+
+        Evaluations can run in two modes: (1) Online evaluation during production serving for
+        real-time quality monitoring, (2) Offline evaluation on collected datasets for
+        systematic quality assessment and regression testing.
+      tags: ["evaluation", "metrics", "quality"]
+
+    - topic: "RAG Pipeline Debugging"
+      content: |
+        Phoenix is particularly powerful for debugging RAG pipeline issues:
+
+        Retrieval analysis: View exactly which documents were retrieved for each query, their
+        similarity scores, and whether they contain the information needed to answer. Identify
+        queries where retrieval fails.
+
+        Embedding visualization: Phoenix renders embedding spaces in 2D/3D using UMAP or t-SNE.
+        This helps identify clusters, outliers, and gaps in your knowledge base coverage.
+
+        Response quality: Trace from the original query through retrieval to the final response.
+        Identify where quality breaks down - is it a retrieval problem (wrong documents) or a
+        generation problem (right documents, wrong answer)?
+
+        Common debugging patterns: (1) High latency - identify which span is the bottleneck,
+        (2) Poor answers - check if retrieval returned relevant documents, (3) Hallucination -
+        compare response against retrieved context, (4) Cost optimization - analyze token usage
+        across the pipeline.
+
+        Phoenix datasets allow you to save problematic traces and create evaluation datasets
+        for systematic testing of pipeline improvements.
+      tags: ["rag", "debugging", "retrieval"]
+
+    - topic: "Comparison with Other Observability Tools"
+      content: |
+        Phoenix vs LangSmith: LangSmith is LangChain's managed observability platform. Phoenix
+        is open-source and self-hosted. LangSmith has deeper LangChain integration but is a
+        paid SaaS. Phoenix supports any framework via OpenTelemetry. Choose Phoenix for
+        self-hosting or framework-agnostic needs; LangSmith for tight LangChain integration.
+
+        Phoenix vs Weights & Biases: W&B focuses on ML experiment tracking with LLM support
+        added. Phoenix is purpose-built for LLM observability. Phoenix has better trace
+        visualization and LLM-specific evaluation. W&B is better for model training workflows.
+
+        Phoenix vs RAGAS: RAGAS is an evaluation-only library, not an observability platform.
+        Phoenix includes RAGAS-style evaluations plus tracing, visualization, and dataset
+        management. Use RAGAS for standalone evaluation scripts; Phoenix for full observability.
+
+        Phoenix vs DeepEval: DeepEval focuses on test-driven evaluation. Phoenix provides
+        broader observability including tracing and monitoring. They can be complementary -
+        use DeepEval for CI/CD testing and Phoenix for production monitoring.
+      tags: ["comparison", "langsmith", "observability"]
+
+code_examples:
+  - title: "Quick Start with OpenAI Tracing"
+    language: "python"
+    code: |
+      import phoenix as px
+      from openinference.instrumentation.openai import OpenAIInstrumentor
+
+      # Launch Phoenix
+      session = px.launch_app()
+
+      # Instrument OpenAI
+      OpenAIInstrumentor().instrument()
+
+      # Use OpenAI as normal - traces are captured automatically
+      from openai import OpenAI
+      client = OpenAI()
+
+      response = client.chat.completions.create(
+          model="gpt-4o",
+          messages=[{"role": "user", "content": "What is RAG?"}]
+      )
+
+      # View traces at http://localhost:6006
+
+  - title: "LLM Evaluation on Traces"
+    language: "python"
+    code: |
+      from phoenix.evals import (
+          HallucinationEvaluator,
+          RelevanceEvaluator,
+          run_evals
+      )
+      from phoenix.evals.models import OpenAIModel
+
+      eval_model = OpenAIModel(model="gpt-4o")
+
+      hallucination_eval = HallucinationEvaluator(eval_model)
+      relevance_eval = RelevanceEvaluator(eval_model)
+
+      # Run evaluations on collected traces
+      results = run_evals(
+          dataframe=trace_df,
+          evaluators=[hallucination_eval, relevance_eval],
+          provide_explanation=True
+      )
+
+  - title: "LangChain RAG Pipeline Tracing"
+    language: "python"
+    code: |
+      import phoenix as px
+      from openinference.instrumentation.langchain import LangChainInstrumentor
+
+      # Launch and instrument
+      px.launch_app()
+      LangChainInstrumentor().instrument()
+
+      # Build and run RAG pipeline - fully traced
+      from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+      from langchain_pinecone import PineconeVectorStore
+
+      vectorstore = PineconeVectorStore.from_existing_index(
+          index_name="knowledge-base",
+          embedding=OpenAIEmbeddings()
+      )
+
+      retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+      docs = retriever.invoke("How does RAG work?")
+      # All retrieval and LLM calls appear in Phoenix UI
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "trace_collection_overhead"
+      value: 1.5
+      unit: "ms"
+      context: "Per-span overhead, OpenTelemetry instrumentation"
+    - name: "ui_load_time"
+      value: 800
+      unit: "ms"
+      context: "Dashboard load with 10K traces, SQLite backend"
+    - name: "evaluation_throughput"
+      value: 50
+      unit: "evals/min"
+      context: "Hallucination evaluator, GPT-4o judge, concurrent execution"
+    - name: "storage_per_trace"
+      value: 5
+      unit: "KB"
+      context: "Average trace size, typical RAG pipeline with 5 spans"
+
+relationships:
+  alternatives:
+    - slug: "ragas"
+      note: "Evaluation-focused library without tracing or observability features"
+    - slug: "deepeval"
+      note: "Test-driven LLM evaluation framework, complementary for CI/CD"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework traced by Phoenix for observability"
+    - slug: "llamaindex"
+      role: "RAG framework traced by Phoenix for pipeline debugging"
+    - slug: "openai"
+      role: "LLM provider instrumented by Phoenix for call tracing"
+  typical_pipeline_position: "evaluation_and_monitoring"
+  pipeline_predecessors: ["llm_layer", "retrieval", "agent_systems"]
+  pipeline_successors: []

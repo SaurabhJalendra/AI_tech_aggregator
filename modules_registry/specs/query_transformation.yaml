@@ -1,0 +1,361 @@
+meta:
+  slug: "query_transformation"
+  name: "Query Transformation"
+  version: "1.0.0"
+  category: "retrieval"
+  subcategory: "query_processing"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Advanced query rewriting techniques for improved retrieval: HyDE, multi-query, and step-back prompting"
+  description: |
+    Query transformation encompasses a set of techniques that modify or augment user queries
+    before retrieval to improve the quality and coverage of retrieved documents. These
+    techniques address the fundamental challenge that user queries are often short, ambiguous,
+    or phrased differently from the language used in source documents.
+
+    Key techniques include HyDE (Hypothetical Document Embeddings), which generates a
+    hypothetical answer and uses its embedding for retrieval; multi-query, which generates
+    multiple rephrased versions of the query to capture different perspectives; and step-back
+    prompting, which abstracts the query to a higher-level question before retrieval.
+
+    These methods leverage LLMs to bridge the vocabulary gap between queries and documents,
+    significantly improving retrieval recall. They are especially valuable in RAG pipelines
+    where the quality of retrieved context directly impacts the final answer quality.
+
+    Query transformation is typically implemented as a preprocessing step before the retriever,
+    adding one LLM call but often dramatically improving the relevance of retrieved documents.
+  logo_url: "/assets/modules/query_transformation.svg"
+  website: "https://python.langchain.com/docs/how_to/#query-analysis"
+  documentation: "https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations/"
+  license: "N/A (technique)"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Improving RAG retrieval quality"
+    - "Handling ambiguous or short queries"
+    - "Bridging vocabulary gaps in domain-specific search"
+    - "Multi-perspective document retrieval"
+    - "Complex multi-hop question answering"
+  supported_operations:
+    - "hyde_generation"
+    - "multi_query_generation"
+    - "step_back_prompting"
+    - "query_decomposition"
+    - "query_expansion"
+    - "query_routing"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "haystack"
+      type: "native"
+
+technical_specs:
+  techniques:
+    - name: "HyDE (Hypothetical Document Embeddings)"
+      description: "LLM generates a hypothetical answer; its embedding is used for retrieval instead of the query embedding"
+      llm_calls: 1
+      latency_overhead: "200-800ms"
+    - name: "Multi-Query"
+      description: "LLM generates 3-5 rephrased versions of the query; results from all versions are merged"
+      llm_calls: 1
+      latency_overhead: "200-800ms"
+    - name: "Step-Back Prompting"
+      description: "LLM generates a higher-level abstract question to retrieve broader context"
+      llm_calls: 1
+      latency_overhead: "200-800ms"
+    - name: "Query Decomposition"
+      description: "Complex query is broken into sub-queries, each retrieved independently"
+      llm_calls: 1
+      latency_overhead: "200-800ms per sub-query"
+    - name: "Query Expansion"
+      description: "Original query is enriched with synonyms, related terms, and contextual keywords"
+      llm_calls: 1
+      latency_overhead: "200-500ms"
+  compatible_llms:
+    - "GPT-4o"
+    - "Claude 3.5 Sonnet"
+    - "Gemini 1.5 Pro"
+    - "Llama 3 (self-hosted)"
+  requires_llm: true
+  adds_latency: true
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Consistently improves retrieval recall by 10-25% across benchmarks. HyDE and multi-query are particularly effective for ambiguous queries."
+  scalability:
+    score: 7
+    justification: "Each query requires an additional LLM call, adding cost and latency. Multi-query multiplies the number of retrieval calls."
+  ease_of_use:
+    score: 8
+    justification: "Well-supported in LangChain and LlamaIndex with minimal code changes. Drop-in enhancement to existing retrieval pipelines."
+  cost_efficiency:
+    score: 6
+    justification: "Each query transformation adds an LLM call ($0.001-0.01 per query depending on model). Costs add up at high query volumes."
+  community:
+    score: 7
+    justification: "Active research area with regular new techniques. Well-documented in framework documentation and tutorials."
+  maturity:
+    score: 7
+    justification: "HyDE published in 2022, multi-query and step-back in 2023. Techniques are well-validated but still evolving."
+  flexibility:
+    score: 9
+    justification: "Techniques can be combined, customized per domain, and work with any retriever. Easy to experiment with different approaches."
+  data_privacy:
+    score: 7
+    justification: "Query text is sent to the LLM for transformation. Can use self-hosted LLMs to keep queries on-premises."
+
+knowledge:
+  entries:
+    - topic: "HyDE (Hypothetical Document Embeddings)"
+      content: |
+        HyDE works on the insight that a hypothetical answer to a question is semantically
+        closer to the actual answer document than the question itself. Instead of embedding
+        the short query, HyDE asks an LLM to generate a hypothetical document that would
+        answer the query, then uses the embedding of that generated document for retrieval.
+
+        The process: (1) User asks "What causes memory leaks in Python?", (2) LLM generates
+        a paragraph-length hypothetical answer about Python memory management, garbage
+        collection, circular references, etc., (3) This generated text is embedded, (4) The
+        embedding is used for similarity search against the document store.
+
+        HyDE is particularly effective when:
+        - Queries are short or keyword-like ("python memory leak")
+        - There's a vocabulary gap between how users ask and how documents are written
+        - The domain has specialized terminology
+
+        Limitations: HyDE can hallucinate in the generated document, which may introduce
+        bias in retrieval. It also adds latency from the LLM generation step. For factual
+        or highly specific queries (e.g., "error code 4032"), HyDE may actually degrade
+        retrieval quality by introducing noise.
+      tags: ["hyde", "technique", "core"]
+
+    - topic: "Multi-Query Retrieval"
+      content: |
+        Multi-query retrieval generates multiple reformulations of the user's query to capture
+        different perspectives and phrasings. Each reformulated query is used for a separate
+        retrieval, and the results are merged (typically using union or RRF).
+
+        For example, the query "How do I deploy a model to production?" might generate:
+        - "Best practices for ML model deployment"
+        - "Model serving infrastructure options"
+        - "Steps to productionize a machine learning model"
+        - "MLOps deployment pipeline setup"
+
+        Each variant captures different aspects and vocabulary, increasing the overall recall
+        of the retrieval step. The merged results cover more relevant documents than any
+        single query would find.
+
+        Multi-query is especially valuable for:
+        - Broad or exploratory questions
+        - Queries that could be interpreted multiple ways
+        - Topics with diverse terminology
+
+        The trade-off is increased retrieval calls (3-5x) and the need to deduplicate and
+        merge results. In practice, the latency overhead is manageable if retrieval calls
+        are parallelized.
+      tags: ["multi-query", "technique", "core"]
+
+    - topic: "Step-Back Prompting"
+      content: |
+        Step-back prompting asks the LLM to generate a more abstract, higher-level version
+        of the query before retrieval. This is based on the observation that retrieving
+        broader context often helps answer specific questions.
+
+        For example:
+        - Original: "Why does my PyTorch model have NaN gradients with learning rate 0.01?"
+        - Step-back: "What causes numerical instability and NaN values during neural network training?"
+
+        The step-back query retrieves documents about the general topic (numerical stability,
+        gradient issues), which provide the context needed to answer the specific question.
+        The original query is also used for retrieval, and results are combined.
+
+        Step-back prompting is most effective for:
+        - Highly specific or narrow questions
+        - Questions that require understanding underlying principles
+        - Troubleshooting queries where the root cause may differ from symptoms
+
+        This technique can be combined with multi-query for even broader coverage: generate
+        both step-back and lateral reformulations of the query.
+      tags: ["step-back", "technique", "core"]
+
+    - topic: "When to Use Which Technique"
+      content: |
+        Choosing the right query transformation technique depends on the query type and domain:
+
+        HyDE works best for: Short queries, keyword-style searches, domains with specialized
+        vocabulary, cases where the document language differs significantly from query language.
+        Avoid for: Highly specific factual queries, queries with exact identifiers.
+
+        Multi-Query works best for: Broad or exploratory questions, ambiguous queries, topics
+        with diverse terminology. It's the most generally applicable technique.
+        Avoid for: Simple, unambiguous queries where the overhead isn't justified.
+
+        Step-Back Prompting works best for: Highly specific or troubleshooting questions,
+        questions requiring understanding of underlying principles.
+        Avoid for: Already abstract or high-level queries.
+
+        Query Decomposition works best for: Multi-hop questions ("Compare X and Y for use
+        case Z"), complex questions requiring information from multiple sources.
+        Avoid for: Simple single-fact questions.
+
+        In practice, multi-query is the safest default choice. Consider combining techniques
+        (e.g., step-back + multi-query) for complex domains, but always measure the actual
+        improvement against baseline retrieval to justify the added latency and cost.
+      tags: ["decision", "comparison", "best-practices"]
+
+code_examples:
+  - title: "HyDE with LangChain"
+    language: "python"
+    code: |
+      from langchain.chains import HypotheticalDocumentEmbedder
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain_core.prompts import ChatPromptTemplate
+
+      # Create HyDE embedder
+      base_embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+      llm = ChatOpenAI(model="gpt-4o-mini")
+
+      hyde_embeddings = HypotheticalDocumentEmbedder.from_llm(
+          llm=llm,
+          base_embeddings=base_embeddings,
+          prompt_key="web_search"  # or custom prompt
+      )
+
+      # Use HyDE embeddings for retrieval
+      vectorstore = PineconeVectorStore(
+          index_name="my-index",
+          embedding=hyde_embeddings
+      )
+      retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+      docs = retriever.invoke("python memory management best practices")
+
+  - title: "Multi-Query Retriever"
+    language: "python"
+    code: |
+      from langchain.retrievers import MultiQueryRetriever
+      from langchain_openai import ChatOpenAI
+
+      llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+
+      # Wrap existing retriever with multi-query
+      multi_retriever = MultiQueryRetriever.from_llm(
+          retriever=base_retriever,
+          llm=llm
+      )
+
+      # This generates multiple query variants,
+      # retrieves for each, and merges results
+      docs = multi_retriever.invoke(
+          "How do I optimize my RAG pipeline for production?"
+      )
+      # Internally generates queries like:
+      # - "RAG pipeline optimization techniques"
+      # - "Production-ready RAG best practices"
+      # - "Improving RAG system performance and latency"
+
+  - title: "Step-Back Prompting with LlamaIndex"
+    language: "python"
+    code: |
+      from llama_index.core.query_engine import SubQuestionQueryEngine
+      from llama_index.core.tools import QueryEngineTool, ToolMetadata
+
+      # Create query engine tool
+      tool = QueryEngineTool(
+          query_engine=base_query_engine,
+          metadata=ToolMetadata(
+              name="knowledge_base",
+              description="Technical documentation search"
+          )
+      )
+
+      # SubQuestionQueryEngine decomposes complex queries
+      query_engine = SubQuestionQueryEngine.from_defaults(
+          query_engine_tools=[tool],
+          llm=llm
+      )
+
+      # Complex query gets decomposed into sub-questions
+      response = query_engine.query(
+          "Compare vector search performance in Pinecone vs Weaviate "
+          "for a 10M document RAG application"
+      )
+
+  - title: "Custom Query Transformation"
+    language: "python"
+    code: |
+      from langchain_core.prompts import ChatPromptTemplate
+      from langchain_openai import ChatOpenAI
+
+      # Custom step-back prompt
+      step_back_prompt = ChatPromptTemplate.from_messages([
+          ("system", "You are an expert at generating abstract, higher-level "
+           "questions from specific queries. Generate a broader question that "
+           "would help retrieve useful background context."),
+          ("user", "Specific question: {query}\n\nBroader step-back question:")
+      ])
+
+      llm = ChatOpenAI(model="gpt-4o-mini")
+      chain = step_back_prompt | llm
+
+      # Generate step-back query
+      original = "Why does HNSW index build fail with 2048-dim vectors in Qdrant?"
+      step_back = chain.invoke({"query": original})
+      # Result: "How do HNSW indexing algorithms handle high-dimensional vectors
+      # and what are common failure modes?"
+
+      # Retrieve with both queries and merge results
+      original_docs = retriever.invoke(original)
+      stepback_docs = retriever.invoke(step_back.content)
+      merged_docs = deduplicate(original_docs + stepback_docs)
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "recall_improvement_hyde"
+      value: 22
+      unit: "percent"
+      context: "HyDE vs baseline embedding retrieval on NQ dataset"
+    - name: "recall_improvement_multi_query"
+      value: 15
+      unit: "percent"
+      context: "Multi-query (3 variants) vs single query on BEIR average"
+    - name: "recall_improvement_step_back"
+      value: 12
+      unit: "percent"
+      context: "Step-back prompting vs baseline on complex queries"
+    - name: "latency_overhead_hyde"
+      value: 450
+      unit: "ms"
+      context: "Additional latency from GPT-4o-mini HyDE generation"
+    - name: "latency_overhead_multi_query"
+      value: 600
+      unit: "ms"
+      context: "Generation + 3 parallel retrieval calls"
+    - name: "cost_per_query_transform"
+      value: 0.003
+      unit: "USD"
+      context: "Average cost of one GPT-4o-mini query transformation call"
+
+relationships:
+  alternatives:
+    - slug: "hybrid_search"
+      note: "Hybrid search addresses vocabulary gap through sparse retrieval rather than query transformation"
+  complements:
+    - slug: "reranking_models"
+      role: "Reranking after query-transformed retrieval for further quality improvement"
+    - slug: "hybrid_search"
+      role: "Can be combined with hybrid search for maximum retrieval quality"
+    - slug: "langchain"
+      role: "Framework providing native query transformation components"
+    - slug: "llamaindex"
+      role: "Framework with SubQuestionQueryEngine and transformation modules"
+  typical_pipeline_position: "query_processing"
+  pipeline_predecessors: ["user_query"]
+  pipeline_successors: ["retrieval", "vector_store"]

@@ -1,0 +1,205 @@
+meta:
+  slug: "groq_inference"
+  name: "Groq"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "inference_provider"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Ultra-fast LLM inference powered by custom LPU hardware"
+  description: |
+    Groq provides the fastest LLM inference available through its custom-designed
+    Language Processing Unit (LPU) hardware. The LPU is purpose-built for the
+    sequential nature of language model inference, achieving token generation
+    speeds of 500+ tokens/second for models like Llama 3 70B.
+
+    Groq offers an OpenAI-compatible API that serves popular open-source models
+    including Llama 3, Mixtral, and Gemma. The service is known for its extremely
+    low latency and high throughput, making it ideal for real-time applications,
+    agent systems that make many LLM calls, and interactive experiences where
+    response speed matters.
+
+    The trade-off is that Groq only serves a curated set of open-source models
+    and does not support custom or fine-tuned models. It competes on speed and
+    cost rather than model selection.
+  logo_url: "/assets/modules/groq_inference.svg"
+  website: "https://groq.com"
+  documentation: "https://console.groq.com/docs"
+  github: "https://github.com/groq"
+  license: "Proprietary"
+  pricing_model: "freemium"
+
+capabilities:
+  primary_use_cases:
+    - "Ultra-fast LLM inference"
+    - "Real-time conversational AI"
+    - "Agent systems requiring low latency"
+    - "High-throughput batch processing"
+    - "Speed-sensitive applications"
+  supported_operations:
+    - "chat_completions"
+    - "streaming"
+    - "json_mode"
+    - "tool_use"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "crewai"
+      type: "compatible"
+
+technical_specs:
+  hardware: "Groq LPU (Language Processing Unit)"
+  api_compatibility: "OpenAI-compatible"
+  available_models:
+    - "llama-3.1-70b-versatile"
+    - "llama-3.1-8b-instant"
+    - "mixtral-8x7b-32768"
+    - "gemma2-9b-it"
+  max_context_window: 131072
+  streaming: true
+  function_calling: true
+  json_mode: true
+  rate_limits:
+    free_tier: "30 requests/minute"
+    paid_tier: "custom"
+
+comparison_dimensions:
+  performance:
+    score: 10
+    justification: "Industry-leading inference speed. 500+ tokens/second for 70B models. Sub-100ms time-to-first-token."
+  scalability:
+    score: 7
+    justification: "Managed API scales well but free tier has strict rate limits. Enterprise tier available for high volume."
+  ease_of_use:
+    score: 9
+    justification: "OpenAI-compatible API. Drop-in replacement for OpenAI calls with a URL and key change."
+  cost_efficiency:
+    score: 8
+    justification: "Competitive pricing, often cheaper than comparable API providers. Free tier available for development."
+  community:
+    score: 6
+    justification: "Growing community. Primarily known for speed benchmarks. Less ecosystem depth than major providers."
+  maturity:
+    score: 6
+    justification: "Public API launched in 2024. Custom hardware proven but API service is relatively young."
+  flexibility:
+    score: 4
+    justification: "Limited model selection. No custom model hosting or fine-tuning. Serves only curated open-source models."
+  data_privacy:
+    score: 5
+    justification: "Cloud-only service. Data processed on Groq hardware. No self-hosted option."
+
+knowledge:
+  entries:
+    - topic: "When Speed Matters Most"
+      content: |
+        Groq's primary advantage is inference speed. This matters most in:
+
+        1. Agent systems that chain multiple LLM calls. An agent making 10 sequential
+        LLM calls benefits enormously from 5x faster inference, turning a 30-second
+        workflow into a 6-second one.
+
+        2. Interactive applications where perceived latency affects user experience.
+        Chat applications feel dramatically more responsive with Groq's speed.
+
+        3. Batch processing at scale where faster inference means lower total
+        compute time and cost.
+
+        4. Real-time applications like voice assistants where the LLM is in the
+        critical path between user input and response.
+
+        Speed matters less when: the LLM call is not on the critical path, quality
+        differences between models are significant, or you need specific commercial
+        models not available on Groq.
+      tags: ["speed", "use-cases", "decision"]
+
+    - topic: "Groq vs Other Inference Providers"
+      content: |
+        Groq competes with several inference providers:
+
+        vs Together AI / Anyscale: These offer more model selection and custom
+        model hosting. Groq is faster but less flexible.
+
+        vs OpenAI / Anthropic: These offer proprietary frontier models with
+        stronger capabilities. Groq serves open-source models faster and cheaper.
+
+        vs Self-hosted vLLM: Self-hosting gives full control and model selection.
+        Groq is faster for supported models without infrastructure management.
+
+        The winning strategy for many teams is to use Groq for speed-sensitive
+        open-source model calls while using OpenAI/Anthropic for tasks requiring
+        frontier model capabilities.
+      tags: ["comparison", "providers"]
+
+code_examples:
+  - title: "Basic Chat Completion"
+    language: "python"
+    code: |
+      from groq import Groq
+
+      client = Groq(api_key="your-api-key")
+
+      response = client.chat.completions.create(
+          model="llama-3.1-70b-versatile",
+          messages=[
+              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "user", "content": "Explain vector databases in 3 sentences."}
+          ],
+          temperature=0.7,
+          max_tokens=256
+      )
+
+      print(response.choices[0].message.content)
+
+  - title: "OpenAI-Compatible Usage with LangChain"
+    language: "python"
+    code: |
+      from langchain_groq import ChatGroq
+
+      llm = ChatGroq(
+          model="llama-3.1-70b-versatile",
+          temperature=0,
+          api_key="your-api-key"
+      )
+
+      # Drop-in replacement for any LangChain LLM
+      response = llm.invoke("What is retrieval-augmented generation?")
+      print(response.content)
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "tokens_per_second_70b"
+      value: 550
+      unit: "tokens/second"
+      context: "Llama 3.1 70B, single request"
+    - name: "time_to_first_token"
+      value: 70
+      unit: "ms"
+      context: "Llama 3.1 70B, average"
+    - name: "tokens_per_second_8b"
+      value: 1200
+      unit: "tokens/second"
+      context: "Llama 3.1 8B, single request"
+
+relationships:
+  alternatives:
+    - slug: "together_ai"
+      note: "More model selection and custom hosting, slightly slower"
+    - slug: "vllm"
+      note: "Self-hosted inference with full model control"
+    - slug: "openai"
+      note: "Frontier models but slower inference for comparable tasks"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with native Groq integration"
+    - slug: "crewai"
+      role: "Agent framework benefiting from fast inference"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation"]

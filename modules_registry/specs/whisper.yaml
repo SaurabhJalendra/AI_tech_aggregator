@@ -1,0 +1,338 @@
+meta:
+  slug: "whisper"
+  name: "OpenAI Whisper"
+  version: "1.0.0"
+  category: "voice_conversational"
+  subcategory: "speech_to_text"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source automatic speech recognition model with robust multilingual support"
+  description: |
+    OpenAI Whisper is an open-source automatic speech recognition (ASR) system trained on
+    680,000 hours of multilingual and multitask supervised data collected from the web. It
+    approaches human-level robustness and accuracy on English speech recognition and supports
+    transcription and translation across 99 languages.
+
+    Whisper uses a Transformer-based encoder-decoder architecture. The audio is converted to
+    a log-Mel spectrogram, processed by the encoder, and then decoded autoregressively into
+    text tokens. The model is available in multiple sizes (tiny, base, small, medium, large,
+    turbo) allowing users to trade accuracy for speed depending on their use case.
+
+    Being fully open-source (MIT license), Whisper can be self-hosted, fine-tuned on domain
+    specific data, and integrated into any pipeline without per-API-call costs. The community
+    has built extensive tooling around it including faster inference engines (faster-whisper,
+    whisper.cpp), real-time streaming wrappers, and speaker diarization integrations.
+  logo_url: "/assets/modules/whisper.svg"
+  website: "https://openai.com/research/whisper"
+  documentation: "https://github.com/openai/whisper/blob/main/README.md"
+  github: "https://github.com/openai/whisper"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Audio and video transcription"
+    - "Real-time speech-to-text"
+    - "Multilingual transcription"
+    - "Speech translation to English"
+    - "Subtitle and caption generation"
+    - "Voice input for conversational AI"
+  supported_operations:
+    - "transcribe"
+    - "translate"
+    - "detect_language"
+    - "timestamp_generation"
+    - "word_level_timestamps"
+  integrations:
+    - slug: "langchain"
+      type: "community"
+    - slug: "llamaindex"
+      type: "community"
+    - slug: "livekit"
+      type: "compatible"
+
+technical_specs:
+  model_sizes:
+    tiny: "39M parameters"
+    base: "74M parameters"
+    small: "244M parameters"
+    medium: "769M parameters"
+    large_v3: "1.55B parameters"
+    turbo: "809M parameters"
+  supported_languages: 99
+  audio_input_formats:
+    - "mp3"
+    - "mp4"
+    - "mpeg"
+    - "mpga"
+    - "m4a"
+    - "wav"
+    - "webm"
+    - "flac"
+    - "ogg"
+  max_audio_length: "unlimited (chunked processing)"
+  sample_rate: 16000
+  output_formats:
+    - "text"
+    - "json"
+    - "srt"
+    - "vtt"
+    - "tsv"
+  gpu_required: "recommended for medium+ models"
+  quantization_support: true
+  streaming_capable: "via community wrappers"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Large-v3 model achieves near-human accuracy on English. Turbo model provides 8x faster inference with minimal quality loss. Performance varies by language."
+  scalability:
+    score: 7
+    justification: "Self-hosted scaling requires GPU infrastructure management. Multiple inference optimizations (faster-whisper, whisper.cpp) enable efficient batch processing."
+  ease_of_use:
+    score: 8
+    justification: "Simple Python API with one-line transcription. Multiple model sizes for different resource constraints. Extensive community documentation and tutorials."
+  cost_efficiency:
+    score: 10
+    justification: "Fully open-source with no per-API-call costs. GPU inference costs are the only expense. Smaller models run efficiently on consumer hardware."
+  community:
+    score: 9
+    justification: "Massive open-source community. Dozens of derivative projects including faster-whisper, whisper.cpp, whisperX. Active development and model improvements."
+  maturity:
+    score: 9
+    justification: "Released in 2022, battle-tested in production across thousands of applications. Multiple model generations with steady improvements."
+  flexibility:
+    score: 9
+    justification: "Self-hostable, fine-tunable, runs on CPU or GPU. Multiple model sizes and inference backends. Can be deployed anywhere from edge devices to cloud."
+  data_privacy:
+    score: 10
+    justification: "Fully self-hosted with no data leaving your infrastructure. Complete control over audio data processing and retention."
+
+knowledge:
+  entries:
+    - topic: "Model Selection Guide"
+      content: |
+        Choosing the right Whisper model size depends on your accuracy requirements, latency
+        budget, and available hardware:
+
+        Tiny (39M): Best for real-time applications on CPU where accuracy is less critical.
+        Suitable for command recognition and short utterances. ~32x faster than large.
+
+        Base (74M): Good balance for CPU-based transcription of clear audio in common languages.
+        Suitable for meeting transcription where some errors are acceptable.
+
+        Small (244M): Recommended starting point for most applications. Runs well on modest
+        GPUs and provides good accuracy across languages.
+
+        Medium (769M): Strong multilingual performance. Recommended for non-English languages
+        and noisy audio environments.
+
+        Large-v3 (1.55B): Highest accuracy, especially for challenging audio (accents, noise,
+        technical jargon). Requires a capable GPU (8GB+ VRAM).
+
+        Turbo (809M): OpenAI's optimized model offering large-v3 quality at ~8x the speed.
+        Recommended for production workloads needing both accuracy and throughput.
+
+        For production deployments, faster-whisper (CTranslate2 backend) provides 4x speedup
+        and 2x memory reduction compared to the original implementation while maintaining
+        identical accuracy.
+      tags: ["models", "selection", "performance"]
+
+    - topic: "Production Deployment Patterns"
+      content: |
+        Common production deployment patterns for Whisper:
+
+        1. Batch Processing: Use faster-whisper or WhisperX for offline transcription of
+        audio files. Process files in parallel across multiple GPU workers. This is ideal
+        for transcribing archives, podcasts, or video libraries.
+
+        2. Real-Time Streaming: Use whisper-streaming or similar wrappers that segment audio
+        into chunks and process them incrementally. Combine with VAD (Voice Activity Detection)
+        to only process speech segments. Typical latency: 1-3 seconds behind real-time.
+
+        3. API Service: Deploy behind a FastAPI or gRPC service with a queue for handling
+        concurrent requests. Use GPU instances with batched inference for cost efficiency.
+
+        4. Edge Deployment: Use whisper.cpp for CPU-only deployment on edge devices.
+        The tiny and base models run in real-time on modern CPUs without GPU acceleration.
+
+        5. Hybrid Pipeline: Use Whisper for transcription, then pipe output to an LLM for
+        summarization, entity extraction, or question answering. This is the foundation
+        of many voice AI applications.
+
+        Key production considerations: implement retry logic for long audio files, use VAD
+        preprocessing to skip silence, monitor word error rate (WER) on your specific domain,
+        and consider fine-tuning on domain-specific vocabulary.
+      tags: ["deployment", "production", "architecture"]
+
+    - topic: "faster-whisper and Performance Optimization"
+      content: |
+        faster-whisper is a reimplementation of Whisper using CTranslate2, providing significant
+        performance improvements:
+
+        - 4x faster inference than the original OpenAI implementation
+        - 2x less memory usage through INT8 quantization
+        - Identical transcription accuracy (same model weights)
+        - Batched inference support for throughput optimization
+
+        Installation: pip install faster-whisper
+
+        Additional optimization techniques:
+        1. INT8 quantization: Halves memory usage with negligible accuracy impact
+        2. VAD filtering: Use Silero VAD to skip non-speech segments, reducing processing time
+        by 30-50% on typical audio
+        3. Batched inference: Process multiple audio segments in parallel on a single GPU
+        4. Chunked processing: Split long audio into overlapping chunks for consistent memory
+        usage regardless of input length
+
+        For maximum throughput on a single GPU, combine faster-whisper with batched inference
+        and VAD filtering. A single NVIDIA A100 can transcribe approximately 150 hours of
+        audio per hour of compute using the large-v3 model with these optimizations.
+      tags: ["optimization", "faster-whisper", "performance"]
+
+    - topic: "Limitations and Workarounds"
+      content: |
+        Known limitations of Whisper and how to address them:
+
+        1. Hallucination on silence or noise: Whisper may generate phantom text when processing
+        silent or very noisy segments. Workaround: Use VAD preprocessing to detect and skip
+        non-speech regions before passing audio to Whisper.
+
+        2. No native speaker diarization: Whisper does not identify who is speaking.
+        Workaround: Use WhisperX or pyannote-audio for speaker diarization, then align
+        timestamps with Whisper transcription.
+
+        3. Repetition loops: On some audio, especially with background music, the model can
+        get stuck in repetition loops. Workaround: Use temperature fallback (try temperature
+        0 first, then increase) and set compression_ratio_threshold.
+
+        4. Language confusion: On short audio clips or code-switched speech, language detection
+        may be unreliable. Workaround: Explicitly set the language parameter when known.
+
+        5. Punctuation inconsistency: Punctuation quality varies by language. For languages
+        with lower punctuation accuracy, post-process with a punctuation restoration model.
+
+        6. No streaming in the official API: The model processes complete audio segments.
+        Real-time streaming requires community wrappers that handle chunking and buffer
+        management.
+      tags: ["limitations", "workarounds"]
+
+code_examples:
+  - title: "Basic Transcription"
+    language: "python"
+    code: |
+      import whisper
+
+      model = whisper.load_model("turbo")
+
+      # Transcribe audio file
+      result = model.transcribe("audio.mp3")
+      print(result["text"])
+
+      # With options
+      result = model.transcribe(
+          "audio.mp3",
+          language="en",
+          task="transcribe",
+          word_timestamps=True,
+          fp16=True
+      )
+
+      for segment in result["segments"]:
+          print(f"[{segment['start']:.1f}s -> {segment['end']:.1f}s] {segment['text']}")
+
+  - title: "faster-whisper for Production"
+    language: "python"
+    code: |
+      from faster_whisper import WhisperModel
+
+      # Load model with INT8 quantization
+      model = WhisperModel("large-v3", device="cuda", compute_type="int8")
+
+      # Transcribe with VAD filtering
+      segments, info = model.transcribe(
+          "audio.mp3",
+          beam_size=5,
+          language="en",
+          vad_filter=True,
+          vad_parameters=dict(min_silence_duration_ms=500)
+      )
+
+      print(f"Detected language: {info.language} (prob: {info.language_probability:.2f})")
+
+      for segment in segments:
+          print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
+
+  - title: "Real-Time Streaming Pipeline"
+    language: "python"
+    code: |
+      from faster_whisper import WhisperModel
+      import sounddevice as sd
+      import numpy as np
+      import queue
+
+      model = WhisperModel("base", device="cpu", compute_type="int8")
+      audio_queue = queue.Queue()
+
+      def audio_callback(indata, frames, time, status):
+          audio_queue.put(indata.copy())
+
+      # Record and transcribe in chunks
+      CHUNK_DURATION = 3  # seconds
+      SAMPLE_RATE = 16000
+
+      with sd.InputStream(samplerate=SAMPLE_RATE, channels=1,
+                          callback=audio_callback):
+          buffer = np.array([], dtype=np.float32)
+          while True:
+              data = audio_queue.get()
+              buffer = np.append(buffer, data.flatten())
+              if len(buffer) >= SAMPLE_RATE * CHUNK_DURATION:
+                  segments, _ = model.transcribe(buffer, language="en")
+                  for seg in segments:
+                      print(seg.text, end=" ", flush=True)
+                  buffer = np.array([], dtype=np.float32)
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "wer_english_large_v3"
+      value: 4.2
+      unit: "percent"
+      context: "Word Error Rate, LibriSpeech test-clean, large-v3"
+    - name: "wer_english_turbo"
+      value: 4.7
+      unit: "percent"
+      context: "Word Error Rate, LibriSpeech test-clean, turbo"
+    - name: "realtime_factor_large_v3"
+      value: 0.05
+      unit: "ratio"
+      context: "faster-whisper, INT8, NVIDIA A100 (1.0 = real-time)"
+    - name: "realtime_factor_base_cpu"
+      value: 0.8
+      unit: "ratio"
+      context: "faster-whisper, INT8, Intel i7-12700 CPU"
+    - name: "throughput_large_v3"
+      value: 150
+      unit: "hours_audio/hour_compute"
+      context: "faster-whisper, INT8, NVIDIA A100, batched"
+
+relationships:
+  alternatives:
+    - slug: "elevenlabs"
+      note: "Commercial voice AI (primarily TTS, not STT)"
+  complements:
+    - slug: "elevenlabs"
+      role: "Text-to-speech output after Whisper transcription in voice AI pipelines"
+    - slug: "livekit"
+      role: "Real-time audio transport for streaming Whisper transcription"
+    - slug: "openai"
+      role: "LLM processing of transcribed text for summarization or Q&A"
+    - slug: "langchain"
+      role: "Orchestration of transcription-to-LLM pipelines"
+  typical_pipeline_position: "input_processing"
+  pipeline_predecessors: ["audio_capture", "audio_preprocessing"]
+  pipeline_successors: ["llm_generation", "text_processing", "search_indexing"]

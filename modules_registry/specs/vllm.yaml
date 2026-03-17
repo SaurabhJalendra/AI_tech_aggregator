@@ -1,0 +1,339 @@
+meta:
+  slug: "vllm"
+  name: "vLLM"
+  version: "1.0.0"
+  category: "deployment"
+  subcategory: "inference_server"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "High-throughput LLM inference engine with PagedAttention for production serving"
+  description: |
+    vLLM is an open-source library and inference server for fast LLM serving. Its core
+    innovation is PagedAttention, an attention algorithm inspired by virtual memory
+    paging in operating systems, which efficiently manages the key-value cache memory
+    during inference. This allows vLLM to achieve 2-4x higher throughput than naive
+    implementations like HuggingFace Transformers.
+
+    vLLM supports continuous batching, which dynamically groups incoming requests to
+    maximize GPU utilization. Unlike static batching where all requests in a batch must
+    complete before new ones start, continuous batching allows new requests to join and
+    completed requests to leave the batch at each iteration step.
+
+    The server provides an OpenAI-compatible API out of the box, making it a drop-in
+    replacement for OpenAI API calls in existing applications. It supports a wide range
+    of models including Llama, Mistral, Mixtral, Qwen, Gemma, Phi, and many others.
+    Tensor parallelism enables serving large models across multiple GPUs.
+  logo_url: "/assets/modules/vllm.svg"
+  website: "https://vllm.ai"
+  documentation: "https://docs.vllm.ai"
+  github: "https://github.com/vllm-project/vllm"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "High-throughput LLM inference serving"
+    - "Self-hosted OpenAI-compatible API"
+    - "Batch inference for offline processing"
+    - "Multi-model serving"
+    - "Speculative decoding for latency reduction"
+  supported_operations:
+    - "completions"
+    - "chat_completions"
+    - "embeddings"
+    - "tokenize"
+    - "detokenize"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "openai_sdk"
+      type: "compatible"
+    - slug: "huggingface"
+      type: "native"
+    - slug: "ray"
+      type: "native"
+
+technical_specs:
+  attention_backends:
+    - "PagedAttention"
+    - "FlashAttention-2"
+    - "FlashInfer"
+  quantization_methods:
+    - "AWQ"
+    - "GPTQ"
+    - "SqueezeLLM"
+    - "FP8"
+    - "GGUF"
+    - "bitsandbytes"
+  parallelism:
+    tensor_parallel: true
+    pipeline_parallel: true
+    max_gpus: 128
+  supported_hardware:
+    - "NVIDIA GPU (Ampere, Hopper, Ada Lovelace)"
+    - "AMD GPU (MI250, MI300)"
+    - "AWS Neuron (Inferentia2, Trainium)"
+    - "Google TPU"
+    - "Intel Gaudi"
+    - "CPU (limited)"
+  continuous_batching: true
+  speculative_decoding: true
+  prefix_caching: true
+  lora_support: true
+  multi_lora_serving: true
+  structured_output: true
+  openai_compatible_api: true
+  supported_model_architectures:
+    - "LlamaForCausalLM"
+    - "MistralForCausalLM"
+    - "MixtralForCausalLM"
+    - "Qwen2ForCausalLM"
+    - "GemmaForCausalLM"
+    - "PhiForCausalLM"
+    - "GPTNeoXForCausalLM"
+    - "ChatGLMForCausalLM"
+
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: "PagedAttention and continuous batching deliver 2-4x higher throughput than HuggingFace TGI. FlashAttention-2 support further reduces latency. Leading performance among open-source inference engines."
+  scalability:
+    score: 9
+    justification: "Tensor and pipeline parallelism across multiple GPUs. Ray integration for distributed serving. Handles thousands of concurrent requests with continuous batching."
+  ease_of_use:
+    score: 8
+    justification: "Simple CLI to start serving any HuggingFace model. OpenAI-compatible API requires zero client code changes. Docker images available for quick deployment."
+  cost_efficiency:
+    score: 9
+    justification: "Open-source with no licensing cost. Higher throughput per GPU reduces hardware costs. Quantization support (AWQ, GPTQ, FP8) allows serving on smaller GPUs."
+  community:
+    score: 9
+    justification: "30k+ GitHub stars, extremely active development with weekly releases. Backed by UC Berkeley research. Large contributor base and enterprise adoption."
+  maturity:
+    score: 7
+    justification: "Released in 2023, rapidly maturing. Breaking changes still occur between releases. Production-proven at companies like Anyscale, Databricks, and numerous startups."
+  flexibility:
+    score: 8
+    justification: "Supports 50+ model architectures, multiple quantization methods, multi-GPU setups, and LoRA adapters. Limited to generative models; no support for encoder-only models."
+  data_privacy:
+    score: 10
+    justification: "Fully self-hosted inference with zero data leaving your infrastructure. No telemetry or external dependencies during inference."
+
+knowledge:
+  entries:
+    - topic: "PagedAttention Explained"
+      content: |
+        PagedAttention is vLLM's core innovation that dramatically improves memory efficiency
+        during LLM inference. The key insight comes from operating systems: just as virtual
+        memory uses paging to efficiently manage physical memory, PagedAttention manages the
+        key-value (KV) cache in non-contiguous memory blocks.
+
+        In standard LLM inference, each request pre-allocates a contiguous block of GPU
+        memory for its KV cache based on the maximum sequence length. This leads to massive
+        memory waste because most sequences are much shorter than the maximum, and the
+        allocated memory cannot be shared between requests.
+
+        PagedAttention divides the KV cache into fixed-size blocks (pages) that can be
+        allocated on demand and stored non-contiguously. A block table maps logical KV cache
+        positions to physical memory locations. This achieves near-zero memory waste and
+        enables memory sharing between requests with common prefixes (important for system
+        prompts in chat applications).
+
+        The result is 2-4x higher throughput compared to static memory allocation, because
+        more requests can be batched together within the same GPU memory budget.
+      tags: ["architecture", "paged-attention", "internals"]
+
+    - topic: "When to Choose vLLM"
+      content: |
+        vLLM is the right choice when:
+
+        1. You need maximum throughput for self-hosted LLM inference. vLLM consistently
+        leads benchmarks for tokens-per-second on standard hardware.
+
+        2. You want an OpenAI-compatible API for self-hosted models. vLLM's API server
+        is a drop-in replacement, letting you switch between OpenAI and self-hosted
+        models by changing only the base URL.
+
+        3. You're serving multiple LoRA adapters on the same base model. vLLM's multi-LoRA
+        serving avoids loading separate model copies for each adapter.
+
+        4. You need to serve quantized models (AWQ, GPTQ, FP8) to reduce GPU memory
+        requirements without significant quality loss.
+
+        Consider alternatives when: you need a minimal, lightweight solution (use llama.cpp),
+        you need encoder-only models like BERT (use HuggingFace TGI or ONNX Runtime),
+        you need edge/mobile deployment (use llama.cpp or MLC-LLM), or you prefer a
+        Rust-based server (use Candle or Mistral.rs).
+      tags: ["decision", "comparison"]
+
+    - topic: "Quantization Strategies"
+      content: |
+        vLLM supports several quantization methods to reduce memory footprint and improve
+        throughput:
+
+        AWQ (Activation-aware Weight Quantization): 4-bit weight quantization that preserves
+        important weights. Generally the best quality/size trade-off. Pre-quantized models
+        are available on HuggingFace (e.g., TheBloke AWQ models).
+
+        GPTQ: Another 4-bit quantization method. Similar quality to AWQ but slightly slower
+        inference in vLLM. Large ecosystem of pre-quantized models available.
+
+        FP8: 8-bit floating point quantization supported on Hopper GPUs (H100). Minimal
+        quality loss with ~2x memory reduction. Recommended when using H100 or newer GPUs.
+
+        GGUF: Quantization format from llama.cpp. vLLM support allows using the large
+        ecosystem of GGUF-quantized models. Various bit widths from Q2 to Q8.
+
+        For production use, AWQ 4-bit is recommended for Ampere GPUs (A100), and FP8 for
+        Hopper GPUs (H100). The quality impact of 4-bit quantization is typically less than
+        1% on standard benchmarks for models with 13B+ parameters.
+      tags: ["quantization", "optimization", "deployment"]
+
+    - topic: "Production Deployment Patterns"
+      content: |
+        Common production deployment patterns for vLLM:
+
+        1. Single-model serving: Run one model instance per GPU or set of GPUs. Use
+        --tensor-parallel-size for multi-GPU models. Place behind a load balancer for
+        horizontal scaling.
+
+        2. Multi-LoRA serving: Serve a base model with multiple LoRA adapters using the
+        --enable-lora flag. Each request specifies which adapter to use. Efficient
+        because the base model weights are shared.
+
+        3. Prefix caching: Enable with --enable-prefix-caching to cache KV computations
+        for common prefixes (system prompts). Reduces first-token latency by 5-20x for
+        repeated system prompts.
+
+        4. Speculative decoding: Use a smaller draft model to generate candidate tokens
+        verified by the target model. Reduces latency by 1.5-2x for latency-sensitive
+        applications. Enable with --speculative-model.
+
+        5. Kubernetes deployment: Use the official Helm chart or KServe integration for
+        auto-scaling based on request queue depth. GPU node pools with proper resource
+        limits are essential.
+      tags: ["deployment", "production", "kubernetes"]
+
+code_examples:
+  - title: "Start OpenAI-Compatible Server"
+    language: "bash"
+    code: |
+      # Serve a model with OpenAI-compatible API
+      python -m vllm.entrypoints.openai.api_server \
+          --model meta-llama/Llama-3.1-8B-Instruct \
+          --tensor-parallel-size 1 \
+          --max-model-len 8192 \
+          --enable-prefix-caching \
+          --port 8000
+
+      # With quantization
+      python -m vllm.entrypoints.openai.api_server \
+          --model TheBloke/Llama-3.1-70B-Instruct-AWQ \
+          --quantization awq \
+          --tensor-parallel-size 4 \
+          --port 8000
+
+  - title: "Use as OpenAI Drop-in Replacement"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      # Point to vLLM server instead of OpenAI
+      client = OpenAI(
+          base_url="http://localhost:8000/v1",
+          api_key="not-needed"
+      )
+
+      response = client.chat.completions.create(
+          model="meta-llama/Llama-3.1-8B-Instruct",
+          messages=[
+              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "user", "content": "Explain PagedAttention in simple terms."}
+          ],
+          temperature=0.7,
+          max_tokens=512
+      )
+
+      print(response.choices[0].message.content)
+
+  - title: "Offline Batch Inference"
+    language: "python"
+    code: |
+      from vllm import LLM, SamplingParams
+
+      llm = LLM(
+          model="meta-llama/Llama-3.1-8B-Instruct",
+          tensor_parallel_size=1,
+          max_model_len=4096
+      )
+
+      sampling_params = SamplingParams(
+          temperature=0.0,
+          max_tokens=256,
+          top_p=0.95
+      )
+
+      prompts = [
+          "Summarize the key benefits of vector databases:",
+          "Compare REST APIs vs GraphQL:",
+          "Explain container orchestration with Kubernetes:",
+      ]
+
+      outputs = llm.generate(prompts, sampling_params)
+      for output in outputs:
+          print(f"Prompt: {output.prompt[:50]}...")
+          print(f"Output: {output.outputs[0].text}\n")
+
+benchmarks:
+  last_run: "2026-02-22"
+  results:
+    - name: "throughput_llama3_8b"
+      value: 4200
+      unit: "tokens/sec"
+      context: "Llama-3.1-8B, A100 80GB, 64 concurrent requests"
+    - name: "throughput_llama3_70b"
+      value: 1800
+      unit: "tokens/sec"
+      context: "Llama-3.1-70B, 4xA100 80GB, 64 concurrent requests"
+    - name: "ttft_llama3_8b"
+      value: 42
+      unit: "ms"
+      context: "Llama-3.1-8B, A100 80GB, time to first token, single request"
+    - name: "ttft_llama3_8b_prefixcache"
+      value: 8
+      unit: "ms"
+      context: "Llama-3.1-8B, A100 80GB, prefix cache hit, single request"
+    - name: "throughput_vs_tgi"
+      value: 2.4
+      unit: "x_speedup"
+      context: "Llama-3.1-8B, A100 80GB, vs HuggingFace TGI, 64 concurrent"
+    - name: "memory_efficiency"
+      value: 0.97
+      unit: "kv_cache_utilization"
+      context: "PagedAttention vs pre-allocated, 64 concurrent requests"
+
+relationships:
+  alternatives:
+    - slug: "tgi"
+      note: "HuggingFace Text Generation Inference, Rust-based with good HF ecosystem integration"
+    - slug: "llamacpp"
+      note: "CPU and edge-focused inference with GGUF quantization"
+    - slug: "tensorrt_llm"
+      note: "NVIDIA's optimized inference library with maximum single-request performance"
+    - slug: "sglang"
+      note: "Structured generation focused inference engine with RadixAttention"
+  complements:
+    - slug: "ray"
+      role: "Distributed computing framework for scaling vLLM across nodes"
+    - slug: "langchain"
+      role: "Orchestration framework that connects to vLLM's OpenAI-compatible API"
+    - slug: "huggingface"
+      role: "Model hub providing models to serve with vLLM"
+  typical_pipeline_position: "llm_inference"
+  pipeline_predecessors: ["prompt_construction", "retrieval"]
+  pipeline_successors: ["response_parsing", "guardrails"]

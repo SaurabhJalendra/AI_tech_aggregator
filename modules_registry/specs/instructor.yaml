@@ -1,0 +1,243 @@
+meta:
+  slug: "instructor"
+  name: "Instructor"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "structured_output"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Structured outputs from LLMs using Pydantic models"
+  description: |
+    Instructor is a Python library that makes it easy to get structured, typed
+    outputs from LLMs. It patches LLM client libraries (OpenAI, Anthropic, Google,
+    Mistral, etc.) to accept Pydantic models as response schemas, handling
+    validation, retries, and parsing automatically.
+
+    Instead of parsing free-text LLM responses with fragile regex or string
+    manipulation, Instructor lets you define a Pydantic model and get back a
+    validated Python object. If the LLM output doesn't match the schema,
+    Instructor automatically retries with the validation error message,
+    leveraging the LLM's ability to self-correct.
+
+    Instructor supports multiple modes including function calling, JSON mode,
+    and tool use depending on the provider. It has become the de facto standard
+    for structured LLM output in Python applications.
+  logo_url: "/assets/modules/instructor.svg"
+  website: "https://python.useinstructor.com"
+  documentation: "https://python.useinstructor.com"
+  github: "https://github.com/jxnl/instructor"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Structured data extraction from text"
+    - "Type-safe LLM outputs"
+    - "Entity extraction"
+    - "Classification with LLMs"
+    - "Validated API responses from LLMs"
+  supported_operations:
+    - "create"
+    - "create_partial"
+    - "create_iterable"
+    - "retry_with_validation"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "native"
+    - slug: "mistral"
+      type: "native"
+    - slug: "google_gemini"
+      type: "native"
+
+technical_specs:
+  validation: "Pydantic v2"
+  modes:
+    - "function_call"
+    - "json_mode"
+    - "tool_call"
+    - "markdown_json"
+  streaming: true
+  partial_streaming: true
+  iterable_streaming: true
+  retry_logic: true
+  supported_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google"
+    - "Mistral"
+    - "Groq"
+    - "Together"
+    - "Ollama"
+    - "any litellm provider"
+  languages:
+    - "python"
+    - "typescript"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Minimal overhead over raw LLM calls. Retry logic adds latency only on validation failures."
+  scalability:
+    score: 8
+    justification: "Library-level tool, scales with your application. No server component."
+  ease_of_use:
+    score: 10
+    justification: "Define a Pydantic model, patch your client, done. The simplest path to structured LLM output."
+  cost_efficiency:
+    score: 9
+    justification: "Open-source, no additional costs beyond LLM API. Retries add cost only on failures."
+  community:
+    score: 8
+    justification: "Very popular library with active development. Extensive cookbook and documentation."
+  maturity:
+    score: 7
+    justification: "Established since 2023. Stable API with broad provider support."
+  flexibility:
+    score: 9
+    justification: "Works with any LLM provider. Pydantic models allow arbitrary complexity. Multiple extraction modes."
+  data_privacy:
+    score: 9
+    justification: "Client-side library. No data sent to Instructor servers. Privacy depends on your LLM provider."
+
+knowledge:
+  entries:
+    - topic: "Why Instructor Over Raw JSON Mode"
+      content: |
+        While many LLMs support JSON mode natively, Instructor adds critical
+        production features:
+
+        1. Validation: Pydantic ensures types, constraints, and custom validators
+        are satisfied. Raw JSON mode just gives you JSON, not validated data.
+
+        2. Automatic retries: If the LLM output fails validation, Instructor
+        sends the error back to the LLM for correction. This dramatically
+        improves reliability.
+
+        3. Streaming: Instructor supports partial object streaming, where you
+        get partial Pydantic objects as tokens arrive. This enables progressive
+        UI updates with typed data.
+
+        4. Provider abstraction: Same Pydantic models work across OpenAI,
+        Anthropic, Google, and others without changing your extraction code.
+
+        5. Complex types: Nested models, optional fields, lists, enums, and
+        custom validators all work naturally with Pydantic.
+      tags: ["comparison", "json-mode", "features"]
+
+code_examples:
+  - title: "Basic Structured Extraction"
+    language: "python"
+    code: |
+      import instructor
+      from openai import OpenAI
+      from pydantic import BaseModel
+
+      client = instructor.from_openai(OpenAI())
+
+      class UserInfo(BaseModel):
+          name: str
+          age: int
+          email: str
+
+      user = client.chat.completions.create(
+          model="gpt-4o",
+          response_model=UserInfo,
+          messages=[
+              {"role": "user", "content": "John Doe is 30 years old. Email: john@example.com"}
+          ]
+      )
+
+      print(user.name)   # "John Doe"
+      print(user.age)    # 30
+      print(user.email)  # "john@example.com"
+
+  - title: "Complex Extraction with Validation"
+    language: "python"
+    code: |
+      import instructor
+      from openai import OpenAI
+      from pydantic import BaseModel, Field, field_validator
+
+      client = instructor.from_openai(OpenAI())
+
+      class TechComparison(BaseModel):
+          name: str
+          category: str
+          pros: list[str] = Field(min_length=2)
+          cons: list[str] = Field(min_length=1)
+          score: int = Field(ge=1, le=10)
+
+          @field_validator("score")
+          @classmethod
+          def validate_score(cls, v):
+              if v < 1 or v > 10:
+                  raise ValueError("Score must be between 1 and 10")
+              return v
+
+      comparison = client.chat.completions.create(
+          model="gpt-4o",
+          response_model=TechComparison,
+          messages=[
+              {"role": "user", "content": "Evaluate Pinecone as a vector database"}
+          ],
+          max_retries=3
+      )
+
+  - title: "Streaming Partial Objects"
+    language: "python"
+    code: |
+      import instructor
+      from openai import OpenAI
+      from pydantic import BaseModel
+
+      client = instructor.from_openai(OpenAI())
+
+      class Report(BaseModel):
+          title: str
+          summary: str
+          recommendations: list[str]
+
+      for partial in client.chat.completions.create_partial(
+          model="gpt-4o",
+          response_model=Report,
+          messages=[{"role": "user", "content": "Write a report on vector DB trends"}]
+      ):
+          print(partial.model_dump())  # Partial object updates as tokens stream
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "extraction_success_rate"
+      value: 97
+      unit: "percent"
+      context: "First-attempt success rate with GPT-4o"
+    - name: "retry_success_rate"
+      value: 99.5
+      unit: "percent"
+      context: "Success rate with up to 3 retries"
+    - name: "overhead_per_call"
+      value: 5
+      unit: "ms"
+      context: "Library overhead excluding LLM latency"
+
+relationships:
+  alternatives:
+    - slug: "outlines"
+      note: "Structured generation at the token level for local models"
+    - slug: "guardrails_ai"
+      note: "Broader guardrails including structured output validation"
+  complements:
+    - slug: "openai"
+      role: "Primary LLM provider for structured extraction"
+    - slug: "anthropic_claude"
+      role: "LLM provider with tool-based structured output"
+    - slug: "langchain"
+      role: "Orchestration framework, can use Instructor for output parsing"
+  typical_pipeline_position: "output_parsing"
+  pipeline_predecessors: ["llm_generation"]
+  pipeline_successors: ["application_logic"]

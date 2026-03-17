@@ -1,0 +1,413 @@
+meta:
+  slug: "llama"
+  name: "Meta Llama"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "open_source"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Meta's open-weight LLM family enabling self-hosted, customizable AI deployments"
+  description: |
+    Meta's Llama is the most widely adopted open-weight large language model family,
+    with Llama 3.1 and Llama 3.2 models spanning from 1B to 405B parameters. Llama
+    models are released under the Llama Community License, which permits commercial
+    use, fine-tuning, and redistribution, making them the foundation of choice for
+    organizations that need full control over their AI infrastructure.
+
+    Llama 3.1 405B represents the open-source frontier, performing competitively
+    with GPT-4o and Claude Sonnet on many benchmarks. Llama 3.1 70B offers an
+    excellent balance of capability and deployability on standard GPU hardware.
+    Llama 3.2 extends the family with smaller models (1B, 3B) optimized for
+    edge and mobile deployment, plus multimodal variants (11B, 90B) that process
+    both text and images.
+
+    The open-weight nature of Llama enables architectural freedom impossible with
+    proprietary models: full fine-tuning, quantization to any precision, custom
+    serving infrastructure, on-premises deployment for air-gapped environments,
+    and merging with other models. This flexibility comes with the operational
+    burden of self-hosting, including GPU procurement, model serving, scaling,
+    and monitoring.
+
+    Llama models are served through platforms like vLLM, TGI, Ollama, and major
+    cloud providers (AWS Bedrock, Azure AI, Google Vertex AI) for teams that want
+    Llama's capabilities without managing infrastructure directly.
+  logo_url: "/assets/modules/llama.svg"
+  website: "https://llama.meta.com"
+  documentation: "https://llama.meta.com/docs"
+  github: "https://github.com/meta-llama/llama-models"
+  license: "Llama Community License"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Self-hosted production LLM serving"
+    - "Full fine-tuning for domain-specific applications"
+    - "On-premises deployment for regulated industries"
+    - "Edge and mobile AI with smaller model variants"
+    - "Research and experimentation with model internals"
+    - "Custom model merging and quantization"
+  supported_operations:
+    - "text_generation"
+    - "chat_completion"
+    - "tool_use"
+    - "vision (multimodal variants)"
+    - "fine_tuning"
+    - "quantization"
+    - "model_merging"
+    - "distillation"
+  integrations:
+    - slug: "vllm"
+      type: "native"
+    - slug: "ollama"
+      type: "native"
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "haystack"
+      type: "compatible"
+
+technical_specs:
+  model_variants:
+    - name: "Llama 3.1 405B"
+      parameters: "405B"
+      context_window: 131072
+      gpu_requirements: "8x A100 80GB or 8x H100 (FP16), 2x H100 (FP8)"
+      strengths: "Open-source frontier, competitive with GPT-4o"
+    - name: "Llama 3.1 70B"
+      parameters: "70B"
+      context_window: 131072
+      gpu_requirements: "2x A100 80GB (FP16), 1x A100 80GB (INT4)"
+      strengths: "Best open-source cost-performance ratio"
+    - name: "Llama 3.1 8B"
+      parameters: "8B"
+      context_window: 131072
+      gpu_requirements: "1x A100 40GB (FP16), 1x RTX 4090 (INT4)"
+      strengths: "Single-GPU deployment, fine-tuning base"
+    - name: "Llama 3.2 3B"
+      parameters: "3B"
+      context_window: 131072
+      gpu_requirements: "Consumer GPU or mobile device"
+      strengths: "Edge deployment, mobile inference"
+    - name: "Llama 3.2 90B Vision"
+      parameters: "90B"
+      context_window: 131072
+      gpu_requirements: "4x A100 80GB"
+      strengths: "Open-source multimodal with vision"
+  supported_quantization:
+    - "FP16"
+    - "BF16"
+    - "FP8"
+    - "INT8"
+    - "INT4 (GPTQ, AWQ)"
+    - "GGUF"
+  training_framework_compatibility:
+    - "PyTorch"
+    - "Hugging Face Transformers"
+    - "DeepSpeed"
+    - "FSDP"
+    - "Axolotl"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "405B competitive with GPT-4o on many benchmarks. 70B outperforms most proprietary models at its cost tier. Performance varies by task and quantization level."
+  scalability:
+    score: 7
+    justification: "Requires self-managed infrastructure. Horizontal scaling through vLLM, TGI, or cloud-managed endpoints. GPU procurement can be a bottleneck."
+  ease_of_use:
+    score: 5
+    justification: "Requires significant MLOps expertise for production deployment. Ollama simplifies local development. Cloud-managed endpoints reduce operational burden."
+  cost_efficiency:
+    score: 9
+    justification: "No per-token API cost -- only infrastructure costs. At scale, self-hosted Llama is 3-10x cheaper than proprietary APIs. Quantization further reduces GPU requirements."
+  community:
+    score: 10
+    justification: "Largest open-source LLM community. Thousands of fine-tuned variants on Hugging Face. Extensive tooling, tutorials, and community support."
+  maturity:
+    score: 8
+    justification: "Llama 2 launched July 2023, Llama 3 in April 2024. Wide production adoption across enterprises, startups, and research institutions."
+  flexibility:
+    score: 10
+    justification: "Full access to weights enables any customization: fine-tuning, quantization, merging, distillation, architecture modification. No restrictions on deployment environment."
+  data_privacy:
+    score: 10
+    justification: "Complete data isolation with self-hosted deployment. No data leaves your infrastructure. Suitable for air-gapped, ITAR, and classified environments."
+
+knowledge:
+  entries:
+    - topic: "Choosing a Llama Model Size"
+      content: |
+        Selecting the right Llama model size involves balancing capability, hardware
+        requirements, and cost:
+
+        405B: The open-source frontier. Choose when you need GPT-4-class reasoning
+        but must self-host for compliance or cost reasons. Requires significant GPU
+        infrastructure (8x H100 or equivalent). Consider quantization to FP8 to
+        halve GPU requirements with minimal quality loss.
+
+        70B: The sweet spot for most production deployments. Outperforms GPT-3.5 and
+        many proprietary models on reasoning, coding, and analysis tasks. Deployable
+        on 2x A100 80GB at FP16, or a single A100 80GB with INT4 quantization.
+        Fine-tuned 70B models often match or exceed base 405B on specific tasks.
+
+        8B: Ideal for fine-tuning experiments, development, and tasks where a
+        specialized model outperforms a general large model. Runs on a single
+        consumer GPU with quantization. Many production fine-tunes start here.
+
+        3B/1B: Edge and mobile deployment. Good for classification, entity extraction,
+        and simple generation on resource-constrained devices. The 3B model can run
+        on smartphones and Raspberry Pi with quantization.
+
+        Rule of thumb: Start with the smallest model that meets quality requirements
+        on your specific task. A fine-tuned 8B model often outperforms base 70B on
+        narrow, well-defined tasks.
+      tags: ["model-selection", "hardware", "architecture"]
+
+    - topic: "Production Serving with vLLM"
+      content: |
+        vLLM is the recommended serving engine for production Llama deployments. It
+        provides continuous batching, PagedAttention for efficient memory management,
+        and OpenAI-compatible API endpoints.
+
+        Key configuration decisions for vLLM + Llama:
+
+        Tensor parallelism: Set --tensor-parallel-size to match GPU count. For 70B
+        on 2x A100, use TP=2. For 405B on 8x H100, use TP=8.
+
+        Quantization: Use --quantization awq or gptq for INT4 quantization. FP8
+        quantization (--quantization fp8) on H100s provides near-lossless quality
+        with 2x throughput improvement.
+
+        Max model length: Set --max-model-len based on your use case. Full 128K
+        context requires substantial KV cache memory. For most applications, 8K-16K
+        is sufficient and dramatically reduces memory footprint.
+
+        KV cache dtype: Use --kv-cache-dtype fp8 on Ampere+ GPUs to halve KV cache
+        memory with negligible quality impact.
+
+        Throughput optimization: Enable chunked prefill (--enable-chunked-prefill)
+        and tune --max-num-batched-tokens based on your latency vs throughput
+        requirements.
+      tags: ["serving", "vllm", "production", "optimization"]
+
+    - topic: "Fine-Tuning Llama Models"
+      content: |
+        Llama's open weights enable full fine-tuning, a major advantage over
+        proprietary models. Common approaches:
+
+        Full fine-tuning: Updates all model parameters. Requires GPU memory for
+        the full model plus optimizer states (roughly 3x model size). For 70B,
+        this means 8+ A100 80GB GPUs. Provides the highest quality customization
+        but is expensive and risks catastrophic forgetting.
+
+        LoRA/QLoRA: Parameter-efficient fine-tuning that updates small adapter
+        layers while freezing the base model. QLoRA combines 4-bit quantization
+        with LoRA, enabling fine-tuning of 70B on a single A100 80GB. Quality
+        is typically 90-95% of full fine-tuning at a fraction of the cost.
+
+        Training data requirements: Quality matters more than quantity. 1000-5000
+        high-quality examples are often sufficient for task-specific fine-tuning.
+        Include diverse examples covering edge cases and failure modes.
+
+        Recommended tools: Axolotl for easy configuration-driven training, Hugging
+        Face TRL for RLHF/DPO alignment, and torchtune for Meta's official
+        fine-tuning recipes.
+
+        Evaluation: Always hold out a test set. Measure task-specific metrics, not
+        just loss. Compare against the base model and a few-shot prompted version
+        to validate that fine-tuning provides genuine improvement.
+      tags: ["fine-tuning", "lora", "qlora", "training"]
+
+    - topic: "Quantization Strategies"
+      content: |
+        Quantization reduces model precision to lower GPU memory requirements and
+        increase throughput, with varying quality tradeoffs:
+
+        FP8 (8-bit floating point): Available on H100 and newer GPUs. Reduces memory
+        by ~50% with typically <1% quality degradation. The best option when hardware
+        supports it. Supported natively by vLLM and TensorRT-LLM.
+
+        INT8 (8-bit integer): Broader hardware support than FP8. Similar memory
+        reduction. Slight quality degradation on reasoning-heavy tasks. Use
+        bitsandbytes for easy INT8 inference.
+
+        INT4 (GPTQ/AWQ): Reduces memory by ~75%. Enables 70B on a single A100 80GB
+        or consumer GPUs. Quality degradation is noticeable on complex reasoning but
+        acceptable for many production tasks. AWQ generally provides better quality
+        than GPTQ at the same bit width.
+
+        GGUF (llama.cpp format): Optimized for CPU and mixed CPU/GPU inference.
+        Supports various quantization levels (Q4_K_M, Q5_K_M, Q6_K, Q8_0). Ideal
+        for local development and edge deployment where GPU availability is limited.
+
+        Recommendation: Use FP8 on H100s for production. Use AWQ INT4 when GPU
+        memory is constrained. Use GGUF for local development with Ollama.
+      tags: ["quantization", "optimization", "hardware"]
+
+    - topic: "Llama vs Proprietary Models: Decision Framework"
+      content: |
+        Choosing between Llama and proprietary models (GPT-4, Claude, Gemini)
+        depends on several factors:
+
+        Choose Llama when: (1) Data privacy requires complete isolation -- no data
+        can leave your infrastructure, (2) Cost at scale is a primary concern and you
+        have GPU infrastructure, (3) You need deep customization through fine-tuning
+        or model modification, (4) Regulatory requirements mandate on-premises
+        deployment, (5) You need to control the full inference stack for latency
+        optimization.
+
+        Choose proprietary APIs when: (1) Time-to-market matters more than per-token
+        cost, (2) You lack MLOps expertise for production model serving, (3) You need
+        frontier reasoning quality (405B is strong but GPT-4o and Claude Opus still
+        lead on the hardest tasks), (4) Your usage volume doesn't justify dedicated
+        GPU infrastructure, (5) You need capabilities like extended thinking or
+        computer use not available in open models.
+
+        Hybrid approach: Many production systems use Llama for high-volume, simpler
+        tasks (classification, extraction, routing) and proprietary APIs for complex
+        reasoning. This optimizes cost while maintaining quality where it matters.
+      tags: ["decision", "comparison", "architecture"]
+
+code_examples:
+  - title: "Serving Llama with vLLM"
+    language: "python"
+    code: |
+      # Start vLLM server
+      # vllm serve meta-llama/Llama-3.1-70B-Instruct \
+      #   --tensor-parallel-size 2 \
+      #   --quantization awq \
+      #   --max-model-len 16384
+
+      # Use with OpenAI-compatible client
+      from openai import OpenAI
+
+      client = OpenAI(
+          base_url="http://localhost:8000/v1",
+          api_key="not-needed"
+      )
+
+      response = client.chat.completions.create(
+          model="meta-llama/Llama-3.1-70B-Instruct",
+          messages=[
+              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "user", "content": "Explain the CAP theorem."}
+          ],
+          max_tokens=2048,
+          temperature=0.7
+      )
+      print(response.choices[0].message.content)
+
+  - title: "Fine-Tuning with QLoRA"
+    language: "python"
+    code: |
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+      from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+      from transformers import BitsAndBytesConfig, TrainingArguments
+      from trl import SFTTrainer
+      import torch
+
+      # Load model with 4-bit quantization
+      bnb_config = BitsAndBytesConfig(
+          load_in_4bit=True,
+          bnb_4bit_quant_type="nf4",
+          bnb_4bit_compute_dtype=torch.bfloat16,
+      )
+
+      model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-8B-Instruct",
+          quantization_config=bnb_config,
+          device_map="auto"
+      )
+      model = prepare_model_for_kbit_training(model)
+
+      # Configure LoRA
+      lora_config = LoraConfig(
+          r=16, lora_alpha=32,
+          target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+          lora_dropout=0.05,
+          task_type="CAUSAL_LM"
+      )
+      model = get_peft_model(model, lora_config)
+
+      # Train
+      trainer = SFTTrainer(
+          model=model,
+          train_dataset=dataset,
+          args=TrainingArguments(
+              output_dir="./llama-finetuned",
+              num_train_epochs=3,
+              per_device_train_batch_size=4,
+              learning_rate=2e-4,
+          ),
+      )
+      trainer.train()
+
+  - title: "Local Development with Ollama"
+    language: "bash"
+    code: |
+      # Pull and run Llama locally
+      ollama pull llama3.1:8b
+
+      # Interactive chat
+      ollama run llama3.1:8b
+
+      # Use via API (OpenAI-compatible)
+      curl http://localhost:11434/v1/chat/completions \
+        -H "Content-Type: application/json" \
+        -d '{
+          "model": "llama3.1:8b",
+          "messages": [{"role": "user", "content": "Hello!"}]
+        }'
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "mmlu_pro"
+      value: 0.83
+      unit: "accuracy"
+      context: "Llama 3.1 405B, 5-shot"
+    - name: "mmlu_pro_70b"
+      value: 0.68
+      unit: "accuracy"
+      context: "Llama 3.1 70B, 5-shot"
+    - name: "humaneval_plus"
+      value: 0.81
+      unit: "pass@1"
+      context: "Llama 3.1 405B"
+    - name: "tokens_per_second_70b"
+      value: 95
+      unit: "tokens/sec"
+      context: "Llama 3.1 70B, vLLM, 2x A100, FP16"
+    - name: "tokens_per_second_8b"
+      value: 180
+      unit: "tokens/sec"
+      context: "Llama 3.1 8B, vLLM, 1x A100"
+    - name: "cost_per_million_tokens_70b"
+      value: 0.20
+      unit: "USD"
+      context: "Self-hosted 2x A100 spot instances, amortized"
+
+relationships:
+  alternatives:
+    - slug: "mistral"
+      note: "European open-weight alternative with strong multilingual performance"
+    - slug: "claude"
+      note: "Proprietary model with stronger reasoning but no self-hosting"
+    - slug: "gpt4"
+      note: "Proprietary model with broadest ecosystem but no self-hosting"
+    - slug: "gemini"
+      note: "Proprietary model with longest context and native multimodal"
+  complements:
+    - slug: "vllm"
+      role: "High-performance serving engine for production Llama deployments"
+    - slug: "ollama"
+      role: "Local development and testing runtime for Llama models"
+    - slug: "langchain"
+      role: "Orchestration framework for building Llama-powered applications"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation", "caching"]

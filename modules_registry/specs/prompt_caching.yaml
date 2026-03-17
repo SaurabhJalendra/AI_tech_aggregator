@@ -1,0 +1,358 @@
+meta:
+  slug: "prompt_caching"
+  name: "Prompt Caching"
+  version: "1.0.0"
+  category: "caching"
+  subcategory: "provider_caching"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Provider-level prompt prefix caching from Anthropic and OpenAI to reduce cost and latency"
+  description: |
+    Prompt caching is a feature offered by LLM providers (notably Anthropic and OpenAI) that
+    caches the processed representation of prompt prefixes on the provider's infrastructure.
+    When subsequent requests share the same prefix (system prompt, few-shot examples, or
+    large context documents), the provider can skip reprocessing the cached portion, resulting
+    in reduced latency and lower costs.
+
+    Anthropic's prompt caching (available for Claude models) allows developers to mark specific
+    portions of the prompt with cache_control breakpoints. Cached prefixes are stored for
+    5 minutes (extended on each cache hit) and reduce input token costs by up to 90% for
+    the cached portion. There is a small write cost when first caching a prompt.
+
+    OpenAI's prompt caching automatically caches prompt prefixes for GPT-4o and newer models.
+    It requires no explicit configuration - any request sharing a prefix of 1024+ tokens with
+    a recent request automatically benefits from caching with a 50% discount on cached tokens.
+
+    Unlike semantic caching, prompt caching operates at the provider level on exact token
+    prefixes, not semantic similarity. It is most effective for applications that reuse large
+    system prompts, tool definitions, or context documents across many requests.
+  logo_url: "/assets/modules/prompt_caching.svg"
+  website: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"
+  documentation: "https://platform.openai.com/docs/guides/prompt-caching"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Reducing costs for applications with large system prompts"
+    - "Lowering latency for RAG with long context documents"
+    - "Cost-efficient few-shot learning with many examples"
+    - "Tool-heavy agents with large tool definitions"
+    - "Multi-turn conversations with consistent context"
+  supported_operations:
+    - "cache_control_breakpoint"
+    - "automatic_prefix_caching"
+    - "cache_hit_tracking"
+    - "usage_metrics"
+  integrations:
+    - slug: "anthropic_claude"
+      type: "native"
+    - slug: "openai"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  providers:
+    - name: "Anthropic"
+      models: ["claude-3.5-sonnet", "claude-3.5-haiku", "claude-3-opus", "claude-4-opus"]
+      min_cache_tokens: 1024
+      max_cache_breakpoints: 4
+      cache_ttl: "5 minutes (extended on hit)"
+      cost_reduction: "90% on cached input tokens"
+      cache_write_cost: "25% premium on first write"
+      explicit_control: true
+    - name: "OpenAI"
+      models: ["gpt-4o", "gpt-4o-mini", "o1", "o3"]
+      min_prefix_tokens: 1024
+      cache_ttl: "5-10 minutes"
+      cost_reduction: "50% on cached input tokens"
+      cache_write_cost: "none"
+      explicit_control: false
+  cache_scope: "organization-level (not shared across organizations)"
+  works_with_streaming: true
+  works_with_tool_use: true
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Reduces time-to-first-token by 30-80% for cached prefixes. Most impactful for long prompts (10K+ tokens)."
+  scalability:
+    score: 9
+    justification: "Provider-managed infrastructure scales automatically. No additional infrastructure to manage."
+  ease_of_use:
+    score: 9
+    justification: "OpenAI caching is fully automatic. Anthropic requires adding cache_control markers but is straightforward."
+  cost_efficiency:
+    score: 9
+    justification: "50-90% reduction in input token costs for cached portions. Significant savings for applications with large, reusable prompts."
+  community:
+    score: 7
+    justification: "Well-documented by providers. Growing adoption as a best practice for production LLM applications."
+  maturity:
+    score: 7
+    justification: "Anthropic launched prompt caching in mid-2024, OpenAI in late 2024. Features are stable but relatively new."
+  flexibility:
+    score: 5
+    justification: "Only works with supported providers and models. Requires exact prefix matching - even minor changes invalidate the cache."
+  data_privacy:
+    score: 6
+    justification: "Cached prompts are stored on the provider's infrastructure. Subject to the provider's data handling policies."
+
+knowledge:
+  entries:
+    - topic: "Anthropic Prompt Caching"
+      content: |
+        Anthropic's prompt caching allows explicit control over which parts of the prompt are
+        cached. You add cache_control breakpoints to mark the end of cacheable sections.
+
+        The cache works on a prefix basis: everything from the start of the prompt up to a
+        cache_control breakpoint can be cached. Up to 4 breakpoints are supported, with a
+        minimum of 1024 tokens per cached section.
+
+        Pricing: Cached input tokens cost 10% of the regular input token price (90% savings).
+        Writing to the cache costs 125% of the regular price (25% premium). The break-even
+        point is approximately 2 cache hits per write - after that, every hit saves money.
+
+        Cache TTL is 5 minutes, extended to 5 minutes from the last hit. For applications
+        with steady traffic, the cache effectively persists indefinitely.
+
+        Best practices for Anthropic caching:
+        1. Place the most stable content first (system prompt, tool definitions)
+        2. Add cache_control after the stable content
+        3. Place dynamic content (user query, recent messages) after the cached section
+        4. Use the minimum number of breakpoints needed
+
+        Cache hits are reported in the API response via cache_creation_input_tokens and
+        cache_read_input_tokens fields, enabling cost tracking.
+      tags: ["anthropic", "implementation", "pricing"]
+
+    - topic: "OpenAI Prompt Caching"
+      content: |
+        OpenAI's prompt caching is automatic and requires no code changes. Any request with
+        a prefix of 1024+ tokens that matches a recent request's prefix gets cached automatically.
+
+        Key characteristics:
+        - Matching is done on exact token prefixes (not semantic similarity)
+        - Minimum prefix length is 1024 tokens
+        - Cached tokens receive a 50% discount on input pricing
+        - Cache is scoped to the organization level
+        - Works with all GPT-4o, o1, and o3 models
+        - Compatible with streaming, tool use, and structured outputs
+
+        The cache TTL is typically 5-10 minutes but can extend for frequently accessed prefixes.
+        OpenAI reports cached token counts in the usage field of the response.
+
+        Since OpenAI caching is automatic, the optimization strategy is purely about prompt
+        structure: put stable content (system prompt, instructions, tool definitions) at the
+        start, and dynamic content (user query) at the end. This maximizes the cacheable prefix.
+
+        For multi-turn conversations, include the full conversation history in a consistent
+        order. As the conversation grows, the shared prefix (system prompt + earlier messages)
+        becomes increasingly cacheable.
+      tags: ["openai", "implementation", "automatic"]
+
+    - topic: "Optimization Strategies"
+      content: |
+        To maximize prompt caching benefits:
+
+        1. Structure prompts with stable content first. System prompts, tool definitions,
+        few-shot examples, and context documents should be at the beginning. User-specific
+        or dynamic content goes at the end.
+
+        2. Keep the stable prefix identical across requests. Even a single changed token
+        invalidates the cache from that point forward. Use consistent formatting, avoid
+        timestamps in cached sections, and version your system prompts carefully.
+
+        3. For RAG applications, consider a two-tier approach: cache the system prompt and
+        base instructions, then add retrieved context and the user query as the dynamic suffix.
+
+        4. For few-shot learning, include all examples in the cached prefix. Adding or removing
+        examples invalidates the cache, so maintain a stable example set.
+
+        5. Monitor cache hit rates using provider usage metrics. Low hit rates indicate that
+        the prefix is changing too frequently or that request volume is insufficient to
+        maintain cache entries within the TTL window.
+
+        6. For Anthropic, strategically place cache_control breakpoints. The first breakpoint
+        should be after the most stable content (system prompt). Additional breakpoints can
+        be placed after tool definitions or example sets.
+      tags: ["optimization", "best-practices"]
+
+    - topic: "Prompt Caching vs Semantic Caching"
+      content: |
+        Prompt caching and semantic caching solve different problems and can be used together:
+
+        Prompt caching (this module):
+        - Operates at the provider level on exact token prefixes
+        - Reduces cost of processing the same prompt prefix
+        - The LLM still generates a new response for each request
+        - No risk of returning stale or incorrect cached answers
+        - Zero configuration (OpenAI) or minimal configuration (Anthropic)
+
+        Semantic caching:
+        - Operates at the application level on semantic similarity
+        - Returns a previously generated response for similar queries
+        - The LLM is not called at all for cache hits
+        - Risk of returning stale or contextually inappropriate answers
+        - Requires embedding model, vector store, and threshold tuning
+
+        When to use which:
+        - Use prompt caching always (it's essentially free optimization)
+        - Add semantic caching when many queries are semantically similar and responses are
+          stable enough to reuse (FAQ, customer support, educational content)
+        - For applications where every response must be freshly generated (creative writing,
+          personalized advice), use only prompt caching
+      tags: ["comparison", "semantic-caching", "decision"]
+
+code_examples:
+  - title: "Anthropic Prompt Caching"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      # Large system prompt with cache control
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=1024,
+          system=[
+              {
+                  "type": "text",
+                  "text": "You are an expert AI infrastructure advisor. "
+                          "You help teams design and build production AI systems. "
+                          + long_instructions,  # 2000+ tokens of instructions
+                  "cache_control": {"type": "ephemeral"}
+              }
+          ],
+          messages=[
+              {"role": "user", "content": "How should I set up vector search?"}
+          ]
+      )
+
+      # Check cache usage
+      print(f"Cache write tokens: {response.usage.cache_creation_input_tokens}")
+      print(f"Cache read tokens: {response.usage.cache_read_input_tokens}")
+
+  - title: "Anthropic Caching with Tools"
+    language: "python"
+    code: |
+      import anthropic
+
+      client = anthropic.Anthropic()
+
+      # Cache tool definitions (stable across requests)
+      tools = [
+          {
+              "name": "search_docs",
+              "description": "Search technical documentation",
+              "input_schema": {
+                  "type": "object",
+                  "properties": {
+                      "query": {"type": "string"},
+                      "category": {"type": "string"}
+                  },
+                  "required": ["query"]
+              }
+          },
+          # ... many more tools
+      ]
+
+      response = client.messages.create(
+          model="claude-sonnet-4-20250514",
+          max_tokens=1024,
+          system=[
+              {
+                  "type": "text",
+                  "text": system_prompt,
+                  "cache_control": {"type": "ephemeral"}
+              }
+          ],
+          tools=tools,  # Tools are cached as part of the prefix
+          messages=[
+              {"role": "user", "content": user_query}
+          ]
+      )
+
+  - title: "OpenAI Automatic Caching Optimization"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      client = OpenAI()
+
+      # Structure prompt for maximum cache benefit:
+      # 1. Stable system prompt first (cached automatically)
+      # 2. Tool definitions (part of cached prefix)
+      # 3. Dynamic user content last
+
+      system_prompt = """You are an AI infrastructure advisor.
+      You have deep expertise in vector databases, RAG systems,
+      LLM deployment, and ML infrastructure.
+
+      Guidelines:
+      - Always provide specific, actionable recommendations
+      - Include code examples when relevant
+      - Consider cost, performance, and scalability trade-offs
+      """ + additional_instructions  # 1500+ tokens total
+
+      response = client.chat.completions.create(
+          model="gpt-4o",
+          messages=[
+              {"role": "system", "content": system_prompt},
+              {"role": "user", "content": "Compare Pinecone vs Weaviate"}
+          ]
+      )
+
+      # Check cached token count
+      usage = response.usage
+      print(f"Total tokens: {usage.prompt_tokens}")
+      if hasattr(usage, "prompt_tokens_details"):
+          print(f"Cached tokens: {usage.prompt_tokens_details.cached_tokens}")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "cost_reduction_anthropic"
+      value: 85
+      unit: "percent"
+      context: "Input token cost reduction for 5K-token system prompt, Anthropic caching"
+    - name: "cost_reduction_openai"
+      value: 48
+      unit: "percent"
+      context: "Input token cost reduction for 3K-token system prompt, OpenAI automatic caching"
+    - name: "ttft_reduction_anthropic"
+      value: 65
+      unit: "percent"
+      context: "Time-to-first-token reduction with 10K cached tokens, Claude 3.5 Sonnet"
+    - name: "ttft_reduction_openai"
+      value: 40
+      unit: "percent"
+      context: "Time-to-first-token reduction with 5K cached tokens, GPT-4o"
+    - name: "break_even_hits_anthropic"
+      value: 2
+      unit: "requests"
+      context: "Number of cache hits needed to offset the 25% write premium"
+
+relationships:
+  alternatives:
+    - slug: "semantic_caching"
+      note: "Application-level semantic caching returns full responses; prompt caching only caches the prefix processing"
+    - slug: "gptcache"
+      note: "Application-level caching library; operates at a different level than provider prompt caching"
+  complements:
+    - slug: "anthropic_claude"
+      role: "Primary provider offering explicit prompt caching control"
+    - slug: "openai"
+      role: "Provider offering automatic prompt caching"
+    - slug: "semantic_caching"
+      role: "Can be used alongside prompt caching for layered cost optimization"
+  typical_pipeline_position: "caching"
+  pipeline_predecessors: ["prompt_construction"]
+  pipeline_successors: ["llm_generation"]

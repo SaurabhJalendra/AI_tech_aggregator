@@ -2,22 +2,18 @@ import { NextRequest } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
-/**
- * BFF (Backend-for-Frontend) route that proxies chat requests to the
- * FastAPI backend and streams SSE responses back to the client.
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    const authHeader =
+      request.headers.get('authorization') || 'Bearer dev@example.com';
 
     const backendResponse = await fetch(`${BACKEND_URL}/api/v1/advisor/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Forward auth headers if present
-        ...(request.headers.get('authorization')
-          ? { Authorization: request.headers.get('authorization')! }
-          : {}),
+        Authorization: authHeader,
       },
       body: JSON.stringify(body),
     });
@@ -33,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Stream the SSE response back to the client
     if (!backendResponse.body) {
       return new Response(
         JSON.stringify({ error: 'No response body from backend' }),

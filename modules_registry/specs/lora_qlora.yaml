@@ -1,0 +1,439 @@
+meta:
+  slug: "lora_qlora"
+  name: "LoRA/QLoRA"
+  version: "1.0.0"
+  category: "fine_tuning"
+  subcategory: "parameter_efficient"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Parameter-efficient fine-tuning methods that enable LLM customization on consumer-grade hardware"
+  description: |
+    LoRA (Low-Rank Adaptation) and QLoRA (Quantized LoRA) are parameter-efficient
+    fine-tuning (PEFT) methods that dramatically reduce the compute and memory
+    requirements for adapting large language models to specific tasks. Instead of
+    updating all model parameters, LoRA adds small trainable rank-decomposition
+    matrices to the model's attention layers while keeping the original weights frozen.
+
+    LoRA works by decomposing the weight update matrix into two low-rank matrices
+    (A and B), where the rank r is typically 8-64. For a weight matrix of dimension
+    d x d, instead of training d^2 parameters, LoRA trains only 2 x d x r parameters.
+    For a 70B model with r=16, this means training roughly 0.1% of the total parameters.
+
+    QLoRA extends LoRA by quantizing the frozen base model to 4-bit precision using
+    NormalFloat4 (NF4) quantization, while keeping the LoRA adapters in higher
+    precision (BF16). This enables fine-tuning a 70B model on a single 48GB GPU --
+    a task that would otherwise require 8x 80GB GPUs with full fine-tuning.
+
+    These methods have become the standard approach for LLM fine-tuning in production,
+    offering 90-95% of full fine-tuning quality at a fraction of the cost. The trained
+    adapters are small (typically 10-100MB), can be dynamically loaded and swapped at
+    inference time, and multiple adapters can be served simultaneously on a single
+    base model instance.
+  logo_url: "/assets/modules/lora_qlora.svg"
+  website: "https://huggingface.co/docs/peft"
+  documentation: "https://huggingface.co/docs/peft/conceptual_guides/lora"
+  github: "https://github.com/huggingface/peft"
+  license: "Apache 2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Fine-tuning LLMs on limited GPU hardware"
+    - "Domain-specific model adaptation"
+    - "Multi-tenant model serving with adapter swapping"
+    - "Rapid experimentation with different training datasets"
+    - "Task-specific model customization without catastrophic forgetting"
+    - "Serving multiple fine-tuned variants from a single base model"
+  supported_operations:
+    - "lora_training"
+    - "qlora_training"
+    - "adapter_merging"
+    - "adapter_swapping"
+    - "multi_adapter_serving"
+    - "adapter_composition"
+  integrations:
+    - slug: "llama"
+      type: "native"
+    - slug: "mistral"
+      type: "native"
+    - slug: "vllm"
+      type: "native"
+    - slug: "ollama"
+      type: "compatible"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  lora_parameters:
+    r: "Rank of decomposition matrices (typical: 8-64)"
+    lora_alpha: "Scaling factor (typical: 2x r)"
+    lora_dropout: "Dropout on LoRA layers (typical: 0.05-0.1)"
+    target_modules: "Which layers to adapt (typically q_proj, v_proj, k_proj, o_proj)"
+  qlora_parameters:
+    quantization_type: "NF4 (NormalFloat4)"
+    compute_dtype: "bfloat16"
+    double_quantization: "true (quantizes quantization constants)"
+  memory_requirements:
+    "7B full fine-tune": "~60GB (4x A100 40GB)"
+    "7B LoRA": "~20GB (1x A100 40GB or RTX 4090)"
+    "7B QLoRA": "~10GB (1x RTX 3090)"
+    "70B full fine-tune": "~640GB (8x A100 80GB)"
+    "70B LoRA": "~160GB (2x A100 80GB)"
+    "70B QLoRA": "~48GB (1x A100 80GB or A6000)"
+  adapter_size_typical: "10-100MB per adapter"
+  frameworks:
+    - "Hugging Face PEFT"
+    - "Hugging Face TRL"
+    - "Axolotl"
+    - "Unsloth"
+    - "torchtune"
+    - "LitGPT"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "LoRA achieves 90-95% of full fine-tuning quality on most tasks. QLoRA is slightly lower at 85-95%. For narrow, well-defined tasks, the gap is often negligible."
+  scalability:
+    score: 9
+    justification: "Adapters are small and can be dynamically loaded. vLLM supports serving hundreds of LoRA adapters on a single base model. Training scales to any model size with QLoRA."
+  ease_of_use:
+    score: 8
+    justification: "Hugging Face PEFT library provides simple APIs. Axolotl and Unsloth offer configuration-driven training with minimal code. Community has extensive tutorials."
+  cost_efficiency:
+    score: 10
+    justification: "10-100x cheaper than full fine-tuning. QLoRA enables 70B fine-tuning on a single GPU. Adapters are tiny to store and transfer. Multi-adapter serving maximizes GPU utilization."
+  community:
+    score: 9
+    justification: "LoRA is the most popular fine-tuning method. Thousands of LoRA adapters on Hugging Face. Active development across multiple frameworks."
+  maturity:
+    score: 8
+    justification: "LoRA paper published 2021, QLoRA in 2023. Both widely adopted in production. Well-understood best practices and failure modes."
+  flexibility:
+    score: 9
+    justification: "Works with any transformer-based model. Adapters can be merged, composed, or swapped. Supports all training objectives (SFT, RLHF, DPO)."
+  data_privacy:
+    score: 10
+    justification: "Training runs entirely on your infrastructure. Adapters contain no base model information -- sharing adapters does not expose base model weights."
+
+knowledge:
+  entries:
+    - topic: "LoRA Hyperparameter Selection"
+      content: |
+        Choosing the right LoRA hyperparameters significantly impacts fine-tuning quality:
+
+        Rank (r): Controls the expressiveness of the adaptation. Higher rank = more
+        parameters = more capacity but higher memory and risk of overfitting.
+        Recommendations: r=8 for simple tasks (classification, extraction), r=16-32
+        for moderate tasks (instruction following, style transfer), r=64+ for complex
+        tasks (domain-specific reasoning). Start with r=16 as a default.
+
+        Alpha (lora_alpha): Scaling factor applied to the LoRA update. The effective
+        learning rate is scaled by alpha/r. Common practice: set alpha = 2 * r.
+        Higher alpha means LoRA updates have more influence on the output.
+
+        Target modules: Which weight matrices to add LoRA adapters to. Minimum:
+        q_proj and v_proj (query and value projections in attention). Better results:
+        add k_proj, o_proj, and optionally gate_proj, up_proj, down_proj in MLP
+        layers. More target modules = more parameters but better adaptation.
+
+        Dropout: Apply dropout (0.05-0.1) to LoRA layers to reduce overfitting,
+        especially with small datasets. Set to 0 if you have abundant training data.
+
+        Learning rate: Typically 1e-4 to 3e-4 for LoRA, slightly higher than full
+        fine-tuning. Use cosine decay with warmup. QLoRA may benefit from slightly
+        higher learning rates (2e-4 to 5e-4).
+      tags: ["hyperparameters", "configuration", "tuning"]
+
+    - topic: "QLoRA: Trading Precision for Accessibility"
+      content: |
+        QLoRA's key innovation is quantizing the frozen base model to 4-bit precision
+        while training LoRA adapters in higher precision. This enables fine-tuning
+        on dramatically smaller hardware:
+
+        How it works: The base model weights are stored in NF4 (NormalFloat4) format,
+        which is a data type specifically designed for normally distributed neural
+        network weights. During the forward pass, weights are dequantized to BF16
+        for computation. LoRA adapter weights remain in BF16 throughout.
+
+        Double quantization: QLoRA also quantizes the quantization constants (the
+        scaling factors used in NF4), saving an additional ~0.4 bits per parameter.
+
+        Quality impact: QLoRA typically achieves 95-99% of LoRA quality and 90-95%
+        of full fine-tuning quality. The gap is larger for reasoning-heavy tasks and
+        smaller for classification and extraction tasks.
+
+        When to use QLoRA vs LoRA: Use QLoRA when GPU memory is the bottleneck. If
+        you have sufficient GPU memory for standard LoRA, prefer it for slightly
+        higher quality. In practice, the quality difference is often within noise
+        on real-world tasks.
+
+        Important: QLoRA training is slower than LoRA (due to dequantization overhead)
+        but uses much less memory. The throughput tradeoff is worth it when it means
+        the difference between training on available hardware versus not training at all.
+      tags: ["qlora", "quantization", "efficiency"]
+
+    - topic: "Multi-Adapter Serving"
+      content: |
+        One of LoRA's most powerful production features is the ability to serve
+        multiple fine-tuned adapters on a single base model:
+
+        How it works: The base model is loaded once in GPU memory. LoRA adapters
+        (typically 10-100MB each) are loaded alongside. At inference time, the
+        request specifies which adapter to use, and the adapter weights are applied
+        dynamically during the forward pass.
+
+        vLLM multi-LoRA: vLLM supports serving hundreds of LoRA adapters
+        simultaneously. Adapters are loaded on-demand and cached. Configuration:
+        use --enable-lora --max-lora-rank 64 --max-loras 100. Each request
+        specifies the adapter via the model parameter.
+
+        Use cases: Per-customer fine-tuned models (each customer gets their own
+        adapter trained on their data), per-task adapters (one for extraction,
+        one for summarization, one for classification), and A/B testing (compare
+        adapters trained with different data or hyperparameters).
+
+        Resource planning: Base model memory is shared. Each active adapter adds
+        minimal memory overhead (proportional to rank and target modules). The
+        primary constraint is the number of concurrent adapters that can be in
+        GPU memory simultaneously.
+
+        Alternative: If multi-adapter serving complexity is not needed, merge the
+        adapter into the base model weights for a simpler deployment. Merged models
+        behave identically to any standard model.
+      tags: ["serving", "multi-adapter", "production", "vllm"]
+
+    - topic: "Common Pitfalls and Debugging"
+      content: |
+        Common issues encountered during LoRA/QLoRA fine-tuning and their solutions:
+
+        1. Loss not decreasing: Check learning rate (try 2e-4), verify data format
+        matches the tokenizer's chat template, ensure target modules are correct
+        for your model architecture, and confirm that training data is properly
+        shuffled.
+
+        2. Overfitting (low train loss, high val loss): Reduce r, increase dropout,
+        reduce epochs (try 1-2), add more diverse training examples, or use early
+        stopping based on validation loss.
+
+        3. Catastrophic forgetting: The model loses general capabilities. This is
+        less common with LoRA than full fine-tuning but can still occur. Reduce
+        learning rate, reduce epochs, or include general-purpose examples in
+        training data.
+
+        4. QLoRA out-of-memory: Reduce batch size, enable gradient checkpointing,
+        reduce max sequence length, or use gradient accumulation to maintain
+        effective batch size with smaller micro-batches.
+
+        5. Adapter doesn't improve over base: Training data may not be high-quality
+        enough, the task may be too similar to what the base model already handles
+        well, or the evaluation may not capture the intended improvement. Try
+        increasing r or including more target modules.
+
+        6. Merged model behaves differently from adapter model: This can occur due
+        to numerical precision differences. Test the merged model before deploying
+        and compare outputs to the adapter version.
+      tags: ["debugging", "troubleshooting", "common-issues"]
+
+    - topic: "LoRA for Different Training Objectives"
+      content: |
+        LoRA adapters can be trained with different objectives beyond standard SFT:
+
+        Supervised Fine-Tuning (SFT): The most common use case. Train on
+        input-output pairs where the output is the desired model behavior. Use
+        Hugging Face TRL's SFTTrainer with PEFT configuration.
+
+        DPO (Direct Preference Optimization): Train LoRA adapters to prefer
+        certain responses over others. Requires pairs of (chosen, rejected)
+        responses for the same prompt. More stable than RLHF and can be applied
+        directly to LoRA adapters.
+
+        RLHF: Train a reward model (can also use LoRA) then optimize the policy
+        model's LoRA adapters using PPO. More complex but can capture nuanced
+        preferences. See the rlhf_dpo module for details.
+
+        Continued pretraining: Train LoRA adapters on raw domain text (not
+        instruction-formatted) to inject domain knowledge. Use lower rank
+        (r=8-16) and more training steps. Follow with SFT on task-specific data.
+
+        Stacking: Train a base LoRA adapter with SFT, then train a second
+        adapter with DPO on top. The adapters can be merged sequentially or
+        composed at inference time.
+      tags: ["training-objectives", "sft", "dpo", "rlhf"]
+
+code_examples:
+  - title: "Standard LoRA Fine-Tuning"
+    language: "python"
+    code: |
+      from peft import LoraConfig, get_peft_model, TaskType
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+      from trl import SFTTrainer, SFTConfig
+
+      # Load base model
+      model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-8B-Instruct",
+          torch_dtype="bfloat16",
+          device_map="auto"
+      )
+      tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+
+      # Configure LoRA
+      lora_config = LoraConfig(
+          r=16,
+          lora_alpha=32,
+          target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+          lora_dropout=0.05,
+          task_type=TaskType.CAUSAL_LM,
+      )
+      model = get_peft_model(model, lora_config)
+      model.print_trainable_parameters()  # ~0.1% of total
+
+      # Train
+      trainer = SFTTrainer(
+          model=model,
+          train_dataset=train_dataset,
+          eval_dataset=eval_dataset,
+          args=SFTConfig(
+              output_dir="./lora-output",
+              num_train_epochs=3,
+              per_device_train_batch_size=4,
+              learning_rate=2e-4,
+              lr_scheduler_type="cosine",
+              warmup_ratio=0.1,
+              eval_strategy="steps",
+              eval_steps=50,
+              bf16=True,
+          ),
+          tokenizer=tokenizer,
+      )
+      trainer.train()
+      model.save_pretrained("./lora-adapter")
+
+  - title: "QLoRA Fine-Tuning for 70B Models"
+    language: "python"
+    code: |
+      from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+      from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+      import torch
+
+      # 4-bit quantization config
+      bnb_config = BitsAndBytesConfig(
+          load_in_4bit=True,
+          bnb_4bit_quant_type="nf4",
+          bnb_4bit_compute_dtype=torch.bfloat16,
+          bnb_4bit_use_double_quant=True,
+      )
+
+      # Load model in 4-bit
+      model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-70B-Instruct",
+          quantization_config=bnb_config,
+          device_map="auto",
+      )
+      model = prepare_model_for_kbit_training(model)
+
+      # LoRA config (slightly higher rank for larger model)
+      lora_config = LoraConfig(
+          r=32,
+          lora_alpha=64,
+          target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                          "gate_proj", "up_proj", "down_proj"],
+          lora_dropout=0.05,
+          task_type="CAUSAL_LM",
+      )
+      model = get_peft_model(model, lora_config)
+      model.print_trainable_parameters()
+
+      # Training with gradient checkpointing for memory efficiency
+      from trl import SFTTrainer, SFTConfig
+      trainer = SFTTrainer(
+          model=model,
+          train_dataset=dataset,
+          args=SFTConfig(
+              output_dir="./qlora-70b-output",
+              num_train_epochs=2,
+              per_device_train_batch_size=1,
+              gradient_accumulation_steps=16,
+              learning_rate=3e-4,
+              gradient_checkpointing=True,
+              bf16=True,
+              max_seq_length=2048,
+          ),
+      )
+      trainer.train()
+
+  - title: "Merging and Serving LoRA Adapters"
+    language: "python"
+    code: |
+      from peft import PeftModel
+      from transformers import AutoModelForCausalLM, AutoTokenizer
+
+      # Load base model and adapter
+      base_model = AutoModelForCausalLM.from_pretrained(
+          "meta-llama/Llama-3.1-8B-Instruct",
+          torch_dtype="bfloat16",
+          device_map="auto"
+      )
+      model = PeftModel.from_pretrained(base_model, "./lora-adapter")
+
+      # Option 1: Use adapter directly (supports swapping)
+      output = model.generate(input_ids, max_new_tokens=256)
+
+      # Option 2: Merge adapter into base model (simpler serving)
+      merged_model = model.merge_and_unload()
+      merged_model.save_pretrained("./merged-model")
+
+      # Serve merged model with vLLM
+      # vllm serve ./merged-model --max-model-len 8192
+
+      # Or serve with multi-LoRA support
+      # vllm serve meta-llama/Llama-3.1-8B-Instruct \
+      #   --enable-lora \
+      #   --lora-modules adapter1=./lora-adapter adapter2=./lora-adapter-v2
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "lora_vs_full_quality_8b"
+      value: 0.94
+      unit: "relative_performance"
+      context: "LoRA r=16 vs full fine-tuning, Llama 3.1 8B, avg 5 tasks"
+    - name: "qlora_vs_full_quality_8b"
+      value: 0.91
+      unit: "relative_performance"
+      context: "QLoRA r=16 NF4 vs full fine-tuning, Llama 3.1 8B"
+    - name: "memory_reduction_lora"
+      value: 70
+      unit: "percent"
+      context: "GPU memory reduction vs full fine-tuning, Llama 3.1 8B"
+    - name: "memory_reduction_qlora"
+      value: 85
+      unit: "percent"
+      context: "GPU memory reduction vs full fine-tuning, Llama 3.1 8B"
+    - name: "training_throughput_lora"
+      value: 1200
+      unit: "tokens/sec"
+      context: "LoRA training Llama 3.1 8B, 1x A100 80GB"
+    - name: "adapter_size_8b_r16"
+      value: 33
+      unit: "MB"
+      context: "LoRA r=16 adapter for Llama 3.1 8B, q/k/v/o projections"
+
+relationships:
+  alternatives:
+    - slug: "fine_tuning_strategies"
+      note: "Full fine-tuning for maximum quality when compute is available"
+  complements:
+    - slug: "rlhf_dpo"
+      role: "Alignment training applied on top of LoRA SFT adapters"
+    - slug: "llama"
+      role: "Primary base model for LoRA/QLoRA fine-tuning"
+    - slug: "mistral"
+      role: "Alternative base model for LoRA/QLoRA fine-tuning"
+    - slug: "vllm"
+      role: "Production serving with multi-LoRA adapter support"
+  typical_pipeline_position: "model_customization"
+  pipeline_predecessors: ["data_preparation", "base_model_selection"]
+  pipeline_successors: ["alignment_training", "evaluation", "deployment"]

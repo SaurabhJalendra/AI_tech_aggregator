@@ -1,14 +1,16 @@
 """
 AI Advisor Agent
-Core agent class that uses Claude Messages API with tool use and streaming.
+Supports two modes:
+1. Claude Code CLI (uses Max subscription, no API key)
+2. Anthropic SDK (uses API credits, requires ANTHROPIC_API_KEY)
 """
 
 import json
 from collections.abc import AsyncGenerator
 
-import anthropic
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.agent.claude_code_adapter import ClaudeCodeAdapter
 from src.agent.prompts import build_system_prompt
 from src.agent.tools import ALL_TOOLS
 from src.modules.comparison_engine import ComparisonEngine
@@ -17,22 +19,30 @@ from src.services.module_service import ModuleService
 
 class AdvisorAgent:
     """
-    The core AI advisor agent. Uses Claude Messages API with tool use.
-    Streams both text responses and panel commands via SSE.
+    The core AI advisor agent. Streams both text responses and panel commands via SSE.
     """
 
     def __init__(
         self,
         db: AsyncSession,
-        anthropic_api_key: str,
-        model: str = "claude-sonnet-4-20250514",
+        anthropic_api_key: str = "",
+        model: str = "claude-opus-4-20250514",
+        use_claude_code: bool = True,
     ):
         self.db = db
-        self.client = anthropic.AsyncAnthropic(api_key=anthropic_api_key)
         self.model = model
+        self.use_claude_code = use_claude_code
         self.module_service = ModuleService(db)
         self.comparison_engine = ComparisonEngine(db)
         self.tools = ALL_TOOLS
+
+        if use_claude_code:
+            self.claude_code = ClaudeCodeAdapter(model=model)
+            self.client = None
+        else:
+            import anthropic
+            self.claude_code = None
+            self.client = anthropic.AsyncAnthropic(api_key=anthropic_api_key)
 
     async def stream_response(
         self,
@@ -41,11 +51,41 @@ class AdvisorAgent:
         category_count: int = 0,
     ) -> AsyncGenerator[str, None]:
         """
-        Process conversation through Claude with tool use.
+        Process conversation through Claude.
         Yields SSE-formatted events.
         """
         system_prompt = build_system_prompt(module_count, category_count)
 
+        if self.use_claude_code:
+            async for event in self._stream_claude_code(system_prompt, messages):
+                yield event
+        else:
+            async for event in self._stream_anthropic_sdk(system_prompt, messages):
+                yield event
+
+    async def _stream_claude_code(
+        self,
+        system_prompt: str,
+        messages: list[dict],
+    ) -> AsyncGenerator[str, None]:
+        """Stream response using Claude Code CLI."""
+        # Add panel command instructions to system prompt
+        enhanced_prompt = system_prompt + PANEL_COMMAND_INSTRUCTIONS
+
+        async for event in self.claude_code.stream(enhanced_prompt, messages):
+            if event["type"] == "text":
+                yield _sse_event("text", {"content": event["content"]})
+            elif event["type"] == "panel_command":
+                yield _sse_event("panel_command", {"command": event["command"]})
+            elif event["type"] == "done":
+                yield _sse_event("done", {})
+
+    async def _stream_anthropic_sdk(
+        self,
+        system_prompt: str,
+        messages: list[dict],
+    ) -> AsyncGenerator[str, None]:
+        """Stream response using Anthropic SDK (original implementation)."""
         # Agent loop: keep calling Claude until no more tool_use
         while True:
             collected_text = ""
@@ -72,7 +112,6 @@ class AdvisorAgent:
             ]
 
             if not tool_use_blocks:
-                # No tools requested — conversation turn complete
                 break
 
             # Add assistant response to messages
@@ -91,11 +130,9 @@ class AdvisorAgent:
                     "content": json.dumps(result) if isinstance(result, dict) else str(result),
                 })
 
-                # If tool produces a panel command, emit it
                 if panel_command:
                     yield _sse_event("panel_command", {"command": panel_command})
 
-            # Add tool results to messages
             messages.append({"role": "user", "content": tool_results})
 
         yield _sse_event("done", {})
@@ -103,36 +140,25 @@ class AdvisorAgent:
     async def _execute_tool(
         self, tool_name: str, tool_input: dict
     ) -> tuple[dict, dict | None]:
-        """
-        Execute a tool and return (result_data, optional_panel_command).
-        """
+        """Execute a tool and return (result_data, optional_panel_command)."""
         if tool_name == "search_modules":
             return await self._tool_search_modules(tool_input)
-
         elif tool_name == "get_module_detail":
             return await self._tool_get_module_detail(tool_input)
-
         elif tool_name == "compare_modules":
             return await self._tool_compare_modules(tool_input)
-
         elif tool_name == "search_knowledge":
             return await self._tool_search_knowledge(tool_input)
-
         elif tool_name == "render_architecture_diagram":
             return self._tool_render_architecture(tool_input)
-
         elif tool_name == "render_comparison":
             return self._tool_render_comparison(tool_input)
-
         elif tool_name == "render_code_example":
             return self._tool_render_code(tool_input)
-
         elif tool_name == "get_benchmarks":
             return await self._tool_get_benchmarks(tool_input)
-
         elif tool_name == "suggest_stack":
             return await self._tool_suggest_stack(tool_input)
-
         else:
             return {"error": f"Unknown tool: {tool_name}"}, None
 
@@ -262,28 +288,112 @@ class AdvisorAgent:
         return {"benchmarks": results}, None
 
     async def _tool_suggest_stack(self, input: dict) -> tuple[dict, dict]:
-        # For now, return a template recommendation
-        # In production, this would use the comparison engine + knowledge search
-        # to build a data-driven recommendation
+        use_case = input["use_case"]
+        constraints = input.get("constraints", {})
+        preferences = input.get("preferences", [])
+
+        categories = [
+            "data_ingestion", "chunking", "embeddings",
+            "vector_databases", "retrieval", "llm_layer",
+            "agent_systems", "evaluation", "deployment",
+        ]
+        recommended = {}
+        all_nodes = []
+        all_edges = []
+
+        for cat in categories:
+            modules, _ = await self.module_service.list_modules(
+                category=cat, per_page=3
+            )
+            if modules:
+                best = modules[0]
+                if constraints.get("budget") == "low":
+                    for m in modules:
+                        if m.pricing_model in ("open_source", "free"):
+                            best = m
+                            break
+                recommended[cat] = {
+                    "slug": best.slug,
+                    "name": best.name,
+                    "category": cat,
+                    "pricing": best.pricing_model,
+                }
+                all_nodes.append({
+                    "id": cat,
+                    "label": best.name,
+                    "category": cat,
+                    "module_slug": best.slug,
+                })
+
+        pipeline_order = [
+            "data_ingestion", "chunking", "embeddings",
+            "vector_databases", "retrieval", "llm_layer",
+        ]
+        for i in range(len(pipeline_order) - 1):
+            src = pipeline_order[i]
+            tgt = pipeline_order[i + 1]
+            if src in recommended and tgt in recommended:
+                all_edges.append({"source": src, "target": tgt})
+
+        if "evaluation" in recommended and "llm_layer" in recommended:
+            all_edges.append({"source": "llm_layer", "target": "evaluation", "label": "evaluate"})
+        if "deployment" in recommended and "llm_layer" in recommended:
+            all_edges.append({"source": "llm_layer", "target": "deployment", "label": "deploy"})
+
         suggestion = {
-            "use_case": input["use_case"],
-            "constraints": input.get("constraints", {}),
-            "preferences": input.get("preferences", []),
-            "note": "Stack suggestion is based on available module data. Use search_modules and compare_modules for detailed analysis.",
+            "use_case": use_case,
+            "constraints": constraints,
+            "preferences": preferences,
+            "recommended_stack": recommended,
+            "stack_size": len(recommended),
         }
 
-        # Render a placeholder architecture diagram
         panel_command = {
             "action": "render",
             "panel": "architecture_diagram",
             "data": {
-                "nodes": [],
-                "edges": [],
+                "nodes": all_nodes,
+                "edges": all_edges,
                 "layout": "left-to-right",
             },
             "title": "Recommended Architecture",
         }
         return suggestion, panel_command
+
+
+# Panel command instructions appended to system prompt when using Claude Code
+PANEL_COMMAND_INSTRUCTIONS = """
+
+## Panel Commands (IMPORTANT)
+
+You can control a visual panel alongside the chat. To render visualizations, emit special markers in your response:
+
+### Architecture Diagram
+```
+<!--PANEL_CMD:{"action":"render","panel":"architecture_diagram","title":"My Diagram","data":{"nodes":[{"id":"n1","label":"Pinecone","category":"vector_databases"}],"edges":[{"source":"n1","target":"n2"}],"layout":"left-to-right"}}-->
+```
+
+### Comparison Chart (radar or bar)
+```
+<!--PANEL_CMD:{"action":"render","panel":"comparison_chart","title":"Technology Comparison","data":{"comparison":{"modules":[...],"rankings":[...],"dimensions":[...]},"chart_type":"radar"}}-->
+```
+
+### Comparison Table
+```
+<!--PANEL_CMD:{"action":"render","panel":"comparison_table","title":"Technology Comparison","data":{"comparison":{"modules":[...],"rankings":[...],"dimensions":[...]}}}-->
+```
+
+### Code Preview
+```
+<!--PANEL_CMD:{"action":"render","panel":"code_preview","title":"Setup Example","data":{"title":"Pinecone Setup","language":"python","code":"import pinecone\\npinecone.init(api_key='...')"}}-->
+```
+
+RULES:
+- Place panel commands on their own line, inline with your text response
+- The JSON must be valid and on a single line (no newlines inside the JSON)
+- Use these markers instead of just describing what should be shown
+- Always include the panel command when showing comparisons, diagrams, or code
+"""
 
 
 def _sse_event(event_type: str, data: dict) -> str:

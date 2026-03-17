@@ -1,0 +1,183 @@
+meta:
+  slug: "together_ai"
+  name: "Together AI"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "inference_provider"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Fast inference, fine-tuning, and training platform for open-source AI models"
+  description: |
+    Together AI is a cloud platform for running, fine-tuning, and training
+    open-source AI models. It provides a comprehensive API for inference across
+    100+ open-source models including Llama, Mixtral, DBRX, and many others,
+    along with fine-tuning and custom model hosting capabilities.
+
+    Together differentiates itself with a broad model catalog, competitive pricing,
+    and a full MLOps platform that supports the complete model lifecycle from
+    training to deployment. Their inference engine is optimized for high throughput
+    and supports features like function calling, JSON mode, and streaming.
+
+    The platform is popular among teams that want to use open-source models
+    without managing GPU infrastructure, and for organizations that need
+    fine-tuning capabilities with a managed service.
+  logo_url: "/assets/modules/together_ai.svg"
+  website: "https://www.together.ai"
+  documentation: "https://docs.together.ai"
+  github: "https://github.com/togethercomputer"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "Open-source model inference API"
+    - "Model fine-tuning"
+    - "Custom model hosting"
+    - "Embedding generation"
+    - "Image generation"
+  supported_operations:
+    - "chat_completions"
+    - "completions"
+    - "embeddings"
+    - "fine_tuning"
+    - "image_generation"
+    - "function_calling"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "crewai"
+      type: "compatible"
+
+technical_specs:
+  api_compatibility: "OpenAI-compatible"
+  model_catalog: "100+ models"
+  model_categories:
+    - "chat"
+    - "completion"
+    - "embedding"
+    - "image"
+    - "code"
+  fine_tuning: true
+  custom_model_hosting: true
+  streaming: true
+  function_calling: true
+  json_mode: true
+  max_context_windows: "varies by model, up to 128K"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Fast inference with optimized serving. Not as fast as Groq but supports far more models."
+  scalability:
+    score: 8
+    justification: "Managed platform scales with demand. Dedicated endpoints available for guaranteed capacity."
+  ease_of_use:
+    score: 8
+    justification: "OpenAI-compatible API. Wide model selection accessible through a single platform."
+  cost_efficiency:
+    score: 8
+    justification: "Competitive per-token pricing for open-source models. Often cheaper than hosting your own for moderate workloads."
+  community:
+    score: 7
+    justification: "Active research community. Regular model releases and benchmarks. Good documentation."
+  maturity:
+    score: 7
+    justification: "Established platform since 2023. Stable API with enterprise customers."
+  flexibility:
+    score: 9
+    justification: "Broadest open-source model selection. Fine-tuning, custom hosting, and training all in one platform."
+  data_privacy:
+    score: 5
+    justification: "Cloud-hosted inference. Data processed on Together servers. Enterprise plans with additional privacy controls."
+
+knowledge:
+  entries:
+    - topic: "Together AI vs Self-Hosted Inference"
+      content: |
+        Together AI vs managing your own GPU infrastructure with vLLM:
+
+        Together advantages: No GPU procurement or management, instant access to
+        100+ models, built-in fine-tuning, automatic scaling, pay-per-token pricing
+        that works for variable workloads.
+
+        Self-hosted advantages: Full data control, no per-token costs at high
+        volume (fixed GPU cost), custom model support, no rate limits, lower
+        latency for co-located applications.
+
+        Break-even point: For sustained high-throughput workloads (millions of
+        tokens per day), self-hosting on reserved GPU instances becomes cheaper.
+        For variable or moderate workloads, Together's pay-per-use model is
+        more cost-effective.
+      tags: ["comparison", "self-hosting", "cost"]
+
+code_examples:
+  - title: "Chat Completion with Together"
+    language: "python"
+    code: |
+      from together import Together
+
+      client = Together(api_key="your-api-key")
+
+      response = client.chat.completions.create(
+          model="meta-llama/Llama-3.1-70B-Instruct-Turbo",
+          messages=[
+              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "user", "content": "Compare vector databases for RAG."}
+          ],
+          max_tokens=512,
+          temperature=0.7
+      )
+
+      print(response.choices[0].message.content)
+
+  - title: "Fine-Tuning a Model"
+    language: "python"
+    code: |
+      from together import Together
+
+      client = Together(api_key="your-api-key")
+
+      # Start fine-tuning job
+      response = client.fine_tuning.create(
+          training_file="file-abc123",
+          model="meta-llama/Llama-3.1-8B-Instruct",
+          n_epochs=3,
+          learning_rate=1e-5,
+          suffix="my-custom-model"
+      )
+
+      print(f"Job ID: {response.id}")
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "tokens_per_second_llama70b"
+      value: 180
+      unit: "tokens/second"
+      context: "Llama 3.1 70B Turbo, single request"
+    - name: "time_to_first_token"
+      value: 200
+      unit: "ms"
+      context: "Llama 3.1 70B, average"
+
+relationships:
+  alternatives:
+    - slug: "groq_inference"
+      note: "Faster inference but fewer model options"
+    - slug: "anyscale"
+      note: "Similar platform with Ray-based infrastructure"
+    - slug: "replicate"
+      note: "More focused on model hosting and community models"
+  complements:
+    - slug: "langchain"
+      role: "Orchestration framework with native Together integration"
+    - slug: "weights_biases"
+      role: "Experiment tracking for fine-tuning jobs"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation"]

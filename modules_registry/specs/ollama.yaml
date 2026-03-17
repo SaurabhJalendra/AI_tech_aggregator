@@ -1,0 +1,458 @@
+meta:
+  slug: "ollama"
+  name: "Ollama"
+  version: "1.0.0"
+  category: "llm_layer"
+  subcategory: "self_hosted"
+  status: "stable"
+  last_updated: "2026-03-01"
+  maintainer: "system"
+
+identity:
+  tagline: "Run open-weight LLMs locally with a single command"
+  description: |
+    Ollama is an open-source tool for running large language models locally on your own
+    hardware. It packages model weights, configuration, and a runtime into a simple
+    command-line interface and local API server, making it trivial to download and run
+    models like Llama 3.3, Mistral, Gemma 2, Phi-4, Qwen 2.5, and DeepSeek-R1 on a
+    laptop, workstation, or server.
+
+    Ollama provides an OpenAI-compatible REST API, enabling drop-in replacement of cloud
+    LLM providers in existing applications. This compatibility means tools built for the
+    OpenAI API (LangChain, LlamaIndex, Open WebUI, etc.) can switch to Ollama with minimal
+    code changes, running entirely on local infrastructure.
+
+    The primary value proposition is data privacy and cost control. No data ever leaves
+    your machine, there are no per-token charges, and inference can run fully offline.
+    The trade-off is that local models require capable hardware (especially GPU VRAM) and
+    generally do not match the quality of frontier cloud models like GPT-4o or Claude Opus
+    on the most demanding tasks, though the gap narrows with each generation of open-weight
+    models.
+  logo_url: "/assets/modules/ollama.svg"
+  website: "https://ollama.com"
+  documentation: "https://github.com/ollama/ollama/blob/main/docs/api.md"
+  github: "https://github.com/ollama/ollama"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Private and offline LLM inference"
+    - "Local development and prototyping"
+    - "Cost-free inference for production workloads"
+    - "Edge and air-gapped deployments"
+    - "Running fine-tuned and custom models"
+    - "Teaching and experimentation with LLMs"
+  supported_operations:
+    - "chat_completions"
+    - "completions"
+    - "embeddings"
+    - "model_pull"
+    - "model_create"
+    - "model_list"
+    - "model_copy"
+    - "streaming"
+    - "vision"
+    - "tool_use"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+    - slug: "open_webui"
+      type: "native"
+    - slug: "continue_dev"
+      type: "native"
+    - slug: "autogen"
+      type: "community"
+
+technical_specs:
+  supported_models:
+    - "llama3.3"
+    - "llama3.1"
+    - "mistral"
+    - "mixtral"
+    - "gemma2"
+    - "phi4"
+    - "qwen2.5"
+    - "deepseek-r1"
+    - "codellama"
+    - "command-r"
+    - "llava"
+    - "nomic-embed-text"
+  supported_quantizations:
+    - "Q4_0"
+    - "Q4_K_M"
+    - "Q5_K_M"
+    - "Q8_0"
+    - "FP16"
+  api_compatibility: "OpenAI-compatible (/v1/chat/completions)"
+  tool_use: true
+  vision_models: true
+  embedding_models: true
+  model_customization: true
+  gpu_acceleration:
+    - "NVIDIA CUDA"
+    - "AMD ROCm"
+    - "Apple Metal"
+  cpu_inference: true
+  supported_platforms:
+    - "macOS"
+    - "Linux"
+    - "Windows"
+    - "Docker"
+  default_port: 11434
+  model_storage: "~/.ollama/models"
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Quality depends on the chosen model. Best open-weight models (Llama 3.3 70B, DeepSeek-R1) approach frontier quality for many tasks but lag on the hardest reasoning benchmarks."
+  scalability:
+    score: 4
+    justification: "Single-machine inference by default. No built-in clustering or load balancing. Scaling requires external orchestration with tools like Kubernetes or a reverse proxy."
+  ease_of_use:
+    score: 9
+    justification: "Exceptionally easy to get started: 'ollama run llama3.3' downloads and runs a model. OpenAI-compatible API enables drop-in replacement in existing code."
+  cost_efficiency:
+    score: 10
+    justification: "Zero ongoing cost beyond hardware and electricity. No per-token charges. A $1000 GPU can serve thousands of requests per day indefinitely."
+  community:
+    score: 9
+    justification: "Massive open-source community with 100K+ GitHub stars. Extensive model library, active development, and broad ecosystem integration."
+  maturity:
+    score: 7
+    justification: "Stable for local development and small-scale production. Rapidly improving but lacks enterprise features like authentication, multi-node scaling, and built-in monitoring."
+  flexibility:
+    score: 10
+    justification: "Full control over model selection, quantization, hardware, and deployment. Support for custom models via Modelfiles. No vendor lock-in."
+  data_privacy:
+    score: 10
+    justification: "All inference runs locally. Data never leaves your machine. Fully air-gappable after initial model download. Ideal for regulated industries."
+
+knowledge:
+  entries:
+    - topic: "Getting Started and Model Selection"
+      content: |
+        Ollama makes running local LLMs as simple as a single command. After installing
+        Ollama (available as a native app for macOS, Linux, and Windows, or as a Docker
+        container), you can pull and run models from the Ollama model library.
+
+        Recommended models by use case:
+
+        General purpose: llama3.3 (70B for quality, 8B for speed). Meta's Llama 3.3 is
+        the best general-purpose open-weight model, competitive with GPT-4o-mini on many
+        benchmarks.
+
+        Code generation: codellama or deepseek-coder-v2. For coding tasks, these
+        specialized models outperform general models of similar size.
+
+        Reasoning: deepseek-r1. Uses chain-of-thought reasoning similar to OpenAI's o1.
+        Available in multiple sizes from 1.5B to 671B parameters.
+
+        Fast and lightweight: phi4 (14B) or gemma2 (9B). Good quality for their size,
+        suitable for laptops without dedicated GPUs.
+
+        Vision: llava or llama3.2-vision. Multimodal models that can analyze images.
+
+        Embeddings: nomic-embed-text or mxbai-embed-large. For local vector embedding
+        generation without cloud API calls.
+
+        Hardware guidance: 7-8B models need 8GB+ RAM/VRAM. 13B models need 16GB+.
+        70B models need 48GB+ VRAM or will run slowly on CPU. Quantized versions (Q4_K_M)
+        reduce memory requirements by roughly 4x compared to FP16.
+      tags: ["getting-started", "model-selection"]
+
+    - topic: "OpenAI API Compatibility"
+      content: |
+        Ollama serves an OpenAI-compatible API at http://localhost:11434/v1/, making it
+        a drop-in replacement for OpenAI in most applications. This means you can use the
+        official OpenAI Python SDK, LangChain, LlamaIndex, and any other tool that speaks
+        the OpenAI API format.
+
+        To use the OpenAI SDK with Ollama:
+        - Set base_url to "http://localhost:11434/v1"
+        - Set api_key to any non-empty string (Ollama does not require authentication)
+        - Use the Ollama model name as the model parameter
+
+        Supported endpoints:
+        - /v1/chat/completions (chat with streaming)
+        - /v1/completions (text completion)
+        - /v1/embeddings (vector embeddings)
+        - /v1/models (list available models)
+
+        Limitations of compatibility: Some OpenAI-specific features like logprobs,
+        response_format json_schema strict mode, and parallel function calling may not be
+        fully supported depending on the model. Always test with your specific model and
+        use case.
+
+        This compatibility layer is the key enabler for hybrid architectures where you
+        develop locally with Ollama and deploy to a cloud LLM in production, or vice versa.
+      tags: ["openai-compatible", "api", "integration"]
+
+    - topic: "Custom Models with Modelfiles"
+      content: |
+        Ollama supports creating custom models through Modelfiles, which are similar to
+        Dockerfiles but for LLMs. A Modelfile specifies a base model and customizations
+        like system prompts, parameters, and adapters.
+
+        Modelfile syntax:
+        - FROM: Specifies the base model (e.g., FROM llama3.3)
+        - SYSTEM: Sets a default system prompt
+        - PARAMETER: Sets inference parameters (temperature, top_p, num_ctx, etc.)
+        - ADAPTER: Applies a LoRA or QLoRA adapter for fine-tuned behavior
+        - TEMPLATE: Customizes the prompt template format
+
+        Use cases for custom models:
+        1. Domain-specific assistants: Set a system prompt that enforces behavior for your
+           use case (e.g., "You are a medical coding assistant...")
+        2. Parameter tuning: Lock in optimal temperature, top_p, and context size for your
+           application
+        3. Fine-tuned models: Apply LoRA adapters trained on your data using tools like
+           Unsloth, Axolotl, or PEFT
+        4. Prompt template customization: Ensure the model uses the correct chat template
+           for best performance
+
+        Create and use: ollama create my-model -f Modelfile, then ollama run my-model.
+      tags: ["modelfile", "customization", "fine-tuning"]
+
+    - topic: "Hardware Requirements and Performance Optimization"
+      content: |
+        Inference speed in Ollama is primarily determined by available VRAM (GPU memory) and
+        the model size. Key guidelines:
+
+        GPU inference (recommended):
+        - NVIDIA GPUs with CUDA: Best performance. RTX 3090/4090 (24GB) handles up to 13B
+          FP16 or 70B Q4 quantized models comfortably.
+        - Apple Silicon: M1/M2/M3 with unified memory works well. M2 Max (32GB) or M3 Max
+          (48GB) can run 70B quantized models at usable speeds.
+        - AMD GPUs: Supported via ROCm on Linux. Performance varies by GPU generation.
+
+        CPU inference: Possible but significantly slower (5-20x). Acceptable for small
+        models (7B Q4) on modern CPUs with AVX2 support. Not practical for 70B+ models.
+
+        Memory requirements (approximate, Q4_K_M quantization):
+        - 7B model: ~4GB VRAM, ~8GB system RAM
+        - 13B model: ~8GB VRAM, ~16GB system RAM
+        - 34B model: ~20GB VRAM, ~32GB system RAM
+        - 70B model: ~40GB VRAM, ~64GB system RAM
+
+        Performance optimization:
+        1. Use quantized models (Q4_K_M offers the best quality/size trade-off)
+        2. Set num_gpu layers to maximize GPU offloading
+        3. Adjust num_ctx (context length) - longer context uses more memory
+        4. Use flash attention when supported (enabled by default on compatible hardware)
+        5. For serving, keep models loaded in memory with keep_alive parameter
+      tags: ["hardware", "performance", "gpu", "optimization"]
+
+    - topic: "When to Choose Ollama vs Cloud APIs"
+      content: |
+        Choose Ollama when:
+        - Data sensitivity requires that no data leaves your infrastructure (healthcare,
+          legal, defense, finance)
+        - You want predictable costs with no per-token charges
+        - You need offline or air-gapped operation
+        - You are developing and testing LLM applications locally before cloud deployment
+        - Latency consistency matters (no network round-trip, no rate limits)
+        - You want to experiment with many models quickly without API key management
+
+        Stick with cloud APIs (OpenAI, Anthropic, Gemini) when:
+        - You need frontier-level quality on the hardest tasks (complex reasoning, nuanced
+          analysis)
+        - You lack GPU hardware or do not want to manage infrastructure
+        - You need to scale to thousands of concurrent users
+        - You need multimodal capabilities beyond what open-weight models currently offer
+        - You need enterprise SLAs, compliance certifications, and support contracts
+
+        Hybrid approach: Many teams use Ollama for development and testing, then deploy to
+        cloud APIs in production. The OpenAI-compatible API makes switching seamless. Some
+        teams use Ollama for low-complexity tasks (classification, extraction) and cloud
+        APIs for high-complexity tasks (complex reasoning, long analysis).
+      tags: ["decision", "comparison"]
+
+    - topic: "Production Deployment Patterns"
+      content: |
+        While Ollama is primarily designed for local use, it can be deployed for small to
+        medium-scale production workloads:
+
+        Docker deployment: Use the official ollama/ollama Docker image with NVIDIA Container
+        Toolkit for GPU passthrough. Mount a volume for model storage to persist models
+        across container restarts.
+
+        Reverse proxy: Place Nginx or Caddy in front of Ollama to add authentication,
+        TLS, rate limiting, and logging. Ollama itself has no built-in authentication.
+
+        Multiple instances: Run multiple Ollama instances behind a load balancer for
+        horizontal scaling. Each instance needs its own GPU allocation.
+
+        Kubernetes: Deploy as a StatefulSet with GPU resource limits. Use node affinity
+        to schedule pods on GPU nodes. Community Helm charts are available.
+
+        Monitoring: Ollama exposes basic metrics. Use Prometheus to track request latency,
+        model loading times, and GPU utilization. Pair with Grafana for dashboards.
+
+        Limitations for production: No built-in authentication or API keys. No native
+        clustering or auto-scaling. No request queuing (requests are processed serially per
+        model). For large-scale production, consider vLLM or TGI as more production-oriented
+        serving solutions, potentially with Ollama still used for model management.
+      tags: ["production", "deployment", "docker", "kubernetes"]
+
+code_examples:
+  - title: "Basic Chat with Ollama"
+    language: "python"
+    code: |
+      import ollama
+
+      response = ollama.chat(
+          model="llama3.3",
+          messages=[
+              {"role": "system", "content": "You are a helpful coding assistant."},
+              {"role": "user", "content": "Write a Python function to merge two sorted lists."}
+          ]
+      )
+
+      print(response["message"]["content"])
+
+  - title: "Using OpenAI SDK with Ollama"
+    language: "python"
+    code: |
+      from openai import OpenAI
+
+      # Point OpenAI SDK at local Ollama server
+      client = OpenAI(
+          base_url="http://localhost:11434/v1",
+          api_key="ollama"  # Any non-empty string works
+      )
+
+      response = client.chat.completions.create(
+          model="llama3.3",
+          messages=[
+              {"role": "user", "content": "Explain the CAP theorem in distributed systems."}
+          ],
+          temperature=0.7,
+          max_tokens=500
+      )
+
+      print(response.choices[0].message.content)
+
+  - title: "Local Embeddings for RAG"
+    language: "python"
+    code: |
+      import ollama
+      import numpy as np
+
+      # Generate embeddings locally - no API key needed
+      def get_embedding(text: str) -> list[float]:
+          response = ollama.embed(
+              model="nomic-embed-text",
+              input=text
+          )
+          return response["embeddings"][0]
+
+      # Embed documents
+      documents = [
+          "Kubernetes uses pods as the smallest deployable unit.",
+          "Docker containers package applications with their dependencies.",
+          "Terraform manages infrastructure as code across cloud providers."
+      ]
+
+      embeddings = [get_embedding(doc) for doc in documents]
+
+      # Simple similarity search
+      query_embedding = get_embedding("How do I deploy containers?")
+      similarities = [
+          np.dot(query_embedding, emb)
+          / (np.linalg.norm(query_embedding) * np.linalg.norm(emb))
+          for emb in embeddings
+      ]
+
+      best_match = documents[np.argmax(similarities)]
+      print(f"Most relevant: {best_match}")
+
+  - title: "Streaming with Tool Use"
+    language: "python"
+    code: |
+      import ollama
+      import json
+
+      # Define tools for the model
+      tools = [
+          {
+              "type": "function",
+              "function": {
+                  "name": "get_weather",
+                  "description": "Get current weather for a location",
+                  "parameters": {
+                      "type": "object",
+                      "properties": {
+                          "location": {"type": "string", "description": "City name"},
+                          "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+                      },
+                      "required": ["location"]
+                  }
+              }
+          }
+      ]
+
+      response = ollama.chat(
+          model="llama3.3",
+          messages=[
+              {"role": "user", "content": "What's the weather in San Francisco?"}
+          ],
+          tools=tools
+      )
+
+      # Check for tool calls
+      if response["message"].get("tool_calls"):
+          for tool_call in response["message"]["tool_calls"]:
+              print(f"Function: {tool_call['function']['name']}")
+              print(f"Arguments: {json.dumps(tool_call['function']['arguments'], indent=2)}")
+
+benchmarks:
+  last_run: "2026-02-20"
+  results:
+    - name: "inference_speed_7b"
+      value: 65
+      unit: "tokens/sec"
+      context: "Llama 3.1 8B Q4_K_M on RTX 4090"
+    - name: "inference_speed_70b"
+      value: 18
+      unit: "tokens/sec"
+      context: "Llama 3.3 70B Q4_K_M on RTX 4090"
+    - name: "inference_speed_apple"
+      value: 25
+      unit: "tokens/sec"
+      context: "Llama 3.3 70B Q4_K_M on M3 Max 48GB"
+    - name: "model_load_time"
+      value: 3.2
+      unit: "seconds"
+      context: "Llama 3.1 8B Q4_K_M cold start on RTX 4090"
+    - name: "mmlu_llama33_70b"
+      value: 73.2
+      unit: "percent"
+      context: "Llama 3.3 70B on MMLU benchmark"
+    - name: "humaneval_llama33_70b"
+      value: 80.7
+      unit: "percent"
+      context: "Llama 3.3 70B pass@1 on HumanEval"
+
+relationships:
+  alternatives:
+    - slug: "openai"
+      note: "Cloud API with frontier model quality but no local deployment option"
+    - slug: "anthropic_claude"
+      note: "Cloud API with strong analysis and long context but no self-hosting"
+    - slug: "google_gemini"
+      note: "Cloud API with very large context windows and Google ecosystem integration"
+    - slug: "vllm"
+      note: "High-performance inference server for production-scale self-hosted LLM serving"
+  complements:
+    - slug: "pinecone"
+      role: "Vector database for RAG pipelines, though local alternatives like ChromaDB pair better"
+    - slug: "langchain"
+      role: "Orchestration framework with native Ollama integration via ChatOllama"
+    - slug: "open_webui"
+      role: "Web-based chat interface for interacting with Ollama models"
+  typical_pipeline_position: "llm_generation"
+  pipeline_predecessors: ["retrieval", "reranking", "prompt_construction"]
+  pipeline_successors: ["output_parsing", "evaluation"]

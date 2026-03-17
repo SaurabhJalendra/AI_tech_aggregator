@@ -1,0 +1,197 @@
+meta:
+  slug: "promptfoo"
+  name: "Promptfoo"
+  version: "1.0.0"
+  category: "evaluation"
+  subcategory: "prompt_testing"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source tool for testing, evaluating, and red-teaming LLM prompts"
+  description: |
+    Promptfoo is an open-source CLI and library for testing and evaluating LLM
+    outputs. It allows developers to define test cases for prompts, run them
+    against multiple LLM providers simultaneously, and compare results using
+    automated assertions and evaluators.
+
+    Promptfoo uses a YAML-based configuration to define prompts, test variables,
+    providers (LLM endpoints), and assertions. This makes it easy to integrate
+    prompt testing into CI/CD pipelines, ensuring that prompt changes don't
+    introduce regressions.
+
+    The tool also supports red-teaming with built-in adversarial test generation
+    for detecting prompt injection vulnerabilities, harmful outputs, and
+    compliance violations. It has become a standard tool for teams that treat
+    prompts as code with proper testing.
+  logo_url: "/assets/modules/promptfoo.svg"
+  website: "https://promptfoo.dev"
+  documentation: "https://promptfoo.dev/docs/intro"
+  github: "https://github.com/promptfoo/promptfoo"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Prompt regression testing"
+    - "LLM output evaluation"
+    - "Multi-provider comparison"
+    - "Red-teaming and security testing"
+    - "CI/CD prompt validation"
+  supported_operations:
+    - "eval"
+    - "generate_tests"
+    - "redteam"
+    - "cache"
+    - "share"
+    - "view"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic_claude"
+      type: "native"
+    - slug: "langchain"
+      type: "compatible"
+
+technical_specs:
+  config_format: "YAML"
+  supported_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google"
+    - "Mistral"
+    - "Ollama"
+    - "Azure OpenAI"
+    - "any OpenAI-compatible API"
+  assertion_types:
+    - "contains"
+    - "equals"
+    - "regex"
+    - "llm-rubric"
+    - "model-graded"
+    - "javascript"
+    - "python"
+  web_ui: true
+  ci_cd_integration: true
+  caching: true
+  languages:
+    - "node"
+    - "python (via CLI)"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Fast local execution with caching. Evaluation speed limited by LLM API latency."
+  scalability:
+    score: 7
+    justification: "Handles large test suites. Concurrent provider calls for efficient evaluation."
+  ease_of_use:
+    score: 9
+    justification: "Simple YAML config with CLI. Quick to set up first evaluation. Built-in web viewer for results."
+  cost_efficiency:
+    score: 9
+    justification: "Open-source tool. Only costs are LLM API calls for test execution."
+  community:
+    score: 7
+    justification: "Growing open-source community. Active development and responsive maintainers."
+  maturity:
+    score: 6
+    justification: "Released in 2023. Rapidly maturing with stable CLI and config format."
+  flexibility:
+    score: 9
+    justification: "Supports any LLM provider, custom assertions, Python/JS evaluators. Highly configurable."
+  data_privacy:
+    score: 8
+    justification: "Runs locally. Test results stay on your machine. Only LLM API calls leave your infrastructure."
+
+knowledge:
+  entries:
+    - topic: "Prompt Testing in CI/CD"
+      content: |
+        Promptfoo enables treating prompts as tested code:
+
+        1. Define your prompts in files alongside your code.
+        2. Create a promptfooconfig.yaml with test cases covering expected behaviors.
+        3. Add assertions for each test case (output contains X, passes LLM rubric, etc.).
+        4. Run promptfoo eval in CI to verify prompts on every pull request.
+
+        This catches regressions when prompts are modified and ensures new prompts
+        meet quality criteria before deployment. The eval results can be compared
+        across runs to track quality trends.
+
+        For RAG applications, test cases can include specific retrieval scenarios
+        where you know the expected answer, ensuring the full pipeline works
+        correctly end-to-end.
+      tags: ["ci-cd", "testing", "workflow"]
+
+code_examples:
+  - title: "Promptfoo Configuration"
+    language: "yaml"
+    code: |
+      # promptfooconfig.yaml
+      prompts:
+        - "Answer the question based on context: {{context}}\n\nQ: {{question}}"
+
+      providers:
+        - openai:gpt-4o
+        - anthropic:messages:claude-sonnet-4-20250514
+
+      tests:
+        - vars:
+            context: "The Eiffel Tower is 330 meters tall."
+            question: "How tall is the Eiffel Tower?"
+          assert:
+            - type: contains
+              value: "330"
+            - type: llm-rubric
+              value: "Answer should mention the height in meters"
+
+        - vars:
+            context: "Python was created by Guido van Rossum."
+            question: "Who created Python?"
+          assert:
+            - type: contains
+              value: "Guido"
+
+  - title: "Run Evaluation from CLI"
+    language: "bash"
+    code: |
+      # Install
+      npm install -g promptfoo
+
+      # Run evaluation
+      promptfoo eval
+
+      # View results in browser
+      promptfoo view
+
+      # Run in CI (exits with error code if assertions fail)
+      promptfoo eval --no-cache --ci
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "eval_throughput"
+      value: 30
+      unit: "test_cases/minute"
+      context: "With GPT-4o provider, no caching"
+    - name: "cached_eval"
+      value: 200
+      unit: "test_cases/minute"
+      context: "With cached LLM responses"
+
+relationships:
+  alternatives:
+    - slug: "ragas"
+      note: "Focused on RAG evaluation with specific metrics"
+    - slug: "deepeval"
+      note: "Python-native LLM evaluation framework"
+  complements:
+    - slug: "openai"
+      role: "LLM provider for evaluation and LLM-as-judge assertions"
+    - slug: "langchain"
+      role: "Chains and prompts can be tested with Promptfoo"
+  typical_pipeline_position: "testing"
+  pipeline_predecessors: ["prompt_engineering"]
+  pipeline_successors: ["deployment"]

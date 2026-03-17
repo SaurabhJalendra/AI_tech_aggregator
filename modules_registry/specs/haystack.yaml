@@ -1,0 +1,406 @@
+meta:
+  slug: "haystack"
+  name: "Haystack"
+  version: "1.0.0"
+  category: "retrieval"
+  subcategory: "search_framework"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Open-source framework by deepset for building production-grade NLP and LLM-powered search pipelines"
+  description: |
+    Haystack is an open-source framework by deepset for building end-to-end NLP and LLM
+    applications, with a strong focus on search, question answering, and retrieval-augmented
+    generation. It provides a pipeline-based architecture where components are connected into
+    directed graphs for document processing, retrieval, and generation.
+
+    Haystack 2.x (the current major version) introduced a complete redesign with a strongly-typed
+    component system, flexible pipeline DAGs, and first-class support for LLM-based applications
+    alongside traditional NLP. Components declare their inputs and outputs with Python type hints,
+    enabling compile-time validation and clear data flow.
+
+    The framework distinguishes itself with a structured, production-oriented approach: pipelines
+    are serializable to YAML for version control and deployment, components are independently
+    testable, and the architecture encourages clean separation of concerns. This makes Haystack
+    particularly appealing to teams with software engineering discipline who want maintainable,
+    testable LLM applications.
+
+    deepset Cloud provides a managed platform for deploying Haystack pipelines at scale, with
+    a visual pipeline editor, evaluation tools, and enterprise features. The open-source
+    framework works fully standalone.
+  logo_url: "/assets/modules/haystack.svg"
+  website: "https://haystack.deepset.ai"
+  documentation: "https://docs.haystack.deepset.ai"
+  github: "https://github.com/deepset-ai/haystack"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Production search and question answering systems"
+    - "Retrieval-Augmented Generation (RAG) pipelines"
+    - "Document processing and indexing pipelines"
+    - "Extractive and generative question answering"
+    - "Semantic search with hybrid retrieval"
+    - "Conversational AI with retrieval grounding"
+  supported_operations:
+    - "document_processing"
+    - "text_splitting"
+    - "embedding_generation"
+    - "vector_retrieval"
+    - "bm25_retrieval"
+    - "hybrid_retrieval"
+    - "reranking"
+    - "prompt_building"
+    - "llm_generation"
+    - "answer_extraction"
+    - "pipeline_serialization"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "native"
+    - slug: "pinecone"
+      type: "native"
+    - slug: "weaviate"
+      type: "native"
+    - slug: "qdrant"
+      type: "native"
+    - slug: "elasticsearch"
+      type: "native"
+    - slug: "chromadb"
+      type: "native"
+
+technical_specs:
+  languages:
+    - "python"
+  python_min_version: "3.9"
+  core_packages:
+    - "haystack-ai"
+    - "haystack-experimental"
+  integration_packages_pattern: "haystack-*"
+  pipeline_architecture: "directed_graph"
+  pipeline_serialization: "YAML"
+  component_system: "typed_inputs_outputs"
+  supported_llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google (Gemini)"
+    - "AWS Bedrock"
+    - "Azure OpenAI"
+    - "Cohere"
+    - "Mistral"
+    - "Ollama"
+    - "HuggingFace (local)"
+  supported_document_stores:
+    - "InMemoryDocumentStore"
+    - "ElasticsearchDocumentStore"
+    - "OpenSearchDocumentStore"
+    - "PineconeDocumentStore"
+    - "WeaviateDocumentStore"
+    - "QdrantDocumentStore"
+    - "ChromaDocumentStore"
+    - "PgvectorDocumentStore"
+  supported_file_types:
+    - "PDF"
+    - "DOCX"
+    - "HTML"
+    - "Markdown"
+    - "TXT"
+    - "CSV"
+  streaming_support: true
+  async_support: true
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Pipeline overhead is minimal. Performance depends on component choices. Native support for efficient batch processing and parallel component execution in pipelines."
+  scalability:
+    score: 7
+    justification: "Pipelines scale via underlying document stores. deepset Cloud provides managed scaling. No built-in distributed pipeline execution in open-source version."
+  ease_of_use:
+    score: 7
+    justification: "Strongly-typed components catch errors early. Pipeline YAML serialization aids deployment. Steeper initial learning curve than LangChain but more predictable behavior."
+  cost_efficiency:
+    score: 9
+    justification: "Fully open-source under Apache 2.0. No framework costs. deepset Cloud is optional for managed deployment. Supports cost-effective local models via HuggingFace and Ollama."
+  community:
+    score: 7
+    justification: "18K+ GitHub stars, active community. Smaller than LangChain but more focused. Strong in the NLP/search community. Well-maintained integration ecosystem."
+  maturity:
+    score: 8
+    justification: "Originally launched in 2020 for NLP search, making it one of the most mature frameworks. Haystack 2.x is a clean redesign that retained production lessons from v1."
+  flexibility:
+    score: 8
+    justification: "Pipeline DAGs support arbitrary component topologies. Custom components are easy to build with the typed interface. YAML serialization enables pipeline-as-code workflows."
+  data_privacy:
+    score: 9
+    justification: "Fully self-hostable with no external dependencies. Supports local LLMs and embedding models. ElasticSearch and PgVector document stores keep data on-premises. Apache 2.0 license."
+
+knowledge:
+  entries:
+    - topic: "Pipeline Architecture"
+      content: |
+        Haystack's core abstraction is the Pipeline — a directed graph of Components connected
+        by typed edges. Each component declares its inputs and outputs with Python type hints,
+        and the pipeline validates connections at construction time.
+
+        Two pipeline types serve different purposes:
+        - Indexing Pipelines: Process documents from raw files to stored, searchable embeddings.
+          Typical flow: FileConverter -> Splitter -> Embedder -> DocumentWriter.
+        - Query Pipelines: Handle user queries from input to generated answers. Typical flow:
+          Embedder -> Retriever -> PromptBuilder -> LLM Generator.
+
+        Pipelines can branch and merge. A hybrid retrieval pipeline might run BM25 and vector
+        retrieval in parallel, then merge results with a JoinDocuments component before
+        reranking. Conditional routing enables dynamic pipeline behavior based on query
+        characteristics.
+
+        Pipelines are serializable to YAML, enabling version control, CI/CD deployment, and
+        sharing. A pipeline can be built in code, exported to YAML, and loaded in production
+        without code changes. This is a significant advantage for teams with strict deployment
+        processes.
+      tags: ["pipeline", "architecture", "core"]
+
+    - topic: "Component System"
+      content: |
+        Haystack components are Python classes that follow a simple contract:
+
+        1. Declare inputs with @component.input_type or as run() method parameters with type hints
+        2. Declare outputs with @component.output_type
+        3. Implement the run() method containing the component logic
+
+        Built-in components include: document converters (PDF, DOCX, HTML), text splitters
+        (by sentence, passage, or token count), embedders (OpenAI, Cohere, HuggingFace),
+        retrievers (vector, BM25, hybrid), rerankers (Cohere, cross-encoder), prompt builders,
+        and LLM generators.
+
+        Custom components are straightforward to build. The @component decorator handles
+        registration and type validation. This composable design means you can mix Haystack
+        components with custom business logic seamlessly.
+
+        Components are independently testable — each can be unit-tested with known inputs and
+        expected outputs without running the full pipeline. This software engineering approach
+        distinguishes Haystack from more monolithic frameworks.
+      tags: ["components", "custom", "development"]
+
+    - topic: "When to Choose Haystack"
+      content: |
+        Haystack is the right choice when: (1) You value software engineering rigor — typed
+        components, serializable pipelines, and testable architecture suit teams with strong
+        engineering practices. (2) Search and retrieval are your primary use case — Haystack's
+        NLP heritage means deep expertise in search quality, hybrid retrieval, and reranking.
+        (3) You need pipeline reproducibility — YAML serialization, version control, and
+        deterministic execution. (4) You're building on Elasticsearch or OpenSearch — Haystack
+        has the most mature integrations with these search engines. (5) On-premises deployment
+        is required — Apache 2.0 license and full self-hosting support.
+
+        Haystack is NOT the right choice when: (1) You need multi-agent orchestration —
+        LangGraph, CrewAI, or AutoGen are more suitable. (2) You want the largest ecosystem
+        of integrations — LangChain has broader coverage. (3) You need TypeScript/JavaScript
+        support — Haystack is Python-only. (4) You want the fastest prototyping experience —
+        LlamaIndex's 5-line RAG is quicker for proof-of-concepts.
+      tags: ["decision", "comparison"]
+
+    - topic: "Hybrid Retrieval and Reranking"
+      content: |
+        Haystack excels at hybrid retrieval, combining multiple retrieval strategies:
+
+        BM25 Retrieval: Traditional keyword-based retrieval using term frequency and document
+        frequency scoring. Available through Elasticsearch, OpenSearch, and in-memory document
+        stores. Best for exact keyword matching and technical queries.
+
+        Vector Retrieval: Semantic similarity search using embeddings. Supports all major
+        vector stores. Best for natural language queries where meaning matters more than
+        exact terms.
+
+        Hybrid: Run BM25 and vector retrieval in parallel, then merge results using
+        reciprocal rank fusion (RRF) or weighted scoring via the JoinDocuments component.
+        This combines keyword precision with semantic understanding.
+
+        Reranking: After initial retrieval, a cross-encoder reranker (Cohere Rerank, sentence
+        transformers) re-scores the top results. This dramatically improves precision — a
+        common pattern is to retrieve 50 candidates and rerank to top 5.
+
+        The pipeline architecture makes it natural to express these patterns: branch into
+        parallel retrievers, join results, then pipe through a reranker. Each step is a
+        separate component that can be swapped or tuned independently.
+      tags: ["retrieval", "hybrid", "reranking"]
+
+    - topic: "Pipeline Serialization and Deployment"
+      content: |
+        Haystack pipelines can be serialized to YAML for deployment and version control:
+
+        Export: pipeline.dump("pipeline.yaml") saves the full pipeline configuration including
+        component parameters, connections, and metadata.
+
+        Import: Pipeline.load("pipeline.yaml") reconstructs the pipeline from YAML. Custom
+        components are resolved by their registered names.
+
+        This enables several deployment patterns:
+        - Pipeline-as-code: Define pipelines in YAML, version in Git, deploy via CI/CD
+        - A/B testing: Deploy different pipeline YAMLs and route traffic between them
+        - Environment separation: Same pipeline structure with different parameters (model
+          names, API keys) per environment
+        - deepset Cloud: Upload pipeline YAML to deploy on managed infrastructure
+
+        For self-hosted deployment, Haystack pipelines can be wrapped in FastAPI endpoints,
+        containerized with Docker, and deployed on Kubernetes. The hayhooks utility provides
+        a ready-made REST API server for Haystack pipelines.
+      tags: ["deployment", "serialization", "production"]
+
+code_examples:
+  - title: "Basic RAG Pipeline"
+    language: "python"
+    code: |
+      from haystack import Pipeline
+      from haystack.components.builders import PromptBuilder
+      from haystack.components.embedders import OpenAITextEmbedder, OpenAIDocumentEmbedder
+      from haystack.components.generators import OpenAIGenerator
+      from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever
+      from haystack.document_stores.in_memory import InMemoryDocumentStore
+      from haystack.components.preprocessors import DocumentSplitter
+      from haystack import Document
+
+      # Setup document store
+      doc_store = InMemoryDocumentStore()
+
+      # Indexing pipeline
+      indexing = Pipeline()
+      indexing.add_component("splitter", DocumentSplitter(split_by="sentence", split_length=3))
+      indexing.add_component("embedder", OpenAIDocumentEmbedder())
+      indexing.add_component("writer", doc_store.writer())
+      indexing.connect("splitter", "embedder")
+      indexing.connect("embedder", "writer")
+
+      # Index documents
+      docs = [Document(content="Your document text here...")]
+      indexing.run({"splitter": {"documents": docs}})
+
+      # Query pipeline
+      template = """Answer based on context:\n{% for doc in documents %}{{ doc.content }}\n{% endfor %}\nQuestion: {{ question }}"""
+
+      query_pipeline = Pipeline()
+      query_pipeline.add_component("embedder", OpenAITextEmbedder())
+      query_pipeline.add_component("retriever", InMemoryEmbeddingRetriever(doc_store, top_k=5))
+      query_pipeline.add_component("prompt", PromptBuilder(template=template))
+      query_pipeline.add_component("llm", OpenAIGenerator(model="gpt-4o"))
+      query_pipeline.connect("embedder.embedding", "retriever.query_embedding")
+      query_pipeline.connect("retriever", "prompt.documents")
+      query_pipeline.connect("prompt", "llm")
+
+      result = query_pipeline.run({
+          "embedder": {"text": "How does scaling work?"},
+          "prompt": {"question": "How does scaling work?"}
+      })
+
+  - title: "Hybrid Retrieval with Reranking"
+    language: "python"
+    code: |
+      from haystack import Pipeline
+      from haystack.components.joiners import DocumentJoiner
+      from haystack.components.rankers import TransformersSimilarityRanker
+      from haystack.components.retrievers.in_memory import (
+          InMemoryBM25Retriever,
+          InMemoryEmbeddingRetriever,
+      )
+      from haystack.components.embedders import OpenAITextEmbedder
+
+      pipeline = Pipeline()
+
+      # Parallel retrieval: BM25 + Vector
+      pipeline.add_component("text_embedder", OpenAITextEmbedder())
+      pipeline.add_component("bm25_retriever", InMemoryBM25Retriever(doc_store, top_k=20))
+      pipeline.add_component("vector_retriever", InMemoryEmbeddingRetriever(doc_store, top_k=20))
+
+      # Join and rerank
+      pipeline.add_component("joiner", DocumentJoiner(join_mode="reciprocal_rank_fusion"))
+      pipeline.add_component("ranker", TransformersSimilarityRanker(top_k=5))
+
+      # Connect parallel branches
+      pipeline.connect("text_embedder.embedding", "vector_retriever.query_embedding")
+      pipeline.connect("bm25_retriever", "joiner")
+      pipeline.connect("vector_retriever", "joiner")
+      pipeline.connect("joiner", "ranker")
+
+      result = pipeline.run({
+          "text_embedder": {"text": "vector database performance"},
+          "bm25_retriever": {"query": "vector database performance"},
+          "ranker": {"query": "vector database performance"},
+      })
+
+  - title: "Custom Component"
+    language: "python"
+    code: |
+      from haystack import component, Document
+      from typing import List
+
+      @component
+      class MetadataEnricher:
+          """Custom component that adds metadata to documents."""
+
+          @component.output_types(documents=List[Document])
+          def run(self, documents: List[Document], source: str = "unknown"):
+              for doc in documents:
+                  doc.meta["source"] = source
+                  doc.meta["word_count"] = len(doc.content.split())
+                  doc.meta["has_code"] = "```" in doc.content
+              return {"documents": documents}
+
+      # Use in a pipeline
+      pipeline = Pipeline()
+      pipeline.add_component("enricher", MetadataEnricher())
+      pipeline.add_component("writer", doc_store.writer())
+      pipeline.connect("enricher", "writer")
+
+      pipeline.run({
+          "enricher": {
+              "documents": [Document(content="Example text")],
+              "source": "knowledge_base"
+          }
+      })
+
+benchmarks:
+  last_run: "2026-02-08"
+  results:
+    - name: "pipeline_construction_time"
+      value: 15
+      unit: "ms"
+      context: "Time to construct and validate a 5-component pipeline"
+    - name: "rag_pipeline_overhead"
+      value: 20
+      unit: "ms"
+      context: "Framework overhead per query, excludes embedding + retrieval + LLM time"
+    - name: "yaml_serialization_roundtrip"
+      value: 8
+      unit: "ms"
+      context: "Serialize and deserialize a 5-component pipeline to/from YAML"
+    - name: "hybrid_retrieval_rrf_merge"
+      value: 5
+      unit: "ms"
+      context: "Reciprocal rank fusion merge of 20 BM25 + 20 vector results"
+    - name: "reranking_improvement"
+      value: 22
+      unit: "percent"
+      context: "MRR@5 improvement with cross-encoder reranking vs. vector-only on BEIR NQ"
+
+relationships:
+  alternatives:
+    - slug: "langchain"
+      note: "Broader scope with larger ecosystem but less structured pipeline architecture"
+    - slug: "llamaindex"
+      note: "More focused on index types and advanced retrieval strategies"
+  complements:
+    - slug: "elasticsearch"
+      role: "Production document store with BM25 and vector search capabilities"
+    - slug: "pinecone"
+      role: "Managed vector store for production deployments"
+    - slug: "openai"
+      role: "LLM and embedding provider for generation and indexing"
+    - slug: "cohere"
+      role: "Reranking model provider for improving retrieval precision"
+  typical_pipeline_position: "retrieval_and_search"
+  pipeline_predecessors: ["data_ingestion", "embeddings"]
+  pipeline_successors: ["llm_generation", "evaluation"]

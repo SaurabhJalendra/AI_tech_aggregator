@@ -1,0 +1,348 @@
+meta:
+  slug: "langchain"
+  name: "LangChain"
+  version: "1.0.0"
+  category: "agent_systems"
+  subcategory: "orchestration_framework"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "The leading open-source framework for building applications powered by large language models"
+  description: |
+    LangChain is an open-source framework for developing applications that combine large language
+    models with external data sources, tools, and APIs. It provides a composable set of abstractions
+    for chains, agents, retrieval, memory, and callbacks that simplify the development of complex
+    LLM-powered workflows.
+
+    Originally launched in late 2022 as a Python library, LangChain has evolved into a comprehensive
+    ecosystem including LangChain Core (the base abstractions and LCEL), LangChain Community
+    (third-party integrations), LangGraph (stateful multi-actor agent orchestration), LangSmith
+    (observability and evaluation platform), and LangServe (deployment utilities).
+
+    LangChain Expression Language (LCEL) is the primary composition interface, allowing developers
+    to build chains by piping components together with the | operator. LCEL supports streaming,
+    async execution, batching, and fallbacks out of the box. LangGraph extends this model for
+    cyclic, stateful agent workflows with persistence and human-in-the-loop capabilities.
+
+    The framework has the largest ecosystem of integrations in the LLM tooling space, with native
+    connectors for virtually every LLM provider, vector database, embedding model, and document
+    loader. This breadth makes it the default starting point for many teams, though the rapid
+    pace of API changes and abstraction complexity are common criticisms.
+  logo_url: "/assets/modules/langchain.svg"
+  website: "https://www.langchain.com"
+  documentation: "https://python.langchain.com/docs/"
+  github: "https://github.com/langchain-ai/langchain"
+  license: "MIT"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Retrieval-Augmented Generation (RAG) pipelines"
+    - "Conversational AI agents with tool use"
+    - "Document question answering"
+    - "Multi-step reasoning workflows"
+    - "Structured data extraction from unstructured text"
+    - "Multi-agent orchestration via LangGraph"
+  supported_operations:
+    - "chain_composition"
+    - "agent_execution"
+    - "retrieval"
+    - "tool_calling"
+    - "streaming"
+    - "async_execution"
+    - "memory_management"
+    - "output_parsing"
+    - "prompt_templating"
+    - "callback_hooks"
+  integrations:
+    - slug: "openai"
+      type: "native"
+    - slug: "anthropic"
+      type: "native"
+    - slug: "pinecone"
+      type: "native"
+    - slug: "chromadb"
+      type: "native"
+    - slug: "weaviate"
+      type: "native"
+    - slug: "qdrant"
+      type: "native"
+    - slug: "huggingface"
+      type: "native"
+
+technical_specs:
+  languages:
+    - "python"
+    - "javascript"
+  python_min_version: "3.9"
+  node_min_version: "18"
+  core_packages:
+    - "langchain-core"
+    - "langchain"
+    - "langchain-community"
+    - "langgraph"
+    - "langsmith"
+    - "langserve"
+  supported_llm_providers:
+    - "OpenAI"
+    - "Anthropic"
+    - "Google (Gemini)"
+    - "AWS Bedrock"
+    - "Azure OpenAI"
+    - "Cohere"
+    - "Mistral"
+    - "Ollama"
+    - "HuggingFace"
+  supported_vector_stores: 80+
+  supported_document_loaders: 160+
+  streaming_support: true
+  async_support: true
+
+comparison_dimensions:
+  performance:
+    score: 6
+    justification: "Adds abstraction overhead compared to direct API calls. LCEL streaming mitigates latency for user-facing apps, but deep chain nesting can impact throughput."
+  scalability:
+    score: 7
+    justification: "Async support and LangServe enable production scaling. LangGraph adds persistent state for long-running workflows. No built-in distributed execution."
+  ease_of_use:
+    score: 7
+    justification: "LCEL provides an elegant composition model but has a steep learning curve. Extensive documentation and examples offset complexity. Frequent API changes frustrate developers."
+  cost_efficiency:
+    score: 9
+    justification: "Fully open-source core. LangSmith is the only paid component (optional). No per-call framework costs beyond the underlying LLM and infrastructure."
+  community:
+    score: 10
+    justification: "Largest community in the LLM tooling space with 95K+ GitHub stars, thousands of contributors, and the most third-party integrations of any framework."
+  maturity:
+    score: 7
+    justification: "Production-used by thousands of companies since 2023. API has stabilized significantly with the LCEL and v0.2+ releases, but breaking changes still occur."
+  flexibility:
+    score: 9
+    justification: "Supports virtually every LLM provider, vector store, and tool. LCEL and LangGraph enable arbitrary workflow topologies from simple chains to complex multi-agent systems."
+  data_privacy:
+    score: 8
+    justification: "Fully self-hostable. No data sent to LangChain servers unless LangSmith tracing is explicitly enabled. Supports local LLMs via Ollama and HuggingFace."
+
+knowledge:
+  entries:
+    - topic: "LCEL (LangChain Expression Language)"
+      content: |
+        LCEL is the primary interface for composing LangChain components. It uses Python's pipe
+        operator (|) to chain together runnables — any component that implements the Runnable
+        interface (invoke, stream, batch, ainvoke, astream, abatch).
+
+        A typical LCEL chain looks like: prompt | llm | output_parser. Each component transforms
+        the input and passes the result to the next. LCEL automatically handles:
+        - Streaming: tokens flow through the entire chain as they're generated
+        - Async: every chain is automatically async-compatible
+        - Batching: process multiple inputs in parallel
+        - Fallbacks: retry with alternative models on failure
+        - Tracing: automatic LangSmith integration for observability
+
+        LCEL replaced the legacy Chain classes (LLMChain, SequentialChain, etc.) which are now
+        deprecated. The key advantage is composability — any Runnable can be used anywhere in
+        a chain, including nested chains, branching (RunnableParallel), and conditional routing
+        (RunnableBranch).
+
+        For complex workflows requiring cycles, state persistence, or human-in-the-loop,
+        LangGraph extends LCEL with a graph-based execution model.
+      tags: ["lcel", "core", "composition"]
+
+    - topic: "LangGraph for Stateful Agents"
+      content: |
+        LangGraph is LangChain's library for building stateful, multi-actor agent applications.
+        Unlike LCEL chains which are directed acyclic graphs (DAGs), LangGraph supports cycles,
+        enabling agents that can loop, reflect, and iterate.
+
+        Core concepts: (1) StateGraph defines the agent's state schema and transitions.
+        (2) Nodes are functions that read and write state. (3) Edges define transitions between
+        nodes, including conditional edges for routing. (4) Checkpointing enables persistence,
+        allowing agents to be paused, resumed, and replayed.
+
+        LangGraph is the recommended approach for building agents that need: multi-step tool
+        use with reflection, human-in-the-loop approval gates, persistent conversation memory
+        across sessions, parallel execution of sub-agents, or error recovery with retry logic.
+
+        LangGraph Platform (cloud-hosted) adds deployment, scaling, and a studio UI for
+        debugging agent execution. The open-source library works standalone without the platform.
+      tags: ["langgraph", "agents", "stateful"]
+
+    - topic: "When to Choose LangChain"
+      content: |
+        LangChain is the right choice when: (1) You need rapid prototyping of LLM applications
+        with many integrations. The breadth of connectors lets you swap providers without
+        rewriting code. (2) Your application involves standard RAG patterns. LangChain has the
+        most mature retrieval abstractions. (3) You need multi-agent workflows and are willing
+        to use LangGraph. (4) Observability is important — LangSmith provides production-grade
+        tracing. (5) Your team values community support and documentation.
+
+        LangChain is NOT the right choice when: (1) You need minimal overhead and full control —
+        direct SDK calls to LLM providers are simpler for basic use cases. (2) API stability is
+        critical — LangChain's pace of change can break production code. (3) You're building a
+        simple chatbot without tools or retrieval — the framework adds unnecessary complexity.
+        (4) You need a strongly-typed, compile-time-safe framework — consider Semantic Kernel
+        or Haystack for more structured approaches.
+      tags: ["decision", "comparison"]
+
+    - topic: "RAG Implementation Patterns"
+      content: |
+        LangChain supports multiple RAG architectures:
+
+        Basic RAG: Document loader -> text splitter -> embedding model -> vector store -> retriever
+        -> prompt + LLM. This is the simplest pattern, suitable for most question-answering tasks.
+
+        Conversational RAG: Adds chat history and question condensation. The retriever receives
+        a standalone question derived from the conversation context, not the raw follow-up.
+
+        Agentic RAG: The retriever is wrapped as a tool that an agent can invoke selectively.
+        The agent decides when to retrieve, what to query, and whether to refine the search.
+
+        Multi-index RAG: Routes queries to different vector stores based on intent classification.
+        Useful when knowledge spans multiple domains with different embedding strategies.
+
+        Self-corrective RAG: Uses LangGraph to evaluate retrieval quality and retry with refined
+        queries if the initial results are insufficient. Includes hallucination detection.
+
+        Parent Document Retrieval: Stores small chunks for precise retrieval but returns the
+        full parent document for context. Balances retrieval precision with generation quality.
+      tags: ["rag", "retrieval", "patterns"]
+
+    - topic: "Migration from Legacy Chains to LCEL"
+      content: |
+        Legacy LangChain patterns (LLMChain, SequentialChain, ConversationalRetrievalChain)
+        are deprecated as of langchain v0.2. All new development should use LCEL or LangGraph.
+
+        Key migration patterns:
+        - LLMChain -> prompt | llm | StrOutputParser()
+        - SequentialChain -> chain1 | chain2 | chain3 (pipe operator)
+        - ConversationalRetrievalChain -> create_history_aware_retriever + create_retrieval_chain
+        - AgentExecutor -> LangGraph with ToolNode
+        - ConversationBufferMemory -> RunnableWithMessageHistory or LangGraph state
+
+        The main benefits of migrating: streaming works end-to-end, async is automatic,
+        error handling is more predictable, and LangSmith tracing is automatic without
+        explicit callback configuration.
+      tags: ["migration", "legacy", "upgrade"]
+
+code_examples:
+  - title: "Basic LCEL Chain"
+    language: "python"
+    code: |
+      from langchain_core.prompts import ChatPromptTemplate
+      from langchain_core.output_parsers import StrOutputParser
+      from langchain_openai import ChatOpenAI
+
+      prompt = ChatPromptTemplate.from_messages([
+          ("system", "You are a helpful assistant specialized in {domain}."),
+          ("human", "{question}")
+      ])
+
+      llm = ChatOpenAI(model="gpt-4o")
+      chain = prompt | llm | StrOutputParser()
+
+      # Invoke
+      result = chain.invoke({"domain": "AI infrastructure", "question": "What is RAG?"})
+
+      # Stream
+      for chunk in chain.stream({"domain": "AI infrastructure", "question": "What is RAG?"}):
+          print(chunk, end="", flush=True)
+
+  - title: "RAG Pipeline with Retrieval"
+    language: "python"
+    code: |
+      from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+      from langchain_pinecone import PineconeVectorStore
+      from langchain_core.prompts import ChatPromptTemplate
+      from langchain_core.runnables import RunnablePassthrough
+      from langchain_core.output_parsers import StrOutputParser
+
+      # Setup retriever
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+      vectorstore = PineconeVectorStore(index_name="docs", embedding=embeddings)
+      retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+
+      # Build RAG chain
+      prompt = ChatPromptTemplate.from_template(
+          "Answer based on context:\n{context}\n\nQuestion: {question}"
+      )
+
+      chain = (
+          {"context": retriever, "question": RunnablePassthrough()}
+          | prompt
+          | ChatOpenAI(model="gpt-4o")
+          | StrOutputParser()
+      )
+
+      answer = chain.invoke("How does vector indexing work?")
+
+  - title: "LangGraph Agent with Tools"
+    language: "python"
+    code: |
+      from langgraph.prebuilt import create_react_agent
+      from langchain_openai import ChatOpenAI
+      from langchain_core.tools import tool
+
+      @tool
+      def search_docs(query: str) -> str:
+          """Search the knowledge base for relevant documents."""
+          # Your retrieval logic here
+          return "Found relevant documents about: " + query
+
+      @tool
+      def calculate(expression: str) -> str:
+          """Evaluate a mathematical expression."""
+          return str(eval(expression))
+
+      llm = ChatOpenAI(model="gpt-4o")
+      agent = create_react_agent(llm, [search_docs, calculate])
+
+      # Run the agent
+      result = agent.invoke({
+          "messages": [("human", "What is the cost of 1M vectors at $0.33/month for 12 months?")]
+      })
+
+benchmarks:
+  last_run: "2026-02-15"
+  results:
+    - name: "simple_chain_latency"
+      value: 15
+      unit: "ms"
+      context: "LCEL chain overhead (prompt | llm | parser), excludes LLM call time"
+    - name: "rag_chain_latency_overhead"
+      value: 45
+      unit: "ms"
+      context: "RAG chain framework overhead, excludes embedding + retrieval + LLM time"
+    - name: "agent_step_overhead"
+      value: 8
+      unit: "ms"
+      context: "LangGraph per-step routing overhead"
+    - name: "streaming_first_token_overhead"
+      value: 5
+      unit: "ms"
+      context: "Additional latency added by LCEL streaming pipeline"
+    - name: "concurrent_chain_throughput"
+      value: 250
+      unit: "chains/sec"
+      context: "Async LCEL chains on single process, excludes LLM latency"
+
+relationships:
+  alternatives:
+    - slug: "llamaindex"
+      note: "More focused on data indexing and retrieval, less on agent orchestration"
+    - slug: "haystack"
+      note: "Pipeline-based framework with stronger typing and more structured approach"
+    - slug: "semantic_kernel"
+      note: "Microsoft's SDK with native .NET support and enterprise integration"
+  complements:
+    - slug: "pinecone"
+      role: "Vector store for RAG retrieval pipelines"
+    - slug: "openai"
+      role: "Primary LLM provider for chains and agents"
+    - slug: "anthropic"
+      role: "Alternative LLM provider with strong tool use capabilities"
+  typical_pipeline_position: "orchestration"
+  pipeline_predecessors: ["embeddings", "vector_databases", "data_ingestion"]
+  pipeline_successors: ["deployment", "evaluation"]

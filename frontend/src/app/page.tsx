@@ -1,15 +1,15 @@
 import Link from 'next/link';
 
 const CATEGORIES = [
-  { name: 'Data Ingestion', count: 3, icon: '📥' },
+  { name: 'Data Ingestion', count: 6, icon: '📥' },
   { name: 'Chunking', count: 3, icon: '✂️' },
-  { name: 'Embeddings', count: 4, icon: '🔢' },
-  { name: 'Vector Databases', count: 5, icon: '🗄️' },
+  { name: 'Embeddings', count: 6, icon: '🔢' },
+  { name: 'Vector Databases', count: 10, icon: '🗄️' },
   { name: 'RAG Architectures', count: 3, icon: '🔍' },
-  { name: 'LLMs', count: 5, icon: '🧠' },
-  { name: 'Frameworks', count: 4, icon: '🏗️' },
-  { name: 'Agent Systems', count: 4, icon: '🤖' },
-  { name: 'Evaluation', count: 3, icon: '📊' },
+  { name: 'LLMs', count: 14, icon: '🧠' },
+  { name: 'Agent Systems', count: 7, icon: '🤖' },
+  { name: 'Retrieval', count: 5, icon: '🔎' },
+  { name: 'Evaluation', count: 8, icon: '📊' },
 ];
 
 const FEATURES = [
@@ -64,7 +64,7 @@ export default function LandingPage() {
           <span className="text-blue-600">with confidence</span>
         </h1>
         <p className="mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-          54 technologies across 18 categories. An AI advisor that cross-questions you,
+          86 technologies across 18 categories. An AI advisor that cross-questions you,
           runs live comparisons, generates architecture diagrams, and produces starter code.
         </p>
         <div className="flex gap-4">
@@ -86,7 +86,7 @@ export default function LandingPage() {
       {/* Categories grid */}
       <section className="bg-gray-50 px-8 py-16 dark:bg-gray-900/50">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-8 text-center text-2xl font-bold">18 Categories, 54 Modules</h2>
+          <h2 className="mb-8 text-center text-2xl font-bold">18 Categories, 86 Modules</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORIES.map((cat) => (
               <div
@@ -102,7 +102,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="mt-4 text-center text-sm text-gray-500">
-            + 9 more categories including Monitoring, Security, Deployment, and more
+            + more categories including Security, Deployment, Caching, and Orchestration
           </p>
         </div>
       </section>

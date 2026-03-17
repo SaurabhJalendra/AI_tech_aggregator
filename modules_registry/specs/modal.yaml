@@ -1,0 +1,326 @@
+meta:
+  slug: "modal"
+  name: "Modal"
+  version: "1.0.0"
+  category: "deployment"
+  subcategory: "serverless_gpu"
+  status: "stable"
+  last_updated: "2026-03-06"
+  maintainer: "system"
+
+identity:
+  tagline: "Serverless GPU platform for deploying AI inference, training, and batch workloads"
+  description: |
+    Modal is a serverless cloud platform designed for running AI and compute-intensive
+    workloads. It provides on-demand access to GPUs (from T4 to H100) without the need
+    to manage infrastructure, containers, or orchestration. Developers define their
+    compute environment in Python code, and Modal handles provisioning, scaling,
+    scheduling, and teardown.
+
+    Modal's key innovation is its developer experience: functions are decorated with
+    @app.function() to specify compute requirements (GPU type, memory, concurrency), and
+    Modal handles everything else. There are no Dockerfiles to write, no Kubernetes to
+    manage, and no idle resources to pay for. Cold start times are typically under 5
+    seconds due to container image snapshotting.
+
+    Common use cases include LLM inference serving (vLLM, TGI), model fine-tuning,
+    batch embedding generation, data processing pipelines, and scheduled jobs. Modal
+    supports web endpoints, cron schedules, queues, and persistent volumes for model
+    weights and data.
+  logo_url: "/assets/modules/modal.svg"
+  website: "https://modal.com"
+  documentation: "https://modal.com/docs"
+  github: "https://github.com/modal-labs/modal-client"
+  license: "Proprietary"
+  pricing_model: "paid"
+
+capabilities:
+  primary_use_cases:
+    - "LLM inference serving with GPUs"
+    - "Model fine-tuning and training"
+    - "Batch embedding generation"
+    - "Data processing pipelines"
+    - "Scheduled AI workloads"
+    - "Web API deployment for AI models"
+  supported_operations:
+    - "gpu_function_execution"
+    - "web_endpoint_serving"
+    - "cron_scheduling"
+    - "batch_processing"
+    - "volume_management"
+    - "secret_management"
+    - "container_lifecycle"
+    - "concurrent_scaling"
+  integrations:
+    - slug: "vllm"
+      type: "compatible"
+    - slug: "ollama"
+      type: "compatible"
+    - slug: "langchain"
+      type: "compatible"
+    - slug: "llamaindex"
+      type: "compatible"
+
+technical_specs:
+  gpu_types:
+    - name: "T4"
+      vram_gb: 16
+      use_case: "Basic inference, small models"
+    - name: "L4"
+      vram_gb: 24
+      use_case: "Medium inference workloads"
+    - name: "A10G"
+      vram_gb: 24
+      use_case: "Inference and light training"
+    - name: "A100-40GB"
+      vram_gb: 40
+      use_case: "Large model inference, training"
+    - name: "A100-80GB"
+      vram_gb: 80
+      use_case: "Large model training, multi-model serving"
+    - name: "H100"
+      vram_gb: 80
+      use_case: "Fastest training and inference"
+  max_concurrent_containers: 1000
+  cold_start_time: "3-10 seconds"
+  max_function_timeout_hours: 24
+  persistent_volumes: true
+  web_endpoint_types:
+    - "REST API"
+    - "WebSocket"
+    - "ASGI"
+  sdk_language: "Python"
+  billing_model: "per-second GPU/CPU time"
+
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: "Access to latest GPUs including H100. Near-bare-metal performance. Fast cold starts due to container snapshotting."
+  scalability:
+    score: 9
+    justification: "Scales from zero to 1000+ concurrent containers automatically. No infrastructure management. True serverless scaling."
+  ease_of_use:
+    score: 9
+    justification: "Python-native API with decorators. No Docker/Kubernetes knowledge required. Excellent documentation and examples."
+  cost_efficiency:
+    score: 7
+    justification: "Pay per second with no idle costs. GPU pricing competitive with cloud providers. No commitment required. Can be expensive for sustained workloads."
+  community:
+    score: 7
+    justification: "Growing developer community. Active Discord. Good documentation and examples. Smaller than major cloud providers."
+  maturity:
+    score: 7
+    justification: "Production-ready platform used by many AI companies. Rapidly evolving with frequent new features."
+  flexibility:
+    score: 8
+    justification: "Supports any Python workload. Custom container images. Multiple GPU types. Flexible scheduling options."
+  data_privacy:
+    score: 6
+    justification: "Data processed on Modal's infrastructure. SOC2 compliant. Persistent volumes for data storage. No on-premises option."
+
+knowledge:
+  entries:
+    - topic: "Core Concepts and Developer Experience"
+      content: |
+        Modal's programming model centers on decorated Python functions:
+
+        @app.function(): Declares a function to run on Modal's infrastructure. Accepts
+        parameters for GPU type, memory, timeout, concurrency limits, and container image.
+
+        Image: Defines the container environment using a fluent API. modal.Image.debian_slim()
+        .pip_install("torch", "transformers") builds a container without writing Dockerfiles.
+
+        Volume: Persistent storage that survives container restarts. Used for model weights,
+        datasets, and checkpoints. Volumes are mounted into containers at specified paths.
+
+        Secret: Secure storage for API keys and credentials. Referenced by name in function
+        decorators. Never exposed in logs or code.
+
+        Web endpoint: Functions decorated with @app.web_endpoint() become HTTP endpoints with
+        automatic TLS, load balancing, and scaling. Supports FastAPI-style routing.
+
+        The development workflow: write Python code locally, run `modal run script.py` to
+        execute on Modal's infrastructure, or `modal deploy script.py` for persistent
+        deployment. No build/push/deploy cycle.
+      tags: ["concepts", "developer-experience", "api"]
+
+    - topic: "LLM Inference Deployment"
+      content: |
+        Modal is popular for deploying open-source LLMs for inference. Common patterns:
+
+        vLLM serving: Deploy vLLM as a Modal web endpoint with GPU. The model weights are
+        stored on a Modal Volume and loaded on container start. vLLM handles batching,
+        continuous batching, and KV cache management.
+
+        Container lifecycle: Use @app.cls() for class-based deployment where model loading
+        happens in __enter__ and inference in methods. This separates expensive model loading
+        from per-request inference.
+
+        Scaling: Set concurrency_limit and allow_concurrent_inputs to control how many
+        requests each container handles. Modal auto-scales containers based on queue depth.
+
+        Cost optimization: Use keep_warm=1 to maintain at least one warm container for low
+        latency. Use container_idle_timeout to control how long containers stay alive after
+        the last request. For batch workloads, allow containers to spin down to zero.
+
+        GPU selection: Llama 3 8B fits on a T4/L4 (16/24GB). Llama 3 70B needs A100-80GB
+        or multiple A10Gs. Use the smallest GPU that fits your model for cost efficiency.
+      tags: ["llm", "inference", "vllm", "deployment"]
+
+    - topic: "Batch Processing and Data Pipelines"
+      content: |
+        Modal excels at batch AI workloads that need GPUs but not 24/7 uptime:
+
+        Batch embeddings: Process millions of documents through an embedding model by mapping
+        a Modal function over inputs. Modal handles parallelization across multiple GPU
+        containers. .map() and .starmap() methods distribute work automatically.
+
+        Scheduled jobs: Use @app.function(schedule=modal.Cron("0 2 * * *")) for daily batch
+        jobs. Combine with Volumes to incrementally process new data.
+
+        Data pipelines: Chain Modal functions for multi-step processing. Step 1 extracts text
+        (CPU), step 2 generates embeddings (GPU), step 3 upserts to vector DB (CPU). Each
+        step scales independently.
+
+        Cost advantage: Batch workloads benefit most from Modal's serverless model. Instead of
+        running a GPU VM 24/7 ($2-5/hour), you pay only for actual processing time. A job that
+        takes 2 hours of GPU time costs 2 hours, even if it runs at 3 AM.
+
+        Fan-out pattern: For embarrassingly parallel workloads, Modal can spin up hundreds of
+        containers simultaneously. Processing 1M documents with 100 concurrent containers
+        takes 1/100th the wall-clock time of sequential processing.
+      tags: ["batch", "pipeline", "embeddings", "cost"]
+
+    - topic: "Comparison with Other Deployment Options"
+      content: |
+        Modal vs AWS/GCP/Azure VMs: Cloud VMs offer more control but require infrastructure
+        management (provisioning, scaling, monitoring). Modal eliminates ops overhead but at
+        a premium price for sustained workloads. Use Modal for variable/bursty workloads,
+        VMs for predictable sustained workloads.
+
+        Modal vs Replicate: Replicate is model-focused (deploy a model, get an API). Modal is
+        general-purpose compute (deploy any Python code). Replicate is easier for simple model
+        serving. Modal is more flexible for custom logic and pipelines.
+
+        Modal vs RunPod: RunPod offers serverless GPU with lower prices but less polished
+        developer experience. RunPod requires Docker images. Modal's Python-native approach
+        is faster to develop with. Choose RunPod for cost-sensitive production, Modal for
+        development speed.
+
+        Modal vs Beam/Banana: Similar serverless GPU platforms. Modal has the most polished
+        developer experience and best documentation. Others may offer lower prices or specific
+        features. Evaluate based on GPU availability and pricing for your specific needs.
+
+        When NOT to use Modal: (1) Sustained GPU workloads where reserved instances are cheaper,
+        (2) When you need on-premises deployment, (3) Very latency-sensitive applications where
+        cold starts are unacceptable, (4) Simple CPU workloads where traditional serverless
+        (Lambda, Cloud Functions) is cheaper.
+      tags: ["comparison", "decision", "cloud", "deployment"]
+
+code_examples:
+  - title: "GPU Function with Model Inference"
+    language: "python"
+    code: |
+      import modal
+
+      app = modal.App("llm-inference")
+
+      image = (
+          modal.Image.debian_slim(python_version="3.11")
+          .pip_install("torch", "transformers", "accelerate")
+      )
+
+      @app.cls(gpu="A10G", image=image, container_idle_timeout=300)
+      class Model:
+          @modal.enter()
+          def load_model(self):
+              from transformers import AutoModelForCausalLM, AutoTokenizer
+              self.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3-8B-Instruct")
+              self.model = AutoModelForCausalLM.from_pretrained(
+                  "meta-llama/Llama-3-8B-Instruct",
+                  device_map="auto"
+              )
+
+          @modal.web_endpoint(method="POST")
+          def generate(self, prompt: str):
+              inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
+              outputs = self.model.generate(**inputs, max_new_tokens=256)
+              return self.tokenizer.decode(outputs[0])
+
+  - title: "Batch Embedding Generation"
+    language: "python"
+    code: |
+      import modal
+
+      app = modal.App("batch-embeddings")
+      volume = modal.Volume.from_name("embedding-data", create_if_missing=True)
+
+      image = modal.Image.debian_slim().pip_install("sentence-transformers")
+
+      @app.function(gpu="T4", image=image, volumes={"/data": volume})
+      def embed_batch(texts: list[str]) -> list[list[float]]:
+          from sentence_transformers import SentenceTransformer
+          model = SentenceTransformer("BAAI/bge-large-en-v1.5", device="cuda")
+          return model.encode(texts).tolist()
+
+      @app.local_entrypoint()
+      def main():
+          documents = [...]  # load your documents
+          batches = [documents[i:i+64] for i in range(0, len(documents), 64)]
+
+          results = list(embed_batch.map(batches))
+          print(f"Generated embeddings for {sum(len(r) for r in results)} documents")
+
+  - title: "Scheduled Data Processing Job"
+    language: "python"
+    code: |
+      import modal
+
+      app = modal.App("daily-pipeline")
+
+      @app.function(
+          schedule=modal.Cron("0 2 * * *"),  # Run at 2 AM daily
+          timeout=3600,
+          secrets=[modal.Secret.from_name("api-keys")]
+      )
+      def daily_ingestion():
+          import os
+          # Fetch new documents, process, and embed
+          api_key = os.environ["OPENAI_API_KEY"]
+          # ... pipeline logic ...
+          print("Daily ingestion complete")
+
+benchmarks:
+  last_run: "2026-03-01"
+  results:
+    - name: "cold_start_t4"
+      value: 4.2
+      unit: "seconds"
+      context: "T4 GPU, pre-built image with PyTorch"
+    - name: "cold_start_a100"
+      value: 6.8
+      unit: "seconds"
+      context: "A100-80GB, pre-built image with vLLM"
+    - name: "scale_up_time"
+      value: 8
+      unit: "seconds"
+      context: "Time to scale from 1 to 10 containers"
+    - name: "embedding_throughput"
+      value: 2500
+      unit: "texts/sec"
+      context: "BGE-large on T4, batch size 64, 100 concurrent containers"
+
+relationships:
+  alternatives:
+    - slug: "vllm"
+      note: "LLM serving engine that can be deployed on Modal or self-hosted"
+  complements:
+    - slug: "vllm"
+      role: "LLM inference engine commonly deployed on Modal GPUs"
+    - slug: "langchain"
+      role: "Orchestration framework that calls Modal-deployed models"
+    - slug: "llamaindex"
+      role: "RAG framework that can use Modal-deployed inference endpoints"
+  typical_pipeline_position: "deployment"
+  pipeline_predecessors: ["fine_tuning", "llm_layer"]
+  pipeline_successors: []

@@ -1,0 +1,198 @@
+meta:
+  slug: "lancedb"
+  name: "LanceDB"
+  version: "1.0.0"
+  category: "vector_databases"
+  subcategory: "embedded"
+  status: "stable"
+  last_updated: "2026-02-28"
+  maintainer: "system"
+
+identity:
+  tagline: "Serverless, embedded vector database built on Lance columnar format"
+  description: |
+    LanceDB is an open-source, embedded vector database built on the Lance columnar
+    data format. It runs in-process with your application, requiring no separate
+    server or infrastructure. Data is stored in Lance format on local disk or
+    cloud object storage (S3, GCS, Azure Blob).
+
+    LanceDB supports multi-modal data (vectors, text, images, video) stored together
+    in a single table with full SQL filtering capabilities. The Lance format provides
+    efficient columnar access, versioning, and fast random access patterns ideal
+    for vector search workloads.
+
+    The embedded architecture makes LanceDB ideal for edge deployments, development
+    environments, and applications where operational simplicity is valued. It
+    supports both Python and JavaScript SDKs and integrates with LangChain and
+    LlamaIndex.
+  logo_url: "/assets/modules/lancedb.svg"
+  website: "https://lancedb.com"
+  documentation: "https://lancedb.github.io/lancedb/"
+  github: "https://github.com/lancedb/lancedb"
+  license: "Apache-2.0"
+  pricing_model: "open_source"
+
+capabilities:
+  primary_use_cases:
+    - "Embedded vector search"
+    - "Multi-modal data storage and retrieval"
+    - "Edge and serverless vector search"
+    - "RAG without infrastructure"
+    - "Development and prototyping"
+  supported_operations:
+    - "add"
+    - "search"
+    - "delete"
+    - "update"
+    - "create_index"
+    - "sql_filter"
+  integrations:
+    - slug: "langchain"
+      type: "native"
+    - slug: "llamaindex"
+      type: "native"
+
+technical_specs:
+  architecture: "embedded (in-process)"
+  storage_format: "Lance columnar"
+  storage_backends:
+    - "local disk"
+    - "S3"
+    - "GCS"
+    - "Azure Blob"
+  index_types:
+    - "IVF_PQ"
+    - "IVF_HNSW_PQ"
+    - "IVF_HNSW_SQ"
+  distance_metrics:
+    - "L2"
+    - "cosine"
+    - "dot"
+  multi_modal: true
+  sql_filtering: true
+  versioning: true
+  sdk_languages:
+    - "python"
+    - "node"
+    - "rust"
+
+comparison_dimensions:
+  performance:
+    score: 7
+    justification: "Good query performance for datasets that fit in memory. Lance format provides efficient I/O patterns."
+  scalability:
+    score: 5
+    justification: "Embedded architecture limits scalability. Best for datasets under 100M vectors. No distributed mode."
+  ease_of_use:
+    score: 9
+    justification: "Zero infrastructure setup. Import and use in Python with no server needed."
+  cost_efficiency:
+    score: 10
+    justification: "Open-source with no server costs. Storage on local disk or cheap object storage."
+  community:
+    score: 6
+    justification: "Growing community. Smaller than established vector databases but active development."
+  maturity:
+    score: 5
+    justification: "Relatively new database. Core Lance format is stable but the database layer is still maturing."
+  flexibility:
+    score: 7
+    justification: "Multi-modal support, SQL filtering, cloud storage backends. Limited by embedded architecture."
+  data_privacy:
+    score: 10
+    justification: "Fully local. Data stored on your own disk or cloud storage. No external services."
+
+knowledge:
+  entries:
+    - topic: "LanceDB vs ChromaDB"
+      content: |
+        Both are embedded vector databases but with different strengths:
+
+        LanceDB advantages: Lance columnar format for efficient storage, cloud
+        object storage support (S3/GCS), multi-modal data, SQL filtering,
+        data versioning, better for larger datasets.
+
+        ChromaDB advantages: simpler API, easier to get started, more framework
+        integrations, larger community, client-server mode for production.
+
+        Choose LanceDB when: you need cloud storage backends, multi-modal data,
+        SQL filtering, data versioning, or are building edge/serverless applications.
+
+        Choose ChromaDB when: you want the simplest possible API for prototyping,
+        need client-server architecture, or want the largest community ecosystem.
+      tags: ["comparison", "chromadb"]
+
+code_examples:
+  - title: "Basic Vector Search"
+    language: "python"
+    code: |
+      import lancedb
+      import numpy as np
+
+      db = lancedb.connect("./my-lance-db")
+
+      # Create table with vectors
+      data = [
+          {"text": "RAG pipeline guide", "vector": np.random.randn(384).tolist()},
+          {"text": "Vector database comparison", "vector": np.random.randn(384).tolist()},
+          {"text": "LLM deployment tips", "vector": np.random.randn(384).tolist()},
+      ]
+
+      table = db.create_table("docs", data)
+
+      # Search
+      query_vector = np.random.randn(384).tolist()
+      results = table.search(query_vector).limit(3).to_pandas()
+      print(results[["text", "_distance"]])
+
+  - title: "LangChain Integration"
+    language: "python"
+    code: |
+      from langchain_community.vectorstores import LanceDB
+      from langchain_openai import OpenAIEmbeddings
+      import lancedb
+
+      db = lancedb.connect("./lance-store")
+      embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+      vectorstore = LanceDB.from_documents(
+          documents,
+          embeddings,
+          connection=db,
+          table_name="knowledge-base"
+      )
+
+      results = vectorstore.similarity_search("How does RAG work?", k=5)
+
+benchmarks:
+  last_run: "2026-02-10"
+  results:
+    - name: "query_latency_1m"
+      value: 8
+      unit: "ms"
+      context: "384-dim, top-k=10, 1M vectors, IVF_PQ index"
+    - name: "insert_throughput"
+      value: 50000
+      unit: "vectors/second"
+      context: "384-dim, batch insert"
+    - name: "recall_at_10"
+      value: 0.92
+      unit: "ratio"
+      context: "384-dim, 1M vectors, IVF_PQ index"
+
+relationships:
+  alternatives:
+    - slug: "chromadb"
+      note: "Simpler embedded vector database with client-server option"
+    - slug: "pinecone"
+      note: "Managed vector database for production scale"
+    - slug: "qdrant"
+      note: "Feature-rich vector database with client-server architecture"
+  complements:
+    - slug: "sentence_transformers"
+      role: "Local embedding generation paired with local vector storage"
+    - slug: "langchain"
+      role: "Orchestration framework with LanceDB vector store integration"
+  typical_pipeline_position: "vector_store"
+  pipeline_predecessors: ["embeddings"]
+  pipeline_successors: ["reranking", "llm_generation"]
