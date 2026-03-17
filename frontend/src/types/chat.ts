@@ -28,13 +28,13 @@ export interface ChatMessage {
 
 /** Shape of the SSE events streamed from the backend */
 export interface SSEEvent {
-  event: 'token' | 'panel_command' | 'done' | 'error';
+  event: 'text' | 'panel_command' | 'done' | 'error' | 'meta';
   data: string; // JSON-encoded payload
 }
 
-/** Payload for the token SSE event */
-export interface TokenEventData {
-  token: string;
+/** Payload for the text SSE event */
+export interface TextEventData {
+  content: string;
 }
 
 /** Payload for the panel_command SSE event */

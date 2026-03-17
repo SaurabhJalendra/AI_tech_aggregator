@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
@@ -14,11 +12,8 @@ from src.services.chat_service import ChatService
 
 router = APIRouter(tags=["chat"])
 
-limiter = Limiter(key_func=get_remote_address)
-
 
 @router.post("/advisor/chat")
-@limiter.limit(f"{settings.free_tier_conversations_per_day}/day")
 async def advisor_chat(
     request: Request,
     chat_request: ChatRequest,

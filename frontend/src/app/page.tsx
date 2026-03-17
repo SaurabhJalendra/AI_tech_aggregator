@@ -10,6 +10,15 @@ const CATEGORIES = [
   { name: 'Agent Systems', count: 7, icon: '🤖' },
   { name: 'Retrieval', count: 5, icon: '🔎' },
   { name: 'Evaluation', count: 8, icon: '📊' },
+  { name: 'Caching', count: 3, icon: '⚡' },
+  { name: 'Deployment', count: 4, icon: '🚀' },
+  { name: 'Guardrails', count: 2, icon: '🛡️' },
+  { name: 'Observability', count: 3, icon: '📡' },
+  { name: 'Orchestration', count: 2, icon: '🔗' },
+  { name: 'Fine-Tuning', count: 3, icon: '🎯' },
+  { name: 'Structured Output', count: 2, icon: '📋' },
+  { name: 'Speech & Audio', count: 2, icon: '🎙️' },
+  { name: 'Search', count: 3, icon: '🔍' },
 ];
 
 const FEATURES = [
@@ -101,9 +110,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-center text-sm text-gray-500">
-            + more categories including Security, Deployment, Caching, and Orchestration
-          </p>
         </div>
       </section>
 

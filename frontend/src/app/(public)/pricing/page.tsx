@@ -8,7 +8,7 @@ const TIERS = [
     description: 'Get started with the AI advisor',
     features: [
       '10 advisor conversations/month',
-      'Browse all 54 modules',
+      'Browse all 86 modules',
       'Basic comparisons (2 modules)',
       'Community support',
     ],
@@ -130,7 +130,7 @@ export default function PricingPage() {
         </div>
 
         <div className="mt-12 text-center text-sm text-gray-500">
-          All plans include access to all 54 modules and the knowledge base.
+          All plans include access to all 86 modules and the knowledge base.
           <br />
           Need a custom plan?{' '}
           <Link href="/advisor" className="text-blue-600 hover:underline">

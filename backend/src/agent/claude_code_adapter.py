@@ -56,6 +56,7 @@ class ClaudeCodeAdapter:
             "--no-session-persistence",
             "--disable-slash-commands",
             "--permission-mode", "bypassPermissions",
+            "--max-budget-usd", "1.0",
         ]
 
         # Add MCP config if available
@@ -73,7 +74,13 @@ class ClaudeCodeAdapter:
         last_yielded_pos = 0
 
         try:
+            deadline = asyncio.get_event_loop().time() + 120
+
             async for line in process.stdout:
+                if asyncio.get_event_loop().time() > deadline:
+                    yield {"type": "text", "content": "\n\n*Error: Claude Code subprocess timed out after 120 seconds.*"}
+                    break
+
                 decoded = line.decode("utf-8").strip()
                 if not decoded:
                     continue

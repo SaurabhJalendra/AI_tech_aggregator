@@ -6,6 +6,7 @@ interface ChatState {
   messages: ChatMessage[];
   sessionId: string | null;
   isStreaming: boolean;
+  abortController: AbortController | null;
 
   // Actions
   sendMessage: (content: string) => void;
@@ -27,9 +28,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   sessionId: null,
   isStreaming: false,
+  abortController: null,
 
   sendMessage: (content: string) => {
-    const { addUserMessage, addAssistantMessage, sessionId, setIsStreaming } = get();
+    const { addUserMessage, addAssistantMessage, sessionId, setIsStreaming, abortController } = get();
+
+    // Abort any previous in-flight request
+    if (abortController) {
+      abortController.abort();
+    }
+
+    const controller = new AbortController();
+    set({ abortController: controller });
 
     addUserMessage(content);
     const assistantId = addAssistantMessage();
@@ -47,6 +57,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         Authorization: 'Bearer dev@example.com',
       },
       body,
+      signal: controller.signal,
     })
       .then(async (response) => {
         if (!response.ok || !response.body) {
@@ -98,14 +109,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
 
         get().finishStreaming(assistantId);
+        set({ abortController: null });
       })
       .catch((error) => {
+        if (error?.name === 'AbortError') return;
         console.error('Chat stream error:', error);
         get().appendStreamChunk(
           assistantId,
           '\n\n*An error occurred. Please try again.*'
         );
         get().finishStreaming(assistantId);
+        set({ abortController: null });
       });
   },
 
@@ -175,7 +189,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearMessages: () => {
-    set({ messages: [], sessionId: null, isStreaming: false });
+    const { abortController } = get();
+    if (abortController) {
+      abortController.abort();
+    }
+    set({ messages: [], sessionId: null, isStreaming: false, abortController: null });
   },
 
   setIsStreaming: (streaming: boolean) => {

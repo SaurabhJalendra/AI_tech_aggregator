@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.core.security import get_current_user, _get_or_create_dev_user
 from src.db.session import get_db
 from src.models.user import User
@@ -24,6 +25,8 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     Dev-only login endpoint. In production, auth goes through NextAuth directly.
     Accepts any email/password combination and creates/returns the user.
     """
+    if settings.environment != "development":
+        raise HTTPException(403, "Login disabled in production")
     user = await _get_or_create_dev_user(db, request.email)
     return LoginResponse(
         user={

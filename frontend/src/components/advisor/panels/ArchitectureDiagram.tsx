@@ -19,19 +19,19 @@ interface ArchitectureDiagramProps {
   data: Record<string, unknown>;
 }
 
-const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  data_ingestion: { bg: 'bg-amber-50', border: 'border-amber-400', text: 'text-amber-800' },
-  chunking: { bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-800' },
-  embeddings: { bg: 'bg-yellow-50', border: 'border-yellow-500', text: 'text-yellow-800' },
-  vector_databases: { bg: 'bg-emerald-50', border: 'border-emerald-400', text: 'text-emerald-800' },
-  retrieval: { bg: 'bg-teal-50', border: 'border-teal-400', text: 'text-teal-800' },
-  rag_architectures: { bg: 'bg-cyan-50', border: 'border-cyan-400', text: 'text-cyan-800' },
-  llm_layer: { bg: 'bg-blue-50', border: 'border-blue-400', text: 'text-blue-800' },
-  agent_systems: { bg: 'bg-violet-50', border: 'border-violet-400', text: 'text-violet-800' },
-  evaluation: { bg: 'bg-purple-50', border: 'border-purple-400', text: 'text-purple-800' },
-  caching: { bg: 'bg-pink-50', border: 'border-pink-400', text: 'text-pink-800' },
-  deployment: { bg: 'bg-rose-50', border: 'border-rose-400', text: 'text-rose-800' },
-  default: { bg: 'bg-gray-50', border: 'border-gray-400', text: 'text-gray-800' },
+const CATEGORY_COLORS: Record<string, { fill: string; stroke: string; text: string }> = {
+  data_ingestion: { fill: '#fffbeb', stroke: '#f59e0b', text: '#92400e' },
+  chunking: { fill: '#fff7ed', stroke: '#fb923c', text: '#9a3412' },
+  embeddings: { fill: '#fefce8', stroke: '#eab308', text: '#854d0e' },
+  vector_databases: { fill: '#ecfdf5', stroke: '#34d399', text: '#065f46' },
+  retrieval: { fill: '#f0fdfa', stroke: '#2dd4bf', text: '#115e59' },
+  rag_architectures: { fill: '#ecfeff', stroke: '#22d3ee', text: '#155e75' },
+  llm_layer: { fill: '#eff6ff', stroke: '#60a5fa', text: '#1e40af' },
+  agent_systems: { fill: '#f5f3ff', stroke: '#8b5cf6', text: '#5b21b6' },
+  evaluation: { fill: '#faf5ff', stroke: '#a855f7', text: '#6b21a8' },
+  caching: { fill: '#fdf2f8', stroke: '#ec4899', text: '#9d174d' },
+  deployment: { fill: '#fff1f2', stroke: '#fb7185', text: '#9f1239' },
+  default: { fill: '#f9fafb', stroke: '#9ca3af', text: '#1f2937' },
 };
 
 function getColor(category: string) {
@@ -185,7 +185,8 @@ export default function ArchitectureDiagram({ data }: ArchitectureDiagramProps) 
                   x={(startX + endX) / 2}
                   y={(startY + endY) / 2 - 8}
                   textAnchor="middle"
-                  className="fill-gray-500 text-xs"
+                  fill="#6b7280"
+                  fontSize={12}
                 >
                   {edge.label}
                 </text>
@@ -209,9 +210,8 @@ export default function ArchitectureDiagram({ data }: ArchitectureDiagramProps) 
                 height={nodeHeight}
                 rx={8}
                 ry={8}
-                className={`${color.bg} ${color.border}`}
-                fill="white"
-                stroke="currentColor"
+                fill={color.fill}
+                stroke={color.stroke}
                 strokeWidth={2}
                 style={{ filter: 'drop-shadow(0 1px 2px rgb(0 0 0 / 0.1))' }}
               />
@@ -219,8 +219,9 @@ export default function ArchitectureDiagram({ data }: ArchitectureDiagramProps) 
                 x={p.x + nodeWidth / 2}
                 y={p.y + nodeHeight / 2 - 6}
                 textAnchor="middle"
-                className={`${color.text} text-sm font-semibold`}
-                fill="currentColor"
+                fill={color.text}
+                fontSize={14}
+                fontWeight={600}
               >
                 {node.label}
               </text>
@@ -228,7 +229,8 @@ export default function ArchitectureDiagram({ data }: ArchitectureDiagramProps) 
                 x={p.x + nodeWidth / 2}
                 y={p.y + nodeHeight / 2 + 14}
                 textAnchor="middle"
-                className="fill-gray-400 text-xs"
+                fill="#9ca3af"
+                fontSize={12}
               >
                 {node.category.replace(/_/g, ' ')}
               </text>

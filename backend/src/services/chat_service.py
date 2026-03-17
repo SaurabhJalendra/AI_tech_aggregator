@@ -69,40 +69,44 @@ class ChatService:
         collected_text = ""
         collected_panel_commands = []
 
-        async for sse_event in agent.stream_response(
-            messages=claude_messages,
-            module_count=module_count,
-            category_count=category_count,
-        ):
-            yield sse_event
+        try:
+            async for sse_event in agent.stream_response(
+                messages=claude_messages,
+                module_count=module_count,
+                category_count=category_count,
+            ):
+                yield sse_event
 
-            # Parse the event to collect text/commands for saving
-            try:
-                if sse_event.startswith("data: "):
-                    data = json.loads(sse_event[6:].strip())
-                    if data.get("type") == "text":
-                        collected_text += data.get("content", "")
-                    elif data.get("type") == "panel_command":
-                        collected_panel_commands.append(data.get("command"))
-            except (json.JSONDecodeError, KeyError):
-                pass
+                # Parse the event to collect text/commands for saving
+                try:
+                    if sse_event.startswith("data: "):
+                        data = json.loads(sse_event[6:].strip())
+                        if data.get("type") == "text":
+                            collected_text += data.get("content", "")
+                        elif data.get("type") == "panel_command":
+                            collected_panel_commands.append(data.get("command"))
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+        finally:
+            # Save assistant message (even if partial)
+            if collected_text or collected_panel_commands:
+                assistant_msg = Message(
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content={"text": collected_text},
+                    panel_commands=collected_panel_commands if collected_panel_commands else None,
+                    sequence_num=conversation.message_count + 1,
+                )
+                self.db.add(assistant_msg)
+                conversation.message_count += 1
 
-        # Save assistant message
-        assistant_msg = Message(
-            conversation_id=conversation.id,
-            role="assistant",
-            content={"text": collected_text},
-            panel_commands=collected_panel_commands if collected_panel_commands else None,
-            sequence_num=conversation.message_count + 1,
-        )
-        self.db.add(assistant_msg)
-        conversation.message_count += 1
+            # Update conversation title if it's the first exchange
+            if conversation.message_count <= 2 and not conversation.title:
+                conversation.title = message[:100]
 
-        # Update conversation title if it's the first exchange
-        if conversation.message_count <= 2 and not conversation.title:
-            conversation.title = message[:100]
-
-        await self.db.flush()
+            await self.db.flush()
 
     async def _get_or_create_conversation(
         self, user: User, session_id: str | None
@@ -120,7 +124,7 @@ class ChatService:
                 conversation = result.scalar_one_or_none()
                 if conversation:
                     return conversation
-            except (ValueError, Exception):
+            except ValueError:
                 pass
 
         # Create new conversation

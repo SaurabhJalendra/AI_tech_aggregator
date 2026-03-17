@@ -76,7 +76,10 @@ async def main():
     print("=" * 60)
     print("AI Infrastructure Advisor - Database Seed")
     print("=" * 60)
-    print(f"Database: {settings.database_url}")
+    # Mask password in database URL for safe logging
+    import re
+    masked_url = re.sub(r'://([^:]+):([^@]+)@', r'://\1:***@', settings.database_url)
+    print(f"Database: {masked_url}")
     print()
 
     # Create tables if they don't exist
