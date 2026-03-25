@@ -85,6 +85,23 @@ class ModuleService:
             })
         return categories
 
+    async def list_categories_with_slugs(self) -> list[dict]:
+        """Return categories with their module slugs for prompt injection."""
+        result = await self.db.execute(
+            select(ModuleCategory)
+            .options(selectinload(ModuleCategory.modules))
+            .order_by(ModuleCategory.display_order)
+        )
+        categories = result.scalars().all()
+        return [
+            {
+                "slug": cat.slug,
+                "name": cat.name,
+                "module_slugs": [m.slug for m in cat.modules],
+            }
+            for cat in categories
+        ]
+
     async def search_knowledge(
         self,
         query: str,

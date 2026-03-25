@@ -98,6 +98,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
                   get().setSessionId(parsed.session_id);
                 }
 
+                if (parsed.type === 'tool_activity') {
+                  const activity = parsed as unknown as { tool: string; status: string; message?: string };
+                  set((state) => ({
+                    messages: state.messages.map((msg) =>
+                      msg.id === assistantId
+                        ? {
+                            ...msg,
+                            toolActivities: [
+                              ...(msg.toolActivities || []),
+                              {
+                                tool: activity.tool,
+                                status: activity.status as 'running' | 'complete',
+                                message: activity.message,
+                              },
+                            ],
+                          }
+                        : msg
+                    ),
+                  }));
+                }
+
                 if (parsed.type === 'done') {
                   // Stream complete
                 }

@@ -17,18 +17,26 @@ export interface PanelCommand {
   title?: string;
 }
 
+/** Tool activity indicator shown during assistant streaming */
+export interface ToolActivity {
+  tool: string;
+  status: 'running' | 'complete';
+  message?: string;
+}
+
 /** A single chat message in the conversation */
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   panelCommands?: PanelCommand[];
+  toolActivities?: ToolActivity[];
   timestamp: Date;
 }
 
 /** Shape of the SSE events streamed from the backend */
 export interface SSEEvent {
-  event: 'text' | 'panel_command' | 'done' | 'error' | 'meta';
+  event: 'text' | 'panel_command' | 'tool_activity' | 'done' | 'error' | 'meta';
   data: string; // JSON-encoded payload
 }
 

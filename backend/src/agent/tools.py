@@ -236,6 +236,19 @@ TOOL_GET_BENCHMARKS = {
     },
 }
 
+TOOL_LIST_CATEGORIES = {
+    "name": "list_categories",
+    "description": (
+        "List all available technology categories with their module counts. "
+        "Use this when the user asks what categories or types of technologies are available, "
+        "or when you need to understand the full scope of the catalog."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {},
+    },
+}
+
 TOOL_SUGGEST_STACK = {
     "name": "suggest_stack",
     "description": (
@@ -280,6 +293,7 @@ ALL_TOOLS = [
     TOOL_GET_MODULE_DETAIL,
     TOOL_COMPARE_MODULES,
     TOOL_SEARCH_KNOWLEDGE,
+    TOOL_LIST_CATEGORIES,
     TOOL_RENDER_ARCHITECTURE,
     TOOL_RENDER_COMPARISON,
     TOOL_RENDER_CODE,

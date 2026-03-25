@@ -8,10 +8,12 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agent.advisor import AdvisorAgent
+from src.agent.prompts import build_catalog_section
 from src.core.config import settings
 from src.models.conversation import Conversation, Message
 from src.models.module import Module, ModuleCategory
 from src.models.user import User
+from src.services.module_service import ModuleService
 
 
 class ChatService:
@@ -47,13 +49,18 @@ class ChatService:
         # Build messages for Claude from conversation history
         claude_messages = await self._build_claude_messages(conversation)
 
-        # Get module/category counts for system prompt
+        # Get module/category counts and catalog for system prompt
         module_count = (
             await self.db.execute(select(func.count(Module.id)))
         ).scalar() or 0
         category_count = (
             await self.db.execute(select(func.count(ModuleCategory.id)))
         ).scalar() or 0
+
+        # Build catalog section with all categories and module slugs
+        module_svc = ModuleService(self.db)
+        categories_with_slugs = await module_svc.list_categories_with_slugs()
+        catalog_section = build_catalog_section(categories_with_slugs)
 
         # Emit session_id first
         yield f"data: {json.dumps({'type': 'meta', 'session_id': str(conversation.id)})}\n\n"
@@ -74,6 +81,7 @@ class ChatService:
                 messages=claude_messages,
                 module_count=module_count,
                 category_count=category_count,
+                catalog_section=catalog_section,
             ):
                 yield sse_event
 

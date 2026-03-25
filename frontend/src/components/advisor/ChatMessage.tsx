@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
+import ToolActivityIndicator from './ToolActivityIndicator';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -107,6 +108,12 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           </div>
         ) : (
           <div className="break-words">
+            {message.toolActivities && message.toolActivities.length > 0 && (
+              <ToolActivityIndicator
+                activities={message.toolActivities}
+                hasContent={message.content.length > 0}
+              />
+            )}
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={markdownComponents}

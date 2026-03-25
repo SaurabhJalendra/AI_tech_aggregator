@@ -49,12 +49,13 @@ class AdvisorAgent:
         messages: list[dict],
         module_count: int = 0,
         category_count: int = 0,
+        catalog_section: str = "",
     ) -> AsyncGenerator[str, None]:
         """
         Process conversation through Claude.
         Yields SSE-formatted events.
         """
-        system_prompt = build_system_prompt(module_count, category_count)
+        system_prompt = build_system_prompt(module_count, category_count, catalog_section)
 
         if self.use_claude_code:
             async for event in self._stream_claude_code(system_prompt, messages):
@@ -89,6 +90,8 @@ class AdvisorAgent:
         # Agent loop: keep calling Claude until no more tool_use
         max_iterations = 10
         iteration = 0
+        seen_tool_calls: set[str] = set()
+
         while True:
             iteration += 1
             if iteration > max_iterations:
@@ -125,10 +128,35 @@ class AdvisorAgent:
 
             # Execute tools and build tool results
             tool_results = []
+            duplicate_detected = False
             for tool_block in tool_use_blocks:
+                tool_name = tool_block.name
+                tool_input = tool_block.input
+
+                # Duplicate tool call detection
+                call_key = f"{tool_name}:{json.dumps(tool_input, sort_keys=True)}"
+                if call_key in seen_tool_calls:
+                    yield _sse_event("text", {"content": "\n\nI've already tried that search. Let me work with what I found.\n"})
+                    # Still provide a tool_result to satisfy the API contract
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tool_block.id,
+                        "content": json.dumps({"error": "Duplicate tool call skipped"}),
+                    })
+                    duplicate_detected = True
+                    continue
+                seen_tool_calls.add(call_key)
+
+                # Emit tool activity start event
+                activity_message = _tool_activity_message(tool_name, tool_input)
+                yield _sse_event("tool_activity", {"tool": tool_name, "status": "running", "message": activity_message})
+
                 result, panel_command = await self._execute_tool(
-                    tool_block.name, tool_block.input
+                    tool_name, tool_input
                 )
+
+                # Emit tool activity complete event
+                yield _sse_event("tool_activity", {"tool": tool_name, "status": "complete"})
 
                 tool_results.append({
                     "type": "tool_result",
@@ -139,6 +167,13 @@ class AdvisorAgent:
                 if panel_command:
                     yield _sse_event("panel_command", {"command": panel_command})
 
+            # If all tool calls in this iteration were duplicates, break out
+            if duplicate_detected and all(
+                "Duplicate tool call skipped" in r.get("content", "")
+                for r in tool_results
+            ):
+                break
+
             messages.append({"role": "user", "content": tool_results})
 
         yield _sse_event("done", {})
@@ -147,26 +182,31 @@ class AdvisorAgent:
         self, tool_name: str, tool_input: dict
     ) -> tuple[dict, dict | None]:
         """Execute a tool and return (result_data, optional_panel_command)."""
-        if tool_name == "search_modules":
-            return await self._tool_search_modules(tool_input)
-        elif tool_name == "get_module_detail":
-            return await self._tool_get_module_detail(tool_input)
-        elif tool_name == "compare_modules":
-            return await self._tool_compare_modules(tool_input)
-        elif tool_name == "search_knowledge":
-            return await self._tool_search_knowledge(tool_input)
-        elif tool_name == "render_architecture_diagram":
-            return self._tool_render_architecture(tool_input)
-        elif tool_name == "render_comparison":
-            return self._tool_render_comparison(tool_input)
-        elif tool_name == "render_code_example":
-            return self._tool_render_code(tool_input)
-        elif tool_name == "get_benchmarks":
-            return await self._tool_get_benchmarks(tool_input)
-        elif tool_name == "suggest_stack":
-            return await self._tool_suggest_stack(tool_input)
-        else:
-            return {"error": f"Unknown tool: {tool_name}"}, None
+        try:
+            if tool_name == "search_modules":
+                return await self._tool_search_modules(tool_input)
+            elif tool_name == "get_module_detail":
+                return await self._tool_get_module_detail(tool_input)
+            elif tool_name == "compare_modules":
+                return await self._tool_compare_modules(tool_input)
+            elif tool_name == "search_knowledge":
+                return await self._tool_search_knowledge(tool_input)
+            elif tool_name == "list_categories":
+                return await self._tool_list_categories(tool_input)
+            elif tool_name == "render_architecture_diagram":
+                return self._tool_render_architecture(tool_input)
+            elif tool_name == "render_comparison":
+                return self._tool_render_comparison(tool_input)
+            elif tool_name == "render_code_example":
+                return self._tool_render_code(tool_input)
+            elif tool_name == "get_benchmarks":
+                return await self._tool_get_benchmarks(tool_input)
+            elif tool_name == "suggest_stack":
+                return await self._tool_suggest_stack(tool_input)
+            else:
+                return {"error": f"Unknown tool: {tool_name}"}, None
+        except Exception as e:
+            return {"error": f"Tool '{tool_name}' failed: {str(e)}"}, None
 
     async def _tool_search_modules(self, input: dict) -> tuple[dict, None]:
         modules, total = await self.module_service.list_modules(
@@ -229,6 +269,10 @@ class AdvisorAgent:
             limit=input.get("limit", 5),
         )
         return {"entries": entries, "count": len(entries)}, None
+
+    async def _tool_list_categories(self, input: dict) -> tuple[dict, None]:
+        categories = await self.module_service.list_categories()
+        return {"categories": categories, "count": len(categories)}, None
 
     def _tool_render_architecture(self, input: dict) -> tuple[dict, dict]:
         panel_command = {
@@ -400,6 +444,37 @@ RULES:
 - Use these markers instead of just describing what should be shown
 - Always include the panel command when showing comparisons, diagrams, or code
 """
+
+
+def _tool_activity_message(tool_name: str, tool_input: dict) -> str:
+    """Generate a human-readable activity message for a tool call."""
+    if tool_name == "search_modules":
+        query = tool_input.get("query", "")
+        category = tool_input.get("category", "")
+        if category:
+            return f"Searching {category} modules for '{query}'..."
+        return f"Searching modules for '{query}'..."
+    elif tool_name == "get_module_detail":
+        return f"Fetching details for {tool_input.get('slug', 'module')}..."
+    elif tool_name == "compare_modules":
+        slugs = tool_input.get("slugs", [])
+        return f"Comparing {' vs '.join(slugs)}..."
+    elif tool_name == "search_knowledge":
+        return f"Searching knowledge base for '{tool_input.get('query', '')}'..."
+    elif tool_name == "list_categories":
+        return "Listing available categories..."
+    elif tool_name == "get_benchmarks":
+        slugs = tool_input.get("slugs", [])
+        return f"Fetching benchmarks for {', '.join(slugs)}..."
+    elif tool_name == "suggest_stack":
+        return "Building stack recommendation..."
+    elif tool_name == "render_architecture_diagram":
+        return f"Rendering architecture diagram: {tool_input.get('title', '')}..."
+    elif tool_name == "render_comparison":
+        return "Rendering comparison visualization..."
+    elif tool_name == "render_code_example":
+        return f"Rendering code example: {tool_input.get('title', '')}..."
+    return f"Running {tool_name}..."
 
 
 def _sse_event(event_type: str, data: dict) -> str:

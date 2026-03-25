@@ -68,9 +68,25 @@ not a salesperson. Be honest about trade-offs. If a technology has limitations, 
 """
 
 
-def build_system_prompt(module_count: int, category_count: int) -> str:
-    """Build the system prompt with dynamic module/category counts."""
-    return ADVISOR_SYSTEM_PROMPT.replace(
+def build_catalog_section(categories: list[dict]) -> str:
+    """Build a module catalog section for the system prompt."""
+    lines = ["\n## Available Modules\n", "Use exact slugs when calling tools.\n"]
+    for cat in categories:
+        slugs = ", ".join(cat["module_slugs"])
+        lines.append(f"- **{cat['name']}** ({len(cat['module_slugs'])}): {slugs}")
+    return "\n".join(lines)
+
+
+def build_system_prompt(
+    module_count: int,
+    category_count: int,
+    catalog_section: str = "",
+) -> str:
+    """Build the system prompt with dynamic module/category counts and catalog."""
+    prompt = ADVISOR_SYSTEM_PROMPT.replace(
         "technology modules spanning",
         f"{module_count} technology modules across {category_count} categories spanning",
     )
+    if catalog_section:
+        prompt += catalog_section
+    return prompt
