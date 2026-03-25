@@ -8,6 +8,7 @@ import ComparisonChart from './panels/ComparisonChart';
 import CodePreview from './panels/CodePreview';
 import OptionCards from './panels/OptionCards';
 import InteractiveArchitecture from './panels/InteractiveArchitecture';
+import CodeProject from './panels/CodeProject';
 import type { PanelType } from '@/types/chat';
 
 /**
@@ -58,6 +59,8 @@ export default function MainPanel() {
         return <OptionCards data={panelData} />;
       case 'interactive_architecture':
         return <InteractiveArchitecture data={panelData} />;
+      case 'code_project':
+        return <CodeProject data={panelData} />;
       default:
         return <WelcomePanel />;
     }

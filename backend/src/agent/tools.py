@@ -387,6 +387,46 @@ TOOL_BUILD_ARCHITECTURE_STEP = {
 }
 
 
+TOOL_RENDER_CODE_PROJECT = {
+    "name": "render_code_project",
+    "description": (
+        "Render a multi-file code project in the visual panel. Use this when showing "
+        "starter code, integration examples, or complete setup files. Shows a file tree with tabs."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "title": {"type": "string", "description": "Project title"},
+            "files": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "File path (e.g., 'src/ingest.py')",
+                        },
+                        "language": {
+                            "type": "string",
+                            "description": "Language for syntax highlighting",
+                        },
+                        "code": {
+                            "type": "string",
+                            "description": "File contents",
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Brief file description",
+                        },
+                    },
+                    "required": ["path", "language", "code"],
+                },
+            },
+        },
+        "required": ["title", "files"],
+    },
+}
+
 ALL_TOOLS = [
     TOOL_SEARCH_MODULES,
     TOOL_GET_MODULE_DETAIL,
@@ -400,4 +440,5 @@ ALL_TOOLS = [
     TOOL_SUGGEST_STACK,
     TOOL_PRESENT_OPTIONS,
     TOOL_BUILD_ARCHITECTURE_STEP,
+    TOOL_RENDER_CODE_PROJECT,
 ]

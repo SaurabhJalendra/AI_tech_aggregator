@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import type { ArchNode, ArchEdge } from '@/types/chat';
 
@@ -25,6 +25,13 @@ interface InteractiveArchitectureProps {
   data: Record<string, unknown>;
 }
 
+interface PopoverState {
+  nodeId: string;
+  label: string;
+  x: number;
+  y: number;
+}
+
 export default function InteractiveArchitecture({ data }: InteractiveArchitectureProps) {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isStreaming = useChatStore((s) => s.isStreaming);
@@ -33,6 +40,33 @@ export default function InteractiveArchitecture({ data }: InteractiveArchitectur
   const edges = (data.edges as ArchEdge[]) || [];
   const highlightedNode = data.highlightedNode as string | undefined;
   const title = (data.title as string) || 'Architecture';
+
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Close popover on Escape or click outside
+  useEffect(() => {
+    if (!popover) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPopover(null);
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-popover]')) return;
+      if (target.closest('[data-arch-node]')) return;
+      setPopover(null);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [popover]);
 
   // BFS-based layering: roots at top, children below
   const layout = useMemo(() => {
@@ -100,20 +134,72 @@ export default function InteractiveArchitecture({ data }: InteractiveArchitectur
     return { positions, svgWidth, svgHeight, NODE_W, NODE_H };
   }, [nodes, edges]);
 
-  const handleNodeClick = (node: ArchNode) => {
-    if (isStreaming) return;
-    sendMessage(`Tell me more about ${node.label}`);
-  };
+  const handleNodeClick = useCallback(
+    (node: ArchNode, event: React.MouseEvent) => {
+      if (isStreaming) return;
+
+      // Calculate position in the container's coordinate space
+      const container = containerRef.current;
+      const svg = svgRef.current;
+      if (!container || !svg) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const svgRect = svg.getBoundingClientRect();
+      const pos = layout.positions.get(node.id);
+      if (!pos) return;
+
+      // Scale from SVG viewBox to rendered SVG pixels
+      const scaleX = svgRect.width / layout.svgWidth;
+      const scaleY = svgRect.height / layout.svgHeight;
+
+      const nodeScreenX = svgRect.left + (pos.x + layout.NODE_W / 2) * scaleX;
+      const nodeScreenY = svgRect.top + (pos.y + layout.NODE_H) * scaleY;
+
+      // Convert to container-relative coordinates
+      const popX = nodeScreenX - containerRect.left;
+      const popY = nodeScreenY - containerRect.top;
+
+      setPopover({
+        nodeId: node.id,
+        label: node.label,
+        x: popX,
+        y: popY,
+      });
+    },
+    [isStreaming, layout],
+  );
+
+  const handlePopoverAction = useCallback(
+    (action: 'learn' | 'swap' | 'code') => {
+      if (!popover) return;
+      const label = popover.label;
+      setPopover(null);
+
+      switch (action) {
+        case 'learn':
+          sendMessage(`Tell me more about ${label}`);
+          break;
+        case 'swap':
+          sendMessage(`What alternatives can I use instead of ${label}?`);
+          break;
+        case 'code':
+          sendMessage(`Show me integration code for ${label}`);
+          break;
+      }
+    },
+    [popover, sendMessage],
+  );
 
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-gray-200 px-6 py-3 dark:border-gray-700">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="text-xs text-gray-500">Click a node to learn more</p>
+        <p className="text-xs text-gray-500">Click a node for options</p>
       </div>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div ref={containerRef} className="relative flex-1 overflow-auto p-4">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${layout.svgWidth} ${layout.svgHeight}`}
           className="mx-auto"
           style={{ maxHeight: '100%', width: '100%' }}
@@ -172,12 +258,14 @@ export default function InteractiveArchitecture({ data }: InteractiveArchitectur
             if (!pos) return null;
             const color = getColor(node.category);
             const isHighlighted = highlightedNode === node.id;
+            const isSelected = popover?.nodeId === node.id;
 
             return (
               <g
                 key={node.id}
+                data-arch-node
                 className="animate-fadeIn cursor-pointer"
-                onClick={() => handleNodeClick(node)}
+                onClick={(e) => handleNodeClick(node, e)}
               >
                 <rect
                   x={pos.x}
@@ -187,8 +275,8 @@ export default function InteractiveArchitecture({ data }: InteractiveArchitectur
                   rx={10}
                   ry={10}
                   fill={color.fill}
-                  stroke={isHighlighted ? '#2563eb' : color.stroke}
-                  strokeWidth={isHighlighted ? 3 : 2}
+                  stroke={isSelected ? '#2563eb' : isHighlighted ? '#2563eb' : color.stroke}
+                  strokeWidth={isSelected || isHighlighted ? 3 : 2}
                 />
                 <text
                   x={pos.x + layout.NODE_W / 2}
@@ -216,6 +304,50 @@ export default function InteractiveArchitecture({ data }: InteractiveArchitectur
             );
           })}
         </svg>
+
+        {/* Context menu popover */}
+        {popover && (
+          <div
+            data-popover
+            className="absolute z-50 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+            style={{
+              left: `${popover.x}px`,
+              top: `${popover.y + 8}px`,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <div className="border-b border-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              {popover.label}
+            </div>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              onClick={() => handlePopoverAction('learn')}
+            >
+              <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              Learn more
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              onClick={() => handlePopoverAction('swap')}
+            >
+              <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              </svg>
+              Swap component
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              onClick={() => handlePopoverAction('code')}
+            >
+              <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+              </svg>
+              Show code
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

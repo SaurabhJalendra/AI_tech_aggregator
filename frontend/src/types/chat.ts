@@ -9,7 +9,8 @@ export type PanelType =
   | 'recommendation'
   | 'document'
   | 'option_cards'
-  | 'interactive_architecture';
+  | 'interactive_architecture'
+  | 'code_project';
 
 /** A clickable option card presented in the option_cards panel */
 export interface OptionCard {

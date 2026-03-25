@@ -127,6 +127,15 @@ build_architecture_step(action="highlight", node_id="store")
 - Connect nodes after both endpoints exist
 - Use `highlight` when diving deeper into a specific component
 - Include the module `slug` on nodes so the frontend can link to module details
+
+### render_code_project — Multi-File Code Projects
+Use render_code_project when showing integration code or starter projects — show ALL files \
+needed, not just one snippet. This renders a file tree with tabbed code view in the visual panel.
+
+Use it instead of render_code_example when:
+- The example involves multiple files (e.g., config + main code + requirements)
+- You're showing a complete starter project or boilerplate
+- The integration needs files in different languages or formats
 """
 
 

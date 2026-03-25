@@ -207,6 +207,8 @@ class AdvisorAgent:
                 return self._tool_present_options(tool_input)
             elif tool_name == "build_architecture_step":
                 return self._tool_build_architecture_step(tool_input)
+            elif tool_name == "render_code_project":
+                return self._tool_render_code_project(tool_input)
             else:
                 return {"error": f"Unknown tool: {tool_name}"}, None
         except Exception as e:
@@ -319,6 +321,18 @@ class AdvisorAgent:
             "title": input["title"],
         }
         return {"rendered": True, "panel": "code_preview"}, panel_command
+
+    def _tool_render_code_project(self, input: dict) -> tuple[dict, dict]:
+        panel_command = {
+            "action": "render",
+            "panel": "code_project",
+            "data": {
+                "title": input["title"],
+                "files": input["files"],
+            },
+            "title": input["title"],
+        }
+        return {"rendered": True, "panel": "code_project"}, panel_command
 
     async def _tool_get_benchmarks(self, input: dict) -> tuple[dict, None]:
         results = {}
@@ -514,6 +528,11 @@ You can control a visual panel alongside the chat. To render visualizations, emi
 <!--PANEL_CMD:{"action":"render","panel":"option_cards","data":{"question":"What is your budget range?","options":[{"id":"low","label":"Low Budget","description":"Open source preferred"},{"id":"medium","label":"Medium Budget","description":"Mix of open source and managed"},{"id":"high","label":"High Budget","description":"Enterprise-grade managed services"}]}}-->
 ```
 
+### Code Project (multi-file)
+```
+<!--PANEL_CMD:{"action":"render","panel":"code_project","title":"My Project","data":{"title":"My Project","files":[{"path":"src/main.py","language":"python","code":"print('hello')","description":"Entry point"}]}}-->
+```
+
 ### Interactive Architecture (incremental building)
 Init:
 ```
@@ -583,6 +602,8 @@ def _tool_activity_message(tool_name: str, tool_input: dict) -> str:
         elif action == "highlight":
             return f"Highlighting: {tool_input.get('node_id', '')}..."
         return f"Building architecture: {action}..."
+    elif tool_name == "render_code_project":
+        return f"Rendering code project: {tool_input.get('title', '')}..."
     return f"Running {tool_name}..."
 
 
