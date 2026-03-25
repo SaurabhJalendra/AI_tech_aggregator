@@ -1,0 +1,63 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(uvicorn *)",
+      "Bash(pytest *)",
+      "Bash(curl *)",
+      "Bash(docker *)",
+      "Bash(docker-compose *)",
+      "Bash(git *)",
+      "Bash(taskkill *)",
+      "Bash(tasklist *)",
+      "Bash(netstat *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(rm *)",
+      "Bash(cp *)",
+      "Bash(source *)",
+      "Bash(sleep *)",
+      "Bash(timeout *)",
+      "Bash(echo *)",
+      "Bash(pkill *)",
+      "Bash(kill *)",
+      "Bash(find *)",
+      "Bash(wc *)"
+    ],
+    "defaultMode": "default"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"decision\":\"approve\"}'",
+            "timeout": 2000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'File modified — remember to verify changes work'",
+            "timeout": 2000
+          }
+        ]
+      }
+    ]
+  }
+}

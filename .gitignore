@@ -42,3 +42,10 @@ htmlcov/
 .coverage
 coverage/
 .nyc_output/
+
+# Claude Code
+.claude/settings.local.json
+tasks/
+
+# pytest
+.pytest_cache/
