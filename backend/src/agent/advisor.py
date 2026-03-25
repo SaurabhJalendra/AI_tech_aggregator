@@ -203,6 +203,10 @@ class AdvisorAgent:
                 return await self._tool_get_benchmarks(tool_input)
             elif tool_name == "suggest_stack":
                 return await self._tool_suggest_stack(tool_input)
+            elif tool_name == "present_options":
+                return self._tool_present_options(tool_input)
+            elif tool_name == "build_architecture_step":
+                return self._tool_build_architecture_step(tool_input)
             else:
                 return {"error": f"Unknown tool: {tool_name}"}, None
         except Exception as e:
@@ -410,6 +414,73 @@ class AdvisorAgent:
         }
         return suggestion, panel_command
 
+    def _tool_present_options(self, input: dict) -> tuple[dict, dict]:
+        """Present interactive option cards in the visual panel."""
+        question = input["question"]
+        options = input["options"]
+        panel_command = {
+            "action": "render",
+            "panel": "option_cards",
+            "data": {
+                "question": question,
+                "options": options,
+            },
+        }
+        return {"status": "options_presented", "option_count": len(options)}, panel_command
+
+    def _tool_build_architecture_step(self, input: dict) -> tuple[dict, dict]:
+        """Incrementally build an interactive architecture diagram."""
+        action = input["action"]
+
+        if action == "init":
+            title = input.get("title", "Architecture Diagram")
+            panel_command = {
+                "action": "render",
+                "panel": "interactive_architecture",
+                "data": {
+                    "nodes": [],
+                    "edges": [],
+                    "title": title,
+                },
+            }
+            return {"status": "diagram_initialized", "title": title}, panel_command
+
+        elif action == "add_node":
+            node = input["node"]
+            panel_command = {
+                "action": "update",
+                "data": {
+                    "subAction": "add_node",
+                    "node": node,
+                },
+            }
+            return {"status": "node_added", "node_id": node["id"]}, panel_command
+
+        elif action == "connect":
+            edge = input["edge"]
+            panel_command = {
+                "action": "update",
+                "data": {
+                    "subAction": "add_edge",
+                    "edge": edge,
+                },
+            }
+            return {"status": "edge_added", "from": edge["from"], "to": edge["to"]}, panel_command
+
+        elif action == "highlight":
+            node_id = input["node_id"]
+            panel_command = {
+                "action": "update",
+                "data": {
+                    "subAction": "highlight",
+                    "nodeId": node_id,
+                },
+            }
+            return {"status": "node_highlighted", "node_id": node_id}, panel_command
+
+        else:
+            return {"error": f"Unknown action: {action}"}, None
+
 
 # Panel command instructions appended to system prompt when using Claude Code
 PANEL_COMMAND_INSTRUCTIONS = """
@@ -436,6 +507,29 @@ You can control a visual panel alongside the chat. To render visualizations, emi
 ### Code Preview
 ```
 <!--PANEL_CMD:{"action":"render","panel":"code_preview","title":"Setup Example","data":{"title":"Pinecone Setup","language":"python","code":"import pinecone\\npinecone.init(api_key='...')"}}-->
+```
+
+### Option Cards (interactive choices)
+```
+<!--PANEL_CMD:{"action":"render","panel":"option_cards","data":{"question":"What is your budget range?","options":[{"id":"low","label":"Low Budget","description":"Open source preferred"},{"id":"medium","label":"Medium Budget","description":"Mix of open source and managed"},{"id":"high","label":"High Budget","description":"Enterprise-grade managed services"}]}}-->
+```
+
+### Interactive Architecture (incremental building)
+Init:
+```
+<!--PANEL_CMD:{"action":"render","panel":"interactive_architecture","data":{"nodes":[],"edges":[],"title":"RAG Pipeline"}}-->
+```
+Add node:
+```
+<!--PANEL_CMD:{"action":"update","data":{"subAction":"add_node","node":{"id":"embed","label":"OpenAI Embeddings","slug":"openai_embeddings","category":"embeddings"}}}-->
+```
+Connect:
+```
+<!--PANEL_CMD:{"action":"update","data":{"subAction":"add_edge","edge":{"from":"embed","to":"vectordb","label":"store vectors"}}}-->
+```
+Highlight:
+```
+<!--PANEL_CMD:{"action":"update","data":{"subAction":"highlight","nodeId":"embed"}}-->
 ```
 
 RULES:
@@ -474,6 +568,21 @@ def _tool_activity_message(tool_name: str, tool_input: dict) -> str:
         return "Rendering comparison visualization..."
     elif tool_name == "render_code_example":
         return f"Rendering code example: {tool_input.get('title', '')}..."
+    elif tool_name == "present_options":
+        return f"Presenting options: {tool_input.get('question', '')}..."
+    elif tool_name == "build_architecture_step":
+        action = tool_input.get("action", "")
+        if action == "init":
+            return f"Initializing diagram: {tool_input.get('title', '')}..."
+        elif action == "add_node":
+            node = tool_input.get("node", {})
+            return f"Adding component: {node.get('label', '')}..."
+        elif action == "connect":
+            edge = tool_input.get("edge", {})
+            return f"Connecting {edge.get('from', '')} → {edge.get('to', '')}..."
+        elif action == "highlight":
+            return f"Highlighting: {tool_input.get('node_id', '')}..."
+        return f"Building architecture: {action}..."
     return f"Running {tool_name}..."
 
 

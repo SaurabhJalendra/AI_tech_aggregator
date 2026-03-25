@@ -6,6 +6,8 @@ import ArchitectureDiagram from './panels/ArchitectureDiagram';
 import ComparisonTable from './panels/ComparisonTable';
 import ComparisonChart from './panels/ComparisonChart';
 import CodePreview from './panels/CodePreview';
+import OptionCards from './panels/OptionCards';
+import InteractiveArchitecture from './panels/InteractiveArchitecture';
 import type { PanelType } from '@/types/chat';
 
 /**
@@ -52,6 +54,10 @@ export default function MainPanel() {
             <p className="mt-2 text-gray-500">Document panel placeholder</p>
           </div>
         );
+      case 'option_cards':
+        return <OptionCards data={panelData} />;
+      case 'interactive_architecture':
+        return <InteractiveArchitecture data={panelData} />;
       default:
         return <WelcomePanel />;
     }

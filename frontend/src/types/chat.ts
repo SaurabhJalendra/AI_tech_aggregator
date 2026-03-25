@@ -7,7 +7,33 @@ export type PanelType =
   | 'code_preview'
   | 'module_detail'
   | 'recommendation'
-  | 'document';
+  | 'document'
+  | 'option_cards'
+  | 'interactive_architecture';
+
+/** A clickable option card presented in the option_cards panel */
+export interface OptionCard {
+  id: string;
+  label: string;
+  description?: string;
+  icon?: string;
+}
+
+/** A node in the interactive architecture diagram */
+export interface ArchNode {
+  id: string;
+  label: string;
+  slug?: string;
+  category?: string;
+  description?: string;
+}
+
+/** An edge in the interactive architecture diagram */
+export interface ArchEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
 
 /** Command sent from the assistant (via SSE) to control the right-hand panel */
 export interface PanelCommand {

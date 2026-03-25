@@ -68,6 +68,68 @@ not a salesperson. Be honest about trade-offs. If a technology has limitations, 
 """
 
 
+INTERACTIVE_TOOLS_INSTRUCTIONS = """
+
+## Interactive Tools Usage
+
+### present_options — Interactive Choice Cards
+ALWAYS use present_options instead of listing choices as text when:
+- Asking about budget range (low / medium / high)
+- Asking about scale (prototype / startup / enterprise)
+- Asking about team size (solo / small / medium / large)
+- Asking about privacy requirements (public cloud OK / private / on-prem)
+- Offering 2-6 discrete technology alternatives to choose from
+- Any multiple-choice question where options are well-defined
+
+Each option becomes a clickable card in the visual panel. The user clicks one, and their \
+selection is automatically sent as a chat message. This is faster and clearer than asking \
+the user to type their answer.
+
+### build_architecture_step — Incremental Architecture Diagrams
+ALWAYS use build_architecture_step (not render_architecture_diagram) when recommending \
+a technology stack. Building the diagram node-by-node lets you explain each component \
+as you add it, creating a guided walkthrough experience.
+
+**Required flow:**
+1. `init` — Start a new diagram with a title
+2. `add_node` — Add each component one at a time, explaining your reasoning in the chat \
+text between each tool call
+3. `connect` — Add edges between components to show data flow
+4. `highlight` — Highlight a node when discussing it in detail
+
+**Example sequence for a RAG pipeline:**
+```
+build_architecture_step(action="init", title="RAG Pipeline for Legal Documents")
+→ "Let me build your architecture step by step..."
+
+build_architecture_step(action="add_node", node={"id": "ingest", "label": "Unstructured.io", "slug": "unstructured", "category": "data_ingestion", "description": "Parse PDFs and contracts"})
+→ "First, we need a document ingestion layer..."
+
+build_architecture_step(action="add_node", node={"id": "chunk", "label": "Semantic Chunking", "slug": "chunking_mechanisms", "category": "chunking", "description": "Context-aware splitting"})
+→ "Next, we split documents into meaningful chunks..."
+
+build_architecture_step(action="connect", edge={"from": "ingest", "to": "chunk", "label": "raw text"})
+→ "Documents flow from ingestion to chunking..."
+
+build_architecture_step(action="add_node", node={"id": "embed", "label": "OpenAI Embeddings", "slug": "openai_embeddings", "category": "embeddings"})
+build_architecture_step(action="connect", edge={"from": "chunk", "to": "embed", "label": "chunks"})
+
+build_architecture_step(action="add_node", node={"id": "store", "label": "Pinecone", "slug": "pinecone", "category": "vector_databases"})
+build_architecture_step(action="connect", edge={"from": "embed", "to": "store", "label": "vectors"})
+
+build_architecture_step(action="highlight", node_id="store")
+→ "Let me highlight the vector store — this is where your choice matters most..."
+```
+
+**Key rules:**
+- Always `init` before adding nodes
+- Add nodes one or two at a time with explanatory chat text between calls
+- Connect nodes after both endpoints exist
+- Use `highlight` when diving deeper into a specific component
+- Include the module `slug` on nodes so the frontend can link to module details
+"""
+
+
 def build_catalog_section(categories: list[dict]) -> str:
     """Build a module catalog section for the system prompt."""
     lines = ["\n## Available Modules\n", "Use exact slugs when calling tools.\n"]
@@ -89,4 +151,5 @@ def build_system_prompt(
     )
     if catalog_section:
         prompt += catalog_section
+    prompt += INTERACTIVE_TOOLS_INSTRUCTIONS
     return prompt

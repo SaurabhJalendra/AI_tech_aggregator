@@ -288,6 +288,105 @@ TOOL_SUGGEST_STACK = {
 }
 
 
+TOOL_PRESENT_OPTIONS = {
+    "name": "present_options",
+    "description": (
+        "Present interactive option cards to the user in the visual panel. "
+        "Use this instead of listing options as text when you want the user to "
+        "choose between 2-6 options. Each option becomes a clickable card. "
+        "The user's selection is automatically sent as a chat message."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "question": {
+                "type": "string",
+                "description": "The question being asked of the user",
+            },
+            "options": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "string",
+                            "description": "Unique identifier for this option",
+                        },
+                        "label": {
+                            "type": "string",
+                            "description": "Short display label for the option card",
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Optional longer description shown on the card",
+                        },
+                        "icon": {
+                            "type": "string",
+                            "description": "Optional icon identifier for the card",
+                        },
+                    },
+                    "required": ["id", "label"],
+                },
+                "minItems": 2,
+                "maxItems": 6,
+                "description": "The options to present as clickable cards",
+            },
+        },
+        "required": ["question", "options"],
+    },
+}
+
+TOOL_BUILD_ARCHITECTURE_STEP = {
+    "name": "build_architecture_step",
+    "description": (
+        "Add a node or connection to the interactive architecture diagram. "
+        "Call multiple times to build incrementally. Actions: init (start diagram), "
+        "add_node (add component), connect (add edge), highlight (focus a node)."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["init", "add_node", "connect", "highlight"],
+                "description": "The action to perform on the diagram",
+            },
+            "title": {
+                "type": "string",
+                "description": "Title for the diagram (used with init action)",
+            },
+            "node": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "label": {"type": "string"},
+                    "slug": {"type": "string", "description": "Optional module slug"},
+                    "category": {"type": "string", "description": "Optional category"},
+                    "description": {"type": "string", "description": "Optional description"},
+                },
+                "required": ["id", "label"],
+                "description": "Node to add (used with add_node action)",
+            },
+            "edge": {
+                "type": "object",
+                "properties": {
+                    "from": {"type": "string"},
+                    "to": {"type": "string"},
+                    "label": {"type": "string", "description": "Optional edge label"},
+                },
+                "required": ["from", "to"],
+                "description": "Edge to add (used with connect action)",
+            },
+            "node_id": {
+                "type": "string",
+                "description": "Node ID to highlight (used with highlight action)",
+            },
+        },
+        "required": ["action"],
+    },
+}
+
+
 ALL_TOOLS = [
     TOOL_SEARCH_MODULES,
     TOOL_GET_MODULE_DETAIL,
@@ -299,4 +398,6 @@ ALL_TOOLS = [
     TOOL_RENDER_CODE,
     TOOL_GET_BENCHMARKS,
     TOOL_SUGGEST_STACK,
+    TOOL_PRESENT_OPTIONS,
+    TOOL_BUILD_ARCHITECTURE_STEP,
 ]

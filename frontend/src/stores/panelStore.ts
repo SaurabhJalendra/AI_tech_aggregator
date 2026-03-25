@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PanelType, PanelCommand } from '@/types/chat';
+import type { PanelType, PanelCommand, ArchNode, ArchEdge } from '@/types/chat';
 
 interface PanelHistoryEntry {
   panel: PanelType;
@@ -15,6 +15,9 @@ interface PanelState {
 
   // Actions
   renderPanel: (command: PanelCommand) => void;
+  appendNode: (node: ArchNode) => void;
+  appendEdge: (edge: ArchEdge) => void;
+  highlightNode: (nodeId: string) => void;
   goBack: () => void;
   clearPanel: () => void;
   setPanel: (panel: PanelType, data?: Record<string, unknown>, title?: string) => void;
@@ -39,11 +42,20 @@ export const usePanelStore = create<PanelState>((set, get) => ({
     }
 
     if (command.action === 'update') {
-      // Merge new data into current panel data
-      set((state) => ({
-        panelData: { ...state.panelData, ...command.data },
-        panelTitle: command.title || state.panelTitle,
-      }));
+      const subAction = command.data?.subAction as string | undefined;
+      if (subAction === 'add_node' && command.data.node) {
+        get().appendNode(command.data.node as ArchNode);
+      } else if (subAction === 'add_edge' && command.data.edge) {
+        get().appendEdge(command.data.edge as ArchEdge);
+      } else if (subAction === 'highlight' && command.data.nodeId) {
+        get().highlightNode(command.data.nodeId as string);
+      } else {
+        // Generic data merge
+        set((state) => ({
+          panelData: { ...state.panelData, ...command.data },
+          panelTitle: command.title || state.panelTitle,
+        }));
+      }
       return;
     }
 
@@ -57,6 +69,41 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       panelData: command.data,
       panelTitle: command.title,
     });
+  },
+
+  appendNode: (node: ArchNode) => {
+    set((state) => {
+      const nodes = (state.panelData.nodes as ArchNode[]) || [];
+      // Don't add duplicate nodes
+      if (nodes.some((n) => n.id === node.id)) return state;
+      return {
+        panelData: {
+          ...state.panelData,
+          nodes: [...nodes, node],
+        },
+      };
+    });
+  },
+
+  appendEdge: (edge: ArchEdge) => {
+    set((state) => {
+      const edges = (state.panelData.edges as ArchEdge[]) || [];
+      return {
+        panelData: {
+          ...state.panelData,
+          edges: [...edges, edge],
+        },
+      };
+    });
+  },
+
+  highlightNode: (nodeId: string) => {
+    set((state) => ({
+      panelData: {
+        ...state.panelData,
+        highlightedNode: nodeId,
+      },
+    }));
   },
 
   goBack: () => {
