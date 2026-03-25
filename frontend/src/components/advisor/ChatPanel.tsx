@@ -13,16 +13,15 @@ export default function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
   const isStreaming = useChatStore((s) => s.isStreaming);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to the bottom when new messages arrive
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   return (
-    <div className="flex w-[30%] min-w-[320px] flex-col border-r border-gray-200 dark:border-gray-800">
+    <div className="flex w-[35%] min-w-[320px] flex-col border-r border-gray-200 dark:border-gray-800">
       {/* Messages area */}
       <div
         ref={scrollRef}
@@ -44,6 +43,7 @@ export default function ChatPanel() {
             Thinking...
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input area */}

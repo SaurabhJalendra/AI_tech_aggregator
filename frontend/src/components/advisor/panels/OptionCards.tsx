@@ -3,6 +3,21 @@
 import { useChatStore } from '@/stores/chatStore';
 import type { OptionCard } from '@/types/chat';
 
+const ICON_MAP: Record<string, string> = {
+  building: '🏢', enterprise: '🏢', headphones: '🎧', support: '🎧',
+  book: '📚', research: '📚', code: '💻', technical: '💻',
+  shield: '🛡️', legal: '⚖️', lock: '🔒', folder: '📁',
+  cloud: '☁️', experiment: '🧪', growth: '🚀', other: '📋',
+  document: '📄', search: '🔍', database: '🗄️', brain: '🧠',
+};
+
+function resolveIcon(icon?: string): string {
+  if (!icon) return '';
+  // If it's already an emoji (starts with non-ASCII), return as-is
+  if (icon.charCodeAt(0) > 127) return icon;
+  return ICON_MAP[icon.toLowerCase()] || '📌';
+}
+
 interface OptionCardsProps {
   data: Record<string, unknown>;
 }
@@ -36,7 +51,7 @@ export default function OptionCards({ data }: OptionCardsProps) {
             className="group flex flex-col items-start gap-2 rounded-xl border-2 border-gray-200 bg-white p-5 text-left transition-all hover:border-blue-500 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-400"
           >
             {option.icon && (
-              <span className="text-2xl">{option.icon}</span>
+              <span className="text-2xl">{resolveIcon(option.icon)}</span>
             )}
             <span className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400">
               {option.label}

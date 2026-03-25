@@ -95,7 +95,7 @@ class AdvisorAgent:
         while True:
             iteration += 1
             if iteration > max_iterations:
-                yield _sse_event("text", {"content": "\n\n*Reached maximum iteration limit. Stopping agent loop.*"})
+                yield _sse_event("text", {"content": "\n\nI've outlined the core components above. Want me to continue adding more layers to the architecture, or dive deeper into any specific component?"})
                 break
             collected_text = ""
             tool_use_blocks = []

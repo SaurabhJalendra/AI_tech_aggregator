@@ -108,6 +108,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           </div>
         ) : (
           <div className="break-words">
+            {message.content === '' && (!message.toolActivities || message.toolActivities.length === 0) && (
+              <div className="flex items-center gap-1 py-2">
+                <div className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
             {message.toolActivities && message.toolActivities.length > 0 && (
               <ToolActivityIndicator
                 activities={message.toolActivities}
@@ -120,13 +127,6 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             >
               {message.content}
             </ReactMarkdown>
-          </div>
-        )}
-        {message.panelCommands && message.panelCommands.length > 0 && (
-          <div className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {message.panelCommands.length} panel update(s)
-            </span>
           </div>
         )}
       </div>
