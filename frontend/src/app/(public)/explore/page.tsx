@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { ModuleSummary, CategoryResponse } from '@/types/module';
 
@@ -16,6 +16,27 @@ const PRICING_LABELS: Record<string, string> = {
   paid: 'Paid',
   usage_based: 'Usage Based',
   enterprise: 'Enterprise',
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+  vector_databases: '🗄️',
+  llm_providers: '🧠',
+  embedding_models: '📐',
+  orchestration_frameworks: '🔗',
+  model_serving: '🚀',
+  data_labeling: '🏷️',
+  experiment_tracking: '📊',
+  feature_stores: '📦',
+  monitoring: '👁️',
+  compute_platforms: '💻',
+  data_pipelines: '🔄',
+  annotation_tools: '✏️',
+  automl: '⚡',
+  model_registries: '📋',
+  synthetic_data: '🧪',
+  responsible_ai: '🛡️',
+  edge_ai: '📱',
+  ai_agents: '🤖',
 };
 
 function ModuleCard({ module }: { module: ModuleSummary }) {
@@ -53,6 +74,34 @@ function ModuleCard({ module }: { module: ModuleSummary }) {
   );
 }
 
+function CategoryCard({
+  category,
+  isSelected,
+  onClick,
+}: {
+  category: CategoryResponse;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const icon = category.icon || CATEGORY_ICONS[category.slug] || '📂';
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center rounded-lg border p-4 text-center transition-all ${
+        isSelected
+          ? 'border-blue-500 bg-blue-50 shadow-sm dark:border-blue-600 dark:bg-blue-950'
+          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm dark:border-gray-800 dark:hover:border-blue-700'
+      }`}
+    >
+      <span className="mb-2 text-2xl">{icon}</span>
+      <span className="text-sm font-medium">{category.name}</span>
+      <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {category.module_count} module{category.module_count !== 1 ? 's' : ''}
+      </span>
+    </button>
+  );
+}
+
 export default function ExplorePage() {
   const [modules, setModules] = useState<ModuleSummary[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -61,26 +110,31 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const apiBase =
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:8000';
+  const apiUrl = `${apiBase}/api/v1`;
 
+  // Fetch categories once
   useEffect(() => {
-    fetch(`${apiBase}/modules/categories`)
+    fetch(`${apiUrl}/modules/categories`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
       .then(setCategories)
       .catch(() => {});
-  }, [apiBase]);
+  }, [apiUrl]);
 
+  // Fetch modules
   useEffect(() => {
     setLoading(true);
     setError(null);
 
     const params = new URLSearchParams();
     if (selectedCategory) params.set('category', selectedCategory);
-    if (search) params.set('search', search);
-    params.set('page_size', '50');
+    params.set('per_page', '100');
 
     const qs = params.toString();
-    fetch(`${apiBase}/modules${qs ? `?${qs}` : ''}`)
+    fetch(`${apiUrl}/modules${qs ? `?${qs}` : ''}`)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();
@@ -90,23 +144,23 @@ export default function ExplorePage() {
         setLoading(false);
       })
       .catch((err) => {
-        setError(`Failed to load modules: ${err.message}`);
+        setError(err.message);
         setLoading(false);
       });
-  }, [apiBase, selectedCategory, search]);
+  }, [apiUrl, selectedCategory]);
 
-  const filtered = modules.filter((m) => {
-    if (search) {
-      const q = search.toLowerCase();
-      return (
+  // Client-side search filter
+  const filtered = useMemo(() => {
+    if (!search) return modules;
+    const q = search.toLowerCase();
+    return modules.filter(
+      (m) =>
         m.name.toLowerCase().includes(q) ||
         m.slug.toLowerCase().includes(q) ||
         (m.tagline && m.tagline.toLowerCase().includes(q)) ||
         m.category.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+    );
+  }, [modules, search]);
 
   return (
     <main className="min-h-screen p-8">
@@ -114,52 +168,52 @@ export default function ExplorePage() {
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">Explore Modules</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Browse {modules.length} AI/ML technologies across {categories.length} categories.
+            Browse {modules.length} AI/ML technologies across{' '}
+            {categories.length} categories.
           </p>
         </div>
 
-        {/* Search + Filters */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+        {/* Search */}
+        <div className="mb-6">
           <input
             type="text"
-            placeholder="Search modules..."
+            placeholder="Search modules by name, category, or description..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
           />
         </div>
 
-        {/* Category pills */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`rounded-full px-3 py-1 text-sm transition-colors ${
-              !selectedCategory
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            }`}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.slug}
-              onClick={() =>
-                setSelectedCategory(selectedCategory === cat.slug ? null : cat.slug)
-              }
-              className={`rounded-full px-3 py-1 text-sm transition-colors ${
-                selectedCategory === cat.slug
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-              }`}
-            >
-              {cat.name}
-              {cat.module_count > 0 && (
-                <span className="ml-1 opacity-60">({cat.module_count})</span>
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Category grid */}
+        {categories.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Categories
+            </h2>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
+              {categories.map((cat) => (
+                <CategoryCard
+                  key={cat.slug}
+                  category={cat}
+                  isSelected={selectedCategory === cat.slug}
+                  onClick={() =>
+                    setSelectedCategory(
+                      selectedCategory === cat.slug ? null : cat.slug
+                    )
+                  }
+                />
+              ))}
+            </div>
+            {selectedCategory && (
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className="mt-3 text-sm text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Module grid */}
         {loading ? (
@@ -173,9 +227,13 @@ export default function ExplorePage() {
           </div>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
-            <p className="font-medium">Error</p>
-            <p className="text-sm">{error}</p>
-            <p className="mt-2 text-xs">Make sure the backend is running on {apiBase}</p>
+            <p className="text-lg font-medium">Backend unavailable</p>
+            <p className="mt-1 text-sm">
+              Could not connect to the API. Make sure the backend is running.
+            </p>
+            <p className="mt-2 text-xs opacity-70">
+              Tried: {apiUrl}
+            </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-lg border border-gray-200 p-12 text-center dark:border-gray-800">
