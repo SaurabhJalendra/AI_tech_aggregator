@@ -88,7 +88,7 @@ class AdvisorAgent:
     ) -> AsyncGenerator[str, None]:
         """Stream response using Anthropic SDK (original implementation)."""
         # Agent loop: keep calling Claude until no more tool_use
-        max_iterations = 10
+        max_iterations = 25
         iteration = 0
         seen_tool_calls: set[str] = set()
 
