@@ -21,6 +21,8 @@ out/
 .turbo/
 
 # IDE
+.cursor/
+.dev-os/
 .vscode/
 .idea/
 *.swp
@@ -46,6 +48,16 @@ coverage/
 # Claude Code
 .claude/settings.local.json
 tasks/
+
+# Local docs
+docs/AGENTS.md
+docs/APPLICATION_DATA.md
+docs/APPLICATION_REPOSITORY_GUIDE.md
+docs/BACKEND_IMPLEMENTATION.md
+docs/CLAUDE.md
+docs/IDEA.md
+docs/IMPLEMENTATION_ROADMAP.md
+docs/UI_design.md
 
 # pytest
 .pytest_cache/
