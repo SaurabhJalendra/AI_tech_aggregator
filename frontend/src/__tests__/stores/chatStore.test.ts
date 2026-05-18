@@ -6,6 +6,8 @@ describe('chatStore', () => {
     useChatStore.setState({
       messages: [],
       sessionId: null,
+      activeTask: null,
+      activeConstraints: {},
       isStreaming: false,
     });
   });
@@ -14,6 +16,8 @@ describe('chatStore', () => {
     const state = useChatStore.getState();
     expect(state.messages).toEqual([]);
     expect(state.sessionId).toBeNull();
+    expect(state.activeTask).toBeNull();
+    expect(state.activeConstraints).toEqual({});
     expect(state.isStreaming).toBe(false);
   });
 
@@ -56,6 +60,8 @@ describe('chatStore', () => {
     const state = useChatStore.getState();
     expect(state.messages).toEqual([]);
     expect(state.sessionId).toBeNull();
+    expect(state.activeTask).toBeNull();
+    expect(state.activeConstraints).toEqual({});
     expect(state.isStreaming).toBe(false);
   });
 

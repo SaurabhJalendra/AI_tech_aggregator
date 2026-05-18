@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class ChatRequest(BaseModel):
     session_id: str | None = None
     message: str
+    client_context: dict | None = None
 
 
 class PanelCommand(BaseModel):

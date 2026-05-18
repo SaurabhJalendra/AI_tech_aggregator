@@ -1,4 +1,9 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -34,7 +39,23 @@ class Settings(BaseSettings):
     free_tier_comparisons_per_day: int = 10
     free_tier_max_cost_per_session: float = 0.50
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = SettingsConfigDict(
+        env_file=str(BACKEND_DIR / ".env"),
+        env_file_encoding="utf-8",
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # Prefer backend/.env for local dev so stale shell variables do not
+        # accidentally switch the LLM backend from Claude Code to SDK mode.
+        return init_settings, dotenv_settings, env_settings, file_secret_settings
 
     @property
     def cors_origin_list(self) -> list[str]:

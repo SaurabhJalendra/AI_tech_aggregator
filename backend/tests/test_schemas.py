@@ -18,6 +18,21 @@ class TestChatRequest:
         req = ChatRequest(message="Hello", session_id="abc-123")
         assert req.session_id == "abc-123"
 
+    def test_with_client_context(self):
+        req = ChatRequest(
+            message="Growing Application",
+            client_context={
+                "active_task": "Compare vector databases",
+                "option_answer": {
+                    "question_id": "scale",
+                    "answer_id": "growing_application",
+                    "answer_label": "Growing Application",
+                },
+            },
+        )
+        assert req.client_context["active_task"] == "Compare vector databases"
+        assert req.client_context["option_answer"]["question_id"] == "scale"
+
     def test_empty_message_allowed(self):
         # Pydantic allows empty strings by default
         req = ChatRequest(message="")

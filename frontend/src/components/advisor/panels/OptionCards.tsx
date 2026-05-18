@@ -7,8 +7,10 @@ const ICON_MAP: Record<string, string> = {
   building: '🏢', enterprise: '🏢', headphones: '🎧', support: '🎧',
   book: '📚', research: '📚', code: '💻', technical: '💻',
   shield: '🛡️', legal: '⚖️', lock: '🔒', folder: '📁',
-  cloud: '☁️', experiment: '🧪', growth: '🚀', other: '📋',
+  cloud: '☁️', experiment: '🧪', beaker: '🧪', growth: '🚀', rocket: '🚀', other: '📋',
   document: '📄', search: '🔍', database: '🗄️', brain: '🧠',
+  coin: '💸', scale: '⚖️', bolt: '⚡', tools: '🛠️', split: '🔀',
+  user: '👤', team: '👥', platform: '🏗️',
 };
 
 function resolveIcon(icon?: string): string {
@@ -27,11 +29,22 @@ export default function OptionCards({ data }: OptionCardsProps) {
   const isStreaming = useChatStore((s) => s.isStreaming);
 
   const question = (data.question as string) || '';
+  const questionId =
+    (data.question_id as string | undefined) ||
+    (data.questionId as string | undefined);
   const options = (data.options as OptionCard[]) || [];
 
   const handleSelect = (option: OptionCard) => {
     if (isStreaming) return;
-    sendMessage(option.label);
+    sendMessage(option.label, {
+      option_answer: {
+        question_id: questionId,
+        question,
+        answer_id: option.id,
+        answer_label: option.label,
+        metadata: option.metadata,
+      },
+    });
   };
 
   return (

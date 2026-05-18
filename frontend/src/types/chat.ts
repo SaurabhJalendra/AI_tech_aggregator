@@ -18,6 +18,22 @@ export interface OptionCard {
   label: string;
   description?: string;
   icon?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/** Extra context sent with a chat turn for model reasoning, not user display */
+export interface ClientContext {
+  active_task?: string | null;
+  current_panel?: PanelType;
+  current_panel_data?: Record<string, unknown>;
+  constraints?: Record<string, unknown>;
+  option_answer?: {
+    question_id?: string;
+    question?: string;
+    answer_id: string;
+    answer_label: string;
+    metadata?: Record<string, unknown>;
+  };
 }
 
 /** A node in the interactive architecture diagram */
@@ -63,7 +79,7 @@ export interface ChatMessage {
 
 /** Shape of the SSE events streamed from the backend */
 export interface SSEEvent {
-  event: 'text' | 'panel_command' | 'tool_activity' | 'done' | 'error' | 'meta';
+  event: 'text' | 'panel_command' | 'tool_activity' | 'done' | 'error' | 'meta' | 'keepalive';
   data: string; // JSON-encoded payload
 }
 
@@ -87,7 +103,7 @@ export interface ErrorEventData {
 export interface ChatRequest {
   message: string;
   session_id?: string;
-  context?: Record<string, unknown>;
+  client_context?: ClientContext;
 }
 
 /** Conversation session metadata */

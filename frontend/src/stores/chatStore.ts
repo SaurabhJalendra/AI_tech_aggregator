@@ -1,15 +1,17 @@
 import { create } from 'zustand';
-import type { ChatMessage, PanelCommand } from '@/types/chat';
+import type { ChatMessage, ClientContext, PanelCommand } from '@/types/chat';
 import { usePanelStore } from './panelStore';
 
 interface ChatState {
   messages: ChatMessage[];
   sessionId: string | null;
+  activeTask: string | null;
+  activeConstraints: Record<string, unknown>;
   isStreaming: boolean;
   abortController: AbortController | null;
 
   // Actions
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string, clientContext?: ClientContext) => void;
   appendStreamChunk: (messageId: string, token: string) => void;
   addPanelCommand: (messageId: string, command: PanelCommand) => void;
   finishStreaming: (messageId: string) => void;
@@ -24,13 +26,19 @@ function generateId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function isOptionAnswerContext(context?: ClientContext): boolean {
+  return Boolean(context?.option_answer);
+}
+
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   sessionId: null,
+  activeTask: null,
+  activeConstraints: {},
   isStreaming: false,
   abortController: null,
 
-  sendMessage: (content: string) => {
+  sendMessage: (content: string, clientContext?: ClientContext) => {
     const { addUserMessage, addAssistantMessage, sessionId, setIsStreaming, abortController } = get();
 
     // Abort any previous in-flight request
@@ -45,9 +53,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const assistantId = addAssistantMessage();
     setIsStreaming(true);
 
+    const panelState = usePanelStore.getState();
+    const currentPanel = panelState.currentPanel;
+    const activeTask =
+      clientContext?.active_task ||
+      (isOptionAnswerContext(clientContext) ? get().activeTask : content);
+    const optionMetadata = clientContext?.option_answer?.metadata || {};
+    const optionQuestionId = clientContext?.option_answer?.question_id;
+    const optionAnswerId = clientContext?.option_answer?.answer_id;
+    const activeConstraints = isOptionAnswerContext(clientContext)
+      ? {
+          ...get().activeConstraints,
+          ...optionMetadata,
+          ...(optionQuestionId && optionAnswerId
+            ? { [optionQuestionId]: optionAnswerId }
+            : {}),
+        }
+      : {};
+
+    if (activeTask && activeTask !== get().activeTask) {
+      set({ activeTask });
+    }
+    if (isOptionAnswerContext(clientContext) || Object.keys(get().activeConstraints).length > 0) {
+      set({ activeConstraints });
+    }
+
     const body = JSON.stringify({
       message: content,
       session_id: sessionId,
+      client_context: {
+        ...clientContext,
+        active_task: activeTask,
+        current_panel: clientContext?.current_panel || currentPanel,
+        current_panel_data: clientContext?.current_panel_data || panelState.panelData,
+        constraints: activeConstraints,
+      },
     });
 
     fetch('/api/chat', {
@@ -117,6 +157,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
                         : msg
                     ),
                   }));
+                }
+
+                if (parsed.type === 'error') {
+                  const errorMessage =
+                    parsed.content || parsed.message || 'The advisor returned an error.';
+                  get().appendStreamChunk(
+                    assistantId,
+                    `\n\n*${errorMessage}*`
+                  );
                 }
 
                 if (parsed.type === 'done') {
@@ -214,7 +263,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (abortController) {
       abortController.abort();
     }
-    set({ messages: [], sessionId: null, isStreaming: false, abortController: null });
+    set({
+      messages: [],
+      sessionId: null,
+      activeTask: null,
+      activeConstraints: {},
+      isStreaming: false,
+      abortController: null,
+    });
   },
 
   setIsStreaming: (streaming: boolean) => {

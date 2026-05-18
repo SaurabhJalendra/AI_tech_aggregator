@@ -36,6 +36,7 @@ async def advisor_chat(
             user=user,
             session_id=chat_request.session_id,
             message=chat_request.message,
+            client_context=chat_request.client_context,
         ),
         media_type="text/event-stream",
         headers={

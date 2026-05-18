@@ -6,7 +6,8 @@ Uses the user's Max subscription — no API key required.
 import asyncio
 import json
 import os
-import tempfile
+import shutil
+import subprocess
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -64,17 +65,69 @@ class ClaudeCodeAdapter:
         if mcp_config:
             cmd.extend(["--mcp-config", mcp_config])
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        executable = shutil.which(cmd[0])
+        if not executable:
+            yield {"type": "text", "content": "\n\n*Error: Claude Code CLI was not found on PATH.*"}
+            yield {"type": "done"}
+            return
+
+        if os.name == "nt" and executable.lower().endswith((".cmd", ".bat")):
+            native_executable = (
+                Path(executable).parent
+                / "node_modules"
+                / "@anthropic-ai"
+                / "claude-code"
+                / "bin"
+                / "claude.exe"
+            )
+            if native_executable.exists():
+                executable = str(native_executable)
+            else:
+                yield {
+                    "type": "text",
+                    "content": "\n\n*Error: Claude Code was found only as a Windows command shim, but the native executable could not be located.*",
+                }
+                yield {"type": "done"}
+                return
+
+        if os.name == "nt":
+            for event in await asyncio.to_thread(self._run_blocking, executable, cmd[1:]):
+                yield event
+            yield {"type": "done"}
+            return
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                executable,
+                *cmd[1:],
+                stdin=subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except Exception as e:
+            yield {"type": "text", "content": f"\n\n*Error starting Claude Code CLI: {e}*"}
+            yield {"type": "done"}
+            return
 
         accumulated_text = ""
-        last_yielded_pos = 0
+        stderr_lines: list[str] = []
+
+        async def _collect_stderr() -> None:
+            if process.stderr is None:
+                return
+            async for raw_line in process.stderr:
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if line:
+                    stderr_lines.append(line)
+
+        stderr_task = asyncio.create_task(_collect_stderr())
 
         try:
             deadline = asyncio.get_event_loop().time() + 120
+
+            if process.stdout is None:
+                yield {"type": "text", "content": "\n\n*Error: Claude Code subprocess did not provide stdout.*"}
+                return
 
             async for line in process.stdout:
                 if asyncio.get_event_loop().time() > deadline:
@@ -121,8 +174,78 @@ class ClaudeCodeAdapter:
                     await process.wait()
                 except ProcessLookupError:
                     pass
+            else:
+                await process.wait()
+
+            try:
+                await asyncio.wait_for(stderr_task, timeout=1)
+            except TimeoutError:
+                stderr_task.cancel()
+
+        if not accumulated_text and process.returncode not in (0, None):
+            stderr_text = "\n".join(stderr_lines[-5:]).strip()
+            detail = f": {stderr_text}" if stderr_text else ""
+            yield {
+                "type": "text",
+                "content": f"\n\n*Claude Code exited with status {process.returncode}{detail}*",
+            }
 
         yield {"type": "done"}
+
+    def _run_blocking(self, executable: str, args: list[str]) -> list[dict]:
+        """Run Claude Code synchronously.
+
+        Uvicorn's Windows event loop may not support async subprocesses. Running
+        the CLI in a worker thread keeps the request path async while avoiding
+        the event-loop subprocess limitation.
+        """
+        process = subprocess.Popen(
+            [executable, *args],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        events: list[dict] = []
+        accumulated_text = ""
+
+        if process.stdout is not None:
+            for line in process.stdout:
+                decoded = line.strip()
+                if not decoded:
+                    continue
+                try:
+                    event = json.loads(decoded)
+                except json.JSONDecodeError:
+                    continue
+
+                event_type = event.get("type")
+                if event_type == "assistant":
+                    content_blocks = event.get("message", {}).get("content", [])
+                    for block in content_blocks:
+                        if block.get("type") == "text":
+                            text = block.get("text", "")
+                            if text:
+                                accumulated_text += text
+                                events.extend(self._extract_panel_commands(text))
+                elif event_type == "result":
+                    result_text = event.get("result", "")
+                    if result_text and not accumulated_text:
+                        events.extend(self._extract_panel_commands(result_text))
+                    break
+
+        _, stderr = process.communicate(timeout=5)
+        if not events and process.returncode not in (0, None):
+            detail = f": {stderr.strip()}" if stderr and stderr.strip() else ""
+            events.append({
+                "type": "text",
+                "content": f"\n\n*Claude Code exited with status {process.returncode}{detail}*",
+            })
+
+        return events
 
     def _extract_panel_commands(self, text: str) -> list[dict]:
         """

@@ -12,6 +12,10 @@ interface PanelState {
   panelData: Record<string, unknown>;
   panelTitle: string | undefined;
   panelHistory: PanelHistoryEntry[];
+  pendingRender: {
+    command: PanelCommand;
+    timeout: ReturnType<typeof setTimeout>;
+  } | null;
 
   // Actions
   renderPanel: (command: PanelCommand) => void;
@@ -28,20 +32,30 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   panelData: {},
   panelTitle: undefined,
   panelHistory: [],
+  pendingRender: null,
 
   renderPanel: (command: PanelCommand) => {
-    const { currentPanel, panelData, panelTitle } = get();
-
     if (command.action === 'clear') {
+      const { pendingRender } = get();
+      if (pendingRender) clearTimeout(pendingRender.timeout);
       set({
         currentPanel: 'welcome',
         panelData: {},
         panelTitle: undefined,
+        pendingRender: null,
       });
       return;
     }
 
     if (command.action === 'update') {
+      const { pendingRender } = get();
+      if (pendingRender && pendingRender.command.panel === command.panel) {
+        clearTimeout(pendingRender.timeout);
+        commitRender(pendingRender.command);
+      }
+
+      if (get().currentPanel !== command.panel) return;
+
       const subAction = command.data?.subAction as string | undefined;
       if (subAction === 'add_node' && command.data.node) {
         get().appendNode(command.data.node as ArchNode);
@@ -59,16 +73,33 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       return;
     }
 
-    // action === 'render' — push current panel onto history and switch
-    set({
-      panelHistory: [
-        ...get().panelHistory,
-        { panel: currentPanel, data: panelData, title: panelTitle },
-      ],
-      currentPanel: command.panel,
-      panelData: command.data,
-      panelTitle: command.title,
-    });
+    // action === 'render' — debounce so rapid multi-render streams settle on the last panel.
+    const { pendingRender } = get();
+    if (pendingRender) clearTimeout(pendingRender.timeout);
+
+    const timeout = setTimeout(() => {
+      commitRender(command);
+    }, 80);
+
+    set({ pendingRender: { command, timeout } });
+
+    function commitRender(renderCommand: PanelCommand) {
+      const state = get();
+      set({
+        panelHistory: [
+          ...state.panelHistory,
+          {
+            panel: state.currentPanel,
+            data: state.panelData,
+            title: state.panelTitle,
+          },
+        ],
+        currentPanel: renderCommand.panel,
+        panelData: renderCommand.data,
+        panelTitle: renderCommand.title,
+        pendingRender: null,
+      });
+    }
   },
 
   appendNode: (node: ArchNode) => {
@@ -107,12 +138,14 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   },
 
   goBack: () => {
-    const { panelHistory } = get();
+    const { panelHistory, pendingRender } = get();
+    if (pendingRender) clearTimeout(pendingRender.timeout);
     if (panelHistory.length === 0) {
       set({
         currentPanel: 'welcome',
         panelData: {},
         panelTitle: undefined,
+        pendingRender: null,
       });
       return;
     }
@@ -123,20 +156,25 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       panelData: previous.data,
       panelTitle: previous.title,
       panelHistory: panelHistory.slice(0, -1),
+      pendingRender: null,
     });
   },
 
   clearPanel: () => {
+    const { pendingRender } = get();
+    if (pendingRender) clearTimeout(pendingRender.timeout);
     set({
       currentPanel: 'welcome',
       panelData: {},
       panelTitle: undefined,
       panelHistory: [],
+      pendingRender: null,
     });
   },
 
   setPanel: (panel: PanelType, data: Record<string, unknown> = {}, title?: string) => {
-    const { currentPanel, panelData, panelTitle } = get();
+    const { currentPanel, panelData, panelTitle, pendingRender } = get();
+    if (pendingRender) clearTimeout(pendingRender.timeout);
 
     set({
       panelHistory: [
@@ -146,6 +184,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       currentPanel: panel,
       panelData: data,
       panelTitle: title,
+      pendingRender: null,
     });
   },
 }));
