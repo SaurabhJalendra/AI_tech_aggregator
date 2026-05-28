@@ -1,0 +1,46 @@
+# Phase-2 decision metadata for common RAG stack modules (per-slug overlays).
+version: "1"
+
+modules:
+  unstructured_io:
+    pricing_tier: low
+    ease_of_use_score: 8
+    operational_complexity: medium
+    deployment: [cloud, on_prem]
+  llamaindex_node_parsers:
+    pricing_tier: low
+    ease_of_use_score: 8
+    operational_complexity: low
+    deployment: [on_prem, cloud]
+  openai_embeddings:
+    pricing_tier: medium
+    ease_of_use_score: 9
+    latency_score: 8
+    deployment: [cloud]
+  sentence_transformers:
+    pricing_tier: low
+    ease_of_use_score: 8
+    deployment: [on_prem]
+  qdrant:
+    pricing_tier: low
+    scalability_score: 8
+    latency_score: 9
+    deployment: [cloud, on_prem]
+  chromadb:
+    pricing_tier: low
+    ease_of_use_score: 9
+    deployment: [on_prem, cloud]
+  cohere_rerank:
+    pricing_tier: medium
+    deployment: [cloud]
+  claude_3_5_haiku:
+    pricing_tier: medium
+    latency_score: 8
+    deployment: [cloud]
+  langfuse:
+    pricing_tier: low
+    ease_of_use_score: 8
+    deployment: [cloud, on_prem]
+  docker:
+    pricing_tier: low
+    deployment: [on_prem]

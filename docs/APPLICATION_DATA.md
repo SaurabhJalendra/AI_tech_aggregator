@@ -1,6 +1,6 @@
 # Application data
 
-This document describes **what data the product uses**, where it lives, and how it flows between the registry, database, cache, and clients. For how the backend is structured in code, see [BACKEND_IMPLEMENTATION.md](./BACKEND_IMPLEMENTATION.md).
+This document describes **what data the product uses**, where it lives, and how it flows between the registry, database, cache, advisor packages, and clients. For backend code layout, see [BACKEND_IMPLEMENTATION.md](./BACKEND_IMPLEMENTATION.md).
 
 ---
 
@@ -8,123 +8,223 @@ This document describes **what data the product uses**, where it lives, and how 
 
 Technology modules are authored as **one YAML file per module** under `modules_registry/specs/{slug}.yaml`. The canonical shape is defined in `modules_registry/schema.yaml`.
 
-**Typical sections and purpose**
+**Scale:** 102 spec files, 18 category enums (category `infrastructure_comparison` has no specs yet).
+
+**Typical sections**
 
 | Section | Purpose |
 |--------|---------|
-| `meta` | `slug`, `name`, `category` (enum), `status`, `version`, `last_updated`, optional `subcategory`, `maintainer` |
+| `meta` | `slug`, `name`, `category`, `subcategory`, `status`, `version`, `last_updated`, optional `maintainer` |
 | `identity` | `tagline`, `description`, URLs, `license`, `pricing_model`, optional `logo_url` |
-| `capabilities` | `primary_use_cases`, `supported_operations`, and other capability fields per spec |
-| `technical_specs` | Structured, module-specific fields (stored as JSON on the row) |
-| `comparison_dimensions` | Scored dimensions; loaded into `modules.comparison_scores` |
-| `knowledge` | Topic/content entries; each becomes a `module_knowledge` row (embeddable text) |
-| `code_examples` | List of titled snippets; stored on `modules.code_examples` |
-| `benchmarks` | Optional benchmark facts → `benchmarks` table |
-| `relationships` | Alternatives, complements, pipeline predecessors/successors (JSON on `modules`) |
-| `pipeline` | Position and graph hints mapped into pipeline columns on `modules` |
+| `capabilities` | `primary_use_cases`, `supported_operations` |
+| `technical_specs` | Structured fields; may include `decision` block for advisor scoring |
+| `comparison_dimensions` | Eight 1–10 scores → `modules.comparison_scores` |
+| `knowledge` | Topic/content entries → `module_knowledge` rows (embeddable) |
+| `code_examples` | Titled snippets → `modules.code_examples` |
+| `benchmarks` | Optional → `benchmarks` table |
+| `relationships` | `alternatives`, `complements`, `typical_pipeline_position`, `pipeline_predecessors` / `pipeline_successors` |
 
 **Ingestion**
 
-- `scripts/seed_db.py` (and the loader in `backend/src/modules/loader.py`) reads specs, computes a **content hash** (`spec_hash`), and inserts or updates rows without duplicating unchanged specs.
+- `scripts/seed_db.py` → `backend/src/modules/loader.py`
+- Computes **`spec_hash`** (SHA256 of normalized YAML); skips unchanged bodies
+- **`merge_overlay_into_technical_specs`** applies `advisor_registry` decision YAML on load
+- `scripts/sync_decision_metadata.py` — backfill `technical_specs.decision` without full re-seed
+- `scripts/scaffold_foundation_model_specs.py` — generates `llm_layer` / `foundation_model` specs (16 models)
 
 ---
 
-## 2. PostgreSQL (primary store)
+## 2. Advisor configuration (YAML, not in DB)
 
-The database is **PostgreSQL 16 with the `pgvector` extension**. Migrations live under `backend/alembic/versions/` (initial schema: `001_initial_schema.py`).
+| Path | Role |
+|------|------|
+| `backend/src/advisor_playbooks/playbooks.yaml` | Playbook ids, `required_slots`, `slot_impact_values`, `intent_ids`, `phase2_pipeline`, UI behavior |
+| `backend/src/advisor_registry/vector_databases_decision.yaml` | Per-slug deployment/pricing/scores for vector DB shortlists |
+| `backend/src/advisor_registry/rag_modules_decision.yaml` | RAG-stage module decision overlays |
+| `backend/src/advisor_registry/comparison_universe.yaml` | Same-abstraction-layer comparison layers (e.g. retrieval vs reranker) |
+| `backend/src/advisor_intent/registry.yaml` | Curated exemplar phrases → `intent_id` for semantic routing |
 
-### 2.1 Core product tables (actively used by ORM and APIs)
+Loaded at runtime by `advisor_playbooks/loader.py`, `services/decision_metadata.py`, `services/comparison_universe.py`, `services/semantic_intent.py`.
+
+**Phase-2 playbooks** (`phase2_pipeline: true`): `vector_db_comparison`, `rag_pipeline_design`, `module_code`, `architecture_review`, `local_ai_stack`, plus dynamic `category_<slug>` from planner.
+
+---
+
+## 3. PostgreSQL (primary store)
+
+PostgreSQL 16 + **pgvector**. Migrations: `backend/alembic/versions/` (including `002_bge_embedding_dimensions.py` for **1024-dim** vectors).
+
+### 3.1 Core tables
 
 | Table | Role |
 |-------|------|
 | `module_categories` | Category slug, display name, ordering, icon |
-| `modules` | One row per technology: identity, JSON blobs for specs/capabilities/relationships, `spec_hash` |
-| `module_knowledge` | Per-module knowledge chunks; **`embedding vector(1536)`** for semantic search |
-| `module_integrations` | Edges to other modules (`target_slug`, `integration_type`) |
-| `benchmarks` | Numeric benchmarks linked to a module |
-| `users` | Accounts: email, tier, optional team, API key field |
-| `teams` | Team container (owner reference in migration) |
-| `conversations` | Chat sessions per user: title, counts, cost/token aggregates |
-| `messages` | Chat turns: `role`, **`content` JSON** (e.g. `{"text": "..."}`), optional **`panel_commands` JSON** (list of UI commands), sequence |
-| `comparisons` | Cached comparison results (module slugs, dimensions, weights, JSON `result`, expiry) |
-| `usage_records` | Per-event usage (tokens, cost, optional `conversation_id`, `metadata`) |
-| `usage_aggregates` | Rolled-up usage by user and period |
+| `modules` | One row per technology; JSON for specs, `comparison_scores`, relationships, `spec_hash` |
+| `module_knowledge` | Knowledge chunks; **`embedding vector(1024)`** for semantic search |
+| `module_integrations` | Edges (`target_slug`, `integration_type`) |
+| `benchmarks` | Numeric benchmarks per module |
+| `users` / `teams` | Accounts and teams |
+| `conversations` | Chat sessions: title, counts, token/cost aggregates |
+| `messages` | Turns: `role`, **`content` JSON**, **`panel_commands` JSON**, `sequence` |
+| `comparisons` | Cached compare results (slugs, dimensions, weights, `result`, expiry) |
+| `usage_records` / `usage_aggregates` | Usage tracking |
 
-### 2.2 Schema present in migrations; limited or no ORM usage in `src/models`
+### 3.2 Message `content` JSON (assistant)
 
-These tables exist in the database for forward-looking features (research queue, expansion). They may not appear in `backend/src/models/__init__.py`:
+Beyond `text`, assistant messages may persist:
 
-| Table | Role |
-|-------|------|
-| `research_updates` | Findings linked to modules, review workflow |
-| `expansion_candidates` | Suggested new modules / draft specs |
+| Field | Purpose |
+|-------|---------|
+| `text` | Visible assistant reply |
+| `constraint_state` | Canonical slot memory (`ConstraintState`) |
+| `advisor_trace` | Pipeline trace for explainability (shortlist, scores, filters) |
+| `recommendation_explain` | Compact explain payload for UI/LLM guardrails |
 
-### 2.3 Embeddings
+User messages typically `{ "text": "..." }`.
 
-- Column: `module_knowledge.embedding`, type **`vector(1536)`** (OpenAI-style dimension; generation is configured in `backend/src/core/embeddings.py` and related scripts).
-- Used by agent/tooling for **semantic knowledge search** over module content.
+### 3.3 Embeddings
 
----
+- Model: **`BAAI/bge-large-en-v1.5`** via `sentence-transformers` (`backend/src/core/embeddings.py`)
+- Dimension: **1024** on `module_knowledge.embedding`
+- Query prefix for retrieval: configured in embeddings module
+- Generation: `scripts/generate_embeddings.py` when `EMBEDDINGS_ENABLED=true`
+- Used for: **knowledge search**, **semantic intent** exemplar matching
 
-## 3. Redis (ephemeral cache)
+### 3.4 Forward-looking tables (migration only)
 
-Redis is optional at runtime: if the client cannot connect, cache helpers return misses and the API still serves from PostgreSQL.
-
-**Usage** (`backend/src/core/redis.py`)
-
-- JSON-serialized values with TTL.
-- **Module list**: keys like `modules:list:{category}:{status}:{search}:{page}:{per_page}` (TTL 300s).
-- **Module detail**: `modules:detail:{slug}` (see `modules.py` for exact TTL).
-- **Categories**: `modules:categories` (TTL 3600s).
+`research_updates`, `expansion_candidates` — not wired in current ORM exports.
 
 ---
 
-## 4. Streaming chat protocol (SSE payloads)
+## 4. Redis (ephemeral cache)
 
-The advisor chat endpoint streams **Server-Sent Events** (`data: …`). The frontend and BFF parse lines starting with `data: ` as JSON.
+Optional; misses fall through to PostgreSQL (`backend/src/core/redis.py`).
 
-**Common event types**
+| Key pattern | TTL | Content |
+|-------------|-----|---------|
+| `modules:list:{category}:{status}:{search}:{page}:{per_page}` | 300s | Paginated module list |
+| `modules:detail:{slug}` | 600s | Module detail |
+| `modules:categories` | 3600s | Category list |
+
+---
+
+## 5. Streaming chat protocol (SSE)
+
+`POST /api/v1/advisor/chat` returns `text/event-stream`. BFF at `POST /api/chat` proxies the stream unchanged.
+
+### 5.1 Request body (`ChatRequest`)
+
+```json
+{
+  "message": "string",
+  "session_id": "uuid | null",
+  "client_context": {
+    "constraint_state": { "slots": {}, "playbook_id": null },
+    "current_panel": "comparison_chart",
+    "option_answer": { "answer_id": "...", "answer_label": "..." },
+    "intent_clarification_choice": { "intent_id": "...", "label": "..." },
+    "advisor_trace": {},
+    "recommendation_explain": {}
+  }
+}
+```
+
+### 5.2 Event types
 
 | `type` | Meaning |
 |--------|---------|
-| `meta` | e.g. `session_id` (conversation UUID) for the client to reuse |
-| `text` | Incremental assistant text (`content`) |
-| `panel_command` | UI instruction: `command` matches the panel command shape below |
-| `tool_activity` | Optional progress for tool execution (when emitted) |
+| `meta` | `session_id`, optional `constraint_state`, `advisor_trace`, `recommendation_explain`, intent/playbook fields |
+| `text` | Incremental assistant text |
+| `panel_command` | `{ command: PanelCommand }` |
+| `tool_activity` | Tool name + `running` \| `complete` (SDK path) |
 | `done` | Stream finished |
 | `error` | Error payload |
 
-**Panel commands (persisted and replayed)**
+### 5.3 Panel commands
 
-- Stored on assistant `messages.panel_commands` as a JSON array.
-- Shape aligns with the frontend contract in `frontend/src/types/chat.ts`: `action` (`render` \| `update` \| `clear`), `panel` (e.g. `architecture_diagram`, `comparison_chart`, `code_preview`, …), `data`, optional `title`.
-- `GET /api/v1/sessions/{id}/messages` returns each message’s `panel_commands` for history replay.
+Persisted on assistant `messages.panel_commands` as a JSON array.
 
----
+```json
+{
+  "action": "render | update | clear",
+  "panel": "comparison_chart | interactive_architecture | option_cards | ...",
+  "data": { },
+  "title": "optional"
+}
+```
 
-## 5. REST JSON shapes (high level)
+Architecture **updates** may include `subAction`: `add_node`, `add_edge`, `highlight`.
 
-- **Modules list** (`GET /api/v1/modules`): paginated list with summary fields (`slug`, `name`, `category`, `tagline`, etc.).
-- **Module detail** (`GET /api/v1/modules/{slug}`): full module payload including knowledge, integrations, benchmarks as implemented in the route.
-- **Compare** (`POST /api/v1/compare`): request body per `CompareRequest`; response is the comparison engine’s structured result (dimensions, rankings, etc.).
-- **Sessions**: list metadata and per-session messages as built in `sessions.py`.
-
----
-
-## 6. Client-side state (not server data, but “data the app uses”)
-
-- **Zustand** (`frontend/src/stores/chatStore.ts`, `panelStore.ts`): messages, streaming state, session id, current panel and history.
-- **Next.js BFF** (`frontend/src/app/api/chat/route.ts`): proxies the raw SSE body to the backend; does not reinterpret panel payloads.
+Frontend contract: `frontend/src/types/chat.ts`.
 
 ---
 
-## 7. Related paths
+## 6. Constraint state
+
+Canonical model: `backend/src/schemas/constraint_state.py` ↔ `frontend/src/types/chat.ts`.
+
+| Concept | Description |
+|---------|-------------|
+| `ConstraintSlot` | `value`, `source` (`explicit`, `inferred`, `option_card`, `accumulated`, `default`), `confidence` |
+| Slots | e.g. `budget_tier`, `scale`, `deployment`, `language`, `use_case` — playbook-specific |
+| `ConstraintStateService` | Merges message text + `client_context.option_answer` + prior state |
+
+Slot impact: `SlotImpactPolicy` only asks missing slots that change pipeline `preview_signature`.
+
+---
+
+## 7. Advisor trace & explainability
+
+`AdvisorTrace` (`schemas/advisor_trace.py`): `retrieved`, `filtered_out`, `scores`, `shortlist`, `steps`, `slot_impact_notes`.
+
+- `to_explain_payload()` → user-visible explainability (internal filter reasons hidden via `explainability_filters.ts`)
+- `explanation_fidelity.py` validates LLM narration against trace when LLM fallback runs
+- Debug UI: `TraceDebugPanel.tsx` (collapsible JSON + entity chips)
+
+---
+
+## 8. REST JSON shapes (high level)
+
+- **Modules list** — paginated summaries
+- **Module detail** — full module + knowledge + integrations + benchmarks
+- **Compare** — `ComparisonResult`: dimension matrix, rankings, weighted overall, highlights, recommendation string
+- **Sessions** — conversation metadata; messages include `panel_commands`
+- **Advisor playbooks** — declarative playbook list for tooling/docs
+
+---
+
+## 9. Comparison data
+
+**Eight dimensions** (1–10): `performance`, `scalability`, `ease_of_use`, `cost_efficiency`, `community`, `maturity`, `flexibility`, `data_privacy`.
+
+Sources:
+- Spec `comparison_dimensions` → DB `comparison_scores`
+- Playbook scoring (`services/scoring.py`) may blend **decision metadata** overlays with comparison scores
+- `ComparisonEngine` for REST `/compare` and agent `compare_modules` tool
+
+**Comparison universe** layers prevent mixing incompatible modules (e.g. reranker vs retrieval strategy) — see `comparison_universe.yaml`.
+
+---
+
+## 10. Client-side state (not server DB)
+
+| Store | Data |
+|-------|------|
+| `chatStore` | Messages, streaming, `sessionId`, intent clarification, `constraintState`, `lastAdvisorTrace`, `lastRecommendationExplain` |
+| `panelStore` | `currentPanel`, `panelData`, `panelTitle`, `panelHistory`, debounced render |
+| `themeStore` | `light` / `dark` / `system` |
+| `visualIdentityStore` | Session-stable colors for comparison/architecture entities |
+
+---
+
+## 11. Related paths
 
 | Path | Content |
 |------|---------|
 | `modules_registry/schema.yaml` | Module YAML schema |
-| `modules_registry/specs/*.yaml` | Module definitions |
-| `scripts/seed_db.py` | Load/update DB from specs |
-| `scripts/generate_embeddings.py` | Embedding backfill / generation |
+| `modules_registry/specs/*.yaml` | 102 module definitions |
+| `scripts/seed_db.py` | Load/update DB |
+| `scripts/generate_embeddings.py` | BGE embedding backfill |
+| `scripts/sync_decision_metadata.py` | Decision overlay backfill |
 | `backend/alembic/` | Schema migrations |
-| `docs/architecture/README.md` | High-level architecture diagram |
+| `docs/architecture/README.md` | Architecture diagram |

@@ -73,8 +73,7 @@ class ComparisonEngine:
         for dim in dims:
             ranked = sorted(
                 slugs,
-                key=lambda s: matrix[s][dim].value,
-                reverse=True,
+                key=lambda s: (-round(matrix[s][dim].value, 6), s),
             )
             rankings[dim] = ranked
 
@@ -89,7 +88,10 @@ class ComparisonEngine:
                 total_weight += w
             overall_scores[slug] = total / total_weight if total_weight > 0 else 0
 
-        overall_ranking = sorted(slugs, key=lambda s: overall_scores[s], reverse=True)
+        overall_ranking = sorted(
+            slugs,
+            key=lambda s: (-round(overall_scores[s], 6), s),
+        )
 
         # Generate highlights (top 2 strengths for each module)
         highlights: dict[str, list[str]] = {}
@@ -112,7 +114,7 @@ class ComparisonEngine:
         )
 
         return ComparisonResult(
-            modules=slugs,
+            modules=overall_ranking,
             dimensions=dims,
             matrix={
                 slug: {dim: score for dim, score in dim_scores.items()}

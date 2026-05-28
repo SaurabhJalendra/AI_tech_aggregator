@@ -7,6 +7,7 @@ from src.core.security import get_current_user
 from src.db.session import get_db
 from src.models.user import User
 from src.schemas.chat import ChatRequest
+from src.schemas.client_context import validate_client_context
 
 from src.services.chat_service import ChatService
 
@@ -29,6 +30,7 @@ async def advisor_chat(
             detail="Anthropic API key not configured. Set ANTHROPIC_API_KEY in .env or enable USE_CLAUDE_CODE=true",
         )
 
+    safe_context, _ctx_stats = validate_client_context(chat_request.client_context)
     chat_service = ChatService(db)
 
     return StreamingResponse(
@@ -36,7 +38,7 @@ async def advisor_chat(
             user=user,
             session_id=chat_request.session_id,
             message=chat_request.message,
-            client_context=chat_request.client_context,
+            client_context=safe_context,
         ),
         media_type="text/event-stream",
         headers={

@@ -24,6 +24,7 @@ interface PanelState {
   highlightNode: (nodeId: string) => void;
   goBack: () => void;
   clearPanel: () => void;
+  clearCodeDrawer: () => void;
   setPanel: (panel: PanelType, data?: Record<string, unknown>, title?: string) => void;
 }
 
@@ -169,6 +170,14 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       panelTitle: undefined,
       panelHistory: [],
       pendingRender: null,
+    });
+  },
+
+  clearCodeDrawer: () => {
+    set((state) => {
+      if (!state.panelData.codeDrawer) return state;
+      const { codeDrawer: _removed, ...rest } = state.panelData;
+      return { panelData: rest };
     });
   },
 

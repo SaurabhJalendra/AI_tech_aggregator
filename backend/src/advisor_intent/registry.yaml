@@ -1,0 +1,52 @@
+# Curated paraphrases → intent_id. Embeddings computed at runtime via local BGE (see src/core/embeddings.py).
+# intent_id grammar:
+#   architecture_review | local_ai_stack | rag_pipeline | category:<registry_category_slug>
+version: "1"
+exemplars:
+  # Vector / ANN / semantic retrieval (same intent family)
+  - { id: ex-vdb-1, intent_id: "category:vector_databases", text: "Need a vector database" }
+  - { id: ex-vdb-2, intent_id: "category:vector_databases", text: "Help me pick a vector database" }
+  - { id: ex-vdb-3, intent_id: "category:vector_databases", text: "Need semantic retrieval infrastructure" }
+  - { id: ex-vdb-4, intent_id: "category:vector_databases", text: "Looking for an ANN search backend for embeddings" }
+  - { id: ex-vdb-5, intent_id: "category:vector_databases", text: "Need embedding retrieval stack with approximate nearest neighbors" }
+  - { id: ex-vdb-6, intent_id: "category:vector_databases", text: "Compare vector stores for production RAG" }
+  - { id: ex-vdb-7, intent_id: "category:vector_databases", text: "Which vector DB should we use for similarity search" }
+
+  - { id: ex-emb-1, intent_id: "category:embeddings", text: "Need an embedding model or API for RAG" }
+  - { id: ex-emb-2, intent_id: "category:embeddings", text: "Compare embedding providers for retrieval" }
+
+  - { id: ex-ch-1, intent_id: "category:chunking", text: "Need chunking strategy for long documents" }
+  - { id: ex-ing-1, intent_id: "category:data_ingestion", text: "Need document ingestion pipeline for PDFs" }
+
+  - { id: ex-ret-1, intent_id: "category:retrieval", text: "Need hybrid retrieval and reranking layer" }
+  - { id: ex-llm-1, intent_id: "category:llm_layer", text: "Compare LLMs for our application" }
+  - { id: ex-ag-1, intent_id: "category:agent_systems", text: "Compare agent frameworks like LangGraph vs CrewAI" }
+
+  - { id: ex-rag-1, intent_id: "rag_pipeline", text: "Design a full RAG pipeline from ingestion to deployment" }
+  - { id: ex-rag-2, intent_id: "rag_pipeline", text: "End to end retrieval augmented generation architecture" }
+  - { id: ex-rag-3, intent_id: "rag_pipeline", text: "RAG stack with chunking embeddings vector DB and LLM" }
+
+  - { id: ex-local-1, intent_id: "local_ai_stack", text: "Local LLM with agents on consumer GPU zero cost" }
+  - { id: ex-local-2, intent_id: "local_ai_stack", text: "Self hosted language model and agent orchestration" }
+
+  - { id: ex-ar-1, intent_id: "architecture_review", text: "Review my RAG architecture diagram for issues" }
+  - { id: ex-ar-2, intent_id: "architecture_review", text: "What is wrong with this architecture diagram" }
+
+  # Architecture scenario simulation (semantic routing on blueprint)
+  - { id: ex-sim-traffic-1, intent_id: "architecture_simulation:traffic", text: "Suppose retrieval latency becomes problematic under heavy traffic" }
+  - { id: ex-sim-traffic-2, intent_id: "architecture_simulation:traffic", text: "If our traffic spikes heavily what would change in this stack" }
+  - { id: ex-sim-traffic-3, intent_id: "architecture_simulation:traffic", text: "What happens if query volume increases tenfold" }
+  - { id: ex-sim-scale-1, intent_id: "architecture_simulation:enterprise_scale", text: "What happens if we move toward enterprise scale" }
+  - { id: ex-sim-scale-2, intent_id: "architecture_simulation:enterprise_scale", text: "If we need production scale across the whole pipeline" }
+  - { id: ex-sim-latency-1, intent_id: "architecture_simulation:latency", text: "What if end to end latency becomes the top priority for our SLA" }
+  - { id: ex-sim-latency-2, intent_id: "architecture_simulation:latency", text: "Suppose response time becomes critical for users" }
+  - { id: ex-sim-managed-1, intent_id: "architecture_simulation:managed", text: "What if we shift toward fully managed cloud services" }
+  - { id: ex-sim-selfhost-1, intent_id: "architecture_simulation:self_hosted", text: "What if we prioritize self hosted deployment and data control" }
+  - { id: ex-sim-budget-up-1, intent_id: "architecture_simulation:budget_up", text: "What would change if our budget increases significantly" }
+  - { id: ex-sim-budget-down-1, intent_id: "architecture_simulation:budget_down", text: "What if we need to cut infrastructure cost aggressively" }
+  - { id: ex-sim-privacy-1, intent_id: "architecture_simulation:privacy", text: "What if compliance and data residency requirements tighten" }
+  - { id: ex-sim-compliance-1, intent_id: "architecture_simulation:compliance", text: "What happens if compliance requirements tighten after expansion into Europe" }
+  - { id: ex-sim-throughput-1, intent_id: "architecture_simulation:throughput_imbalance", text: "What if retrieval throughput grows faster than embedding generation" }
+  - { id: ex-sim-platform-1, intent_id: "architecture_simulation:platform_capacity", text: "What if platform engineering resources remain limited" }
+  - { id: ex-sim-obs-1, intent_id: "architecture_simulation:observability_overhead", text: "What if observability overhead becomes difficult to manage" }
+  - { id: ex-sim-hybrid-1, intent_id: "architecture_simulation:hybrid", text: "What if we move toward hybrid cloud native infrastructure" }

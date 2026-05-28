@@ -20,169 +20,140 @@ A **living knowledge platform** with an AI advisor that acts like a senior archi
 
 ### What It Does
 
-1. **Asks the right questions** — Budget? Scale? Team size? Privacy requirements? Presented as clickable option cards, not text walls.
+1. **Asks the right questions** — Budget? Scale? Deployment? Presented as **option cards** and intent clarification chips, not only free text.
 
-2. **Designs the architecture live** — Builds a pipeline diagram node by node as it explains each technology choice. The user watches the system materialize.
+2. **Designs the architecture live** — React Flow canvas with pipeline stages; nodes for ingestion → chunking → embeddings → vector store → retrieval → LLM → evaluation.
 
-3. **Grounds every recommendation in data** — 86 modules with structured comparison scores across 8 dimensions (performance, scalability, cost, privacy, etc.), not LLM hallucinations.
+3. **Grounds every recommendation in data** — **102 modules** with structured comparison scores across 8 dimensions, plus playbook-specific **decision metadata** and deterministic **pipelines** (not LLM-only rankings).
 
-4. **Lets users interact** — Click a node to swap it for an alternative. See how the trade-offs change. Get integration code instantly.
+4. **Lets users interact** — Click architecture nodes (Learn / Swap / Code), pick option cards, inspect **explainability** (scores, filters, shortlist) in the comparison decision surface.
 
-5. **Generates starter code** — Complete multi-file projects ready to copy and run, not isolated snippets.
+5. **Generates starter code** — Single snippets (`code_preview`) and multi-file **`code_project`** panels.
 
 ## The Self-Improving Architecture
 
-This is the core design principle: **the platform grows by adding data, not code.**
+**The platform grows by adding data, not code.**
 
 ```
 YAML Spec (one file per technology)
     |
     v
-seed_db.py (loads into PostgreSQL + pgvector)
+seed_db.py + advisor_registry overlays
     |
     v
-Agent Tools (search, compare, recommend)
+PostgreSQL + pgvector (BGE 1024-dim knowledge embeddings)
     |
     v
-Claude LLM (reasons over the structured data)
+Playbooks + Pipelines (deterministic retrieve → filter → score → shortlist)
     |
     v
-Interactive UI (diagrams, cards, charts, code)
+Claude LLM (fallback narration + tools; constrained when playbook active)
+    |
+    v
+Interactive UI (diagrams, decision surface, cards, code)
 ```
 
 **When a new technology appears:**
 1. Create one YAML file with scores, knowledge entries, and code examples
-2. Run `python scripts/seed_db.py`
-3. The advisor immediately knows about it — recommends it, compares it, includes it in architectures
-4. No code changes. No redeployment. Just a YAML file.
+2. Run `python scripts/seed_db.py` (+ `sync_decision_metadata.py` if using decision overlays)
+3. Optionally run `generate_embeddings.py` for semantic search
+4. The advisor immediately knows about it — no application redeploy for catalog data
 
 ### Module Spec Structure
 
-Every technology is defined as a structured YAML spec:
+Every technology is defined as structured YAML under `modules_registry/specs/` (see `schema.yaml`).
 
-```yaml
-meta:
-  slug: pinecone
-  version: "1.0"
+**Scale:** 102 modules, 18 categories (17 with specs). Largest category: `llm_layer` (30 modules, including 19 `foundation_model` subcategory entries).
 
-identity:
-  name: Pinecone
-  tagline: Fully managed vector database
-  category: vector_databases
-  pricing_model: free_tier
-
-comparison_dimensions:
-  performance:    { score: 8, justification: "Sub-100ms p99 query latency..." }
-  scalability:    { score: 9, justification: "Serverless auto-scaling..." }
-  ease_of_use:    { score: 9, justification: "Fully managed, simple API..." }
-  cost_efficiency: { score: 5, justification: "Expensive at scale..." }
-  # ... 8 dimensions total
-
-knowledge:
-  entries:
-    - topic: "When to choose Pinecone"
-      content: "Choose Pinecone when you need zero-ops..."
-
-code_examples:
-  - title: "Basic RAG Pipeline"
-    language: python
-    code: |
-      from pinecone import Pinecone
-      # ...
-
-relationships:
-  alternatives: [weaviate, qdrant, chromadb]
-  complements: [openai_embeddings, langchain]
-```
-
-Currently: **86 modules across 18 categories.**
+**Comparison dimensions (8):** performance, scalability, ease_of_use, cost_efficiency, community, maturity, flexibility, data_privacy.
 
 ## How Users Access It
-
-The platform serves everyone through multiple access methods:
 
 | Access Method | Who It's For |
 |---|---|
 | **Web UI** | Product managers, CTOs, anyone exploring options |
 | **REST API** | Developers building tools on top of the platform |
-| **Python SDK** | Python developers who want programmatic access |
+| **Python SDK** | Programmatic access (including streaming `chat()`) |
 | **CLI** | Terminal-first engineers |
-| **MCP Server** | AI coding tools (Claude Code, etc.) that want module data as tools |
+| **MCP Server** | AI coding tools (Claude Code, etc.) — subset of catalog tools |
 
-## The Agentic Chat Experience
+## The Advisor Experience (Two Layers)
 
-The advisor is not a regular chatbot. It's a tool-using agent with 13 specialized tools:
+### Layer 1 — Deterministic planner (Phase-2, shipped)
 
-### Discovery Tools
-- **search_modules** — find technologies by keyword, category, or use case
-- **get_module_detail** — deep dive into one technology
-- **compare_modules** — side-by-side comparison across 8 dimensions
-- **search_knowledge** — semantic search across expert knowledge entries
-- **list_categories** — browse the full technology landscape
+Before (or instead of) open-ended LLM tool use:
 
-### Interactive Tools
-- **present_options** — show clickable option cards (user clicks to answer)
-- **build_architecture_step** — build diagrams node by node (init, add_node, connect, highlight)
+- **Semantic intent** — BGE similarity to exemplars; clarification when ambiguous
+- **Playbooks** — `vector_db_comparison`, `rag_pipeline_design`, `module_code`, `architecture_review`, `local_ai_stack`, category comparisons
+- **Constraint state** — slots with provenance (`option_card`, `inferred`, `explicit`, …)
+- **Pipelines** — retrieve → filter → score → shortlist; **`AdvisorTrace`** for explainability
+- **Panel validator** — blocks conflicting LLM panel commands when a playbook owns the UX
 
-### Rendering Tools
-- **render_comparison** — radar charts and comparison tables
-- **render_code_example** — syntax-highlighted code blocks
-- **render_code_project** — multi-file starter projects with file tree
-- **render_architecture_diagram** — static architecture diagrams
-- **suggest_stack** — generate a complete technology stack recommendation
+### Layer 2 — Tool-using agent (dual-mode)
+
+**Discovery tools:** `search_modules`, `get_module_detail`, `compare_modules`, `search_knowledge`, `list_categories`
+
+**Interactive tools:** `present_options`, `build_architecture_step`
+
+**Rendering tools:** `render_comparison`, `render_code`, `render_architecture_diagram`, `render_code_project`, `suggest_stack`, `get_benchmarks`
+
+**Modes:** Anthropic SDK (native tools) or Claude Code CLI (panel HTML comment markers).
 
 ### What the User Sees
 
-**Step 1:** User describes their project
-> "I need a RAG pipeline for 500K legal documents, SOC2 required, $500/mo budget"
+**Step 1:** User describes their project (or picks a starter prompt / clarification chip)
 
-**Step 2:** Advisor builds the architecture live
-- Right panel: nodes appear one by one (Unstructured.io → Chunking → Voyage AI → pgvector → Hybrid Search → Claude → Langfuse)
-- Left panel: streaming explanation of each choice
-- Edges with labels show data flow between components
+**Step 2:** Advisor runs a playbook
+- Right panel: comparison decision surface, architecture canvas, or option cards
+- Left panel: streamed explanation grounded in trace/explain payload
+- Optional: `TraceDebugPanel` for developers
 
 **Step 3:** User interacts
-- Click a node → context menu: "Learn more", "Swap component", "Show code"
-- Click "Swap component" → advisor suggests alternatives with trade-off analysis
-- Click "Show code" → multi-file starter project appears
+- Option cards → `client_context.option_answer` → updated constraints
+- Architecture node drawer → chat with structured context
+- Follow-up turns reuse `constraint_state` and panel snapshot in `client_context`
 
-## The Business Model
+## The Business Model (target)
 
 | Tier | Price | Features |
 |---|---|---|
-| Free | $0 | 10 conversations/month, browse all 86 modules, basic comparisons |
-| Pro | $29/month | Unlimited conversations, advanced comparisons, diagram export, starter code, 1K API calls |
-| Team | $99/month | Everything in Pro + 10 team members, shared history, custom scoring, 10K API calls |
-| API | Usage-based | Direct REST access, Python SDK, CLI, MCP integration, SLA |
+| Free | $0 | Limited conversations/month, browse modules, basic comparisons |
+| Pro | $29/month | Unlimited conversations, advanced comparisons, diagram export, starter code, API quota |
+| Team | $99/month | Team seats, shared history, custom scoring |
+| API | Usage-based | REST, SDK, CLI, MCP |
 
-The core data (all 86 modules, scores, knowledge) is always accessible. Monetization is on conversation depth, team features, and API volume.
+Monetization is on conversation depth, team features, and API volume — core catalog data remains accessible for discovery.
 
 ## Technology Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, Zustand |
-| Backend | Python 3.13, FastAPI, SQLAlchemy async, Alembic |
-| Database | PostgreSQL 16 + pgvector (vector search) |
-| Cache | Redis (optional, graceful fallback) |
-| LLM | Anthropic Claude (SDK mode with API key, or Claude Code CLI with Max subscription) |
-| Embeddings | OpenAI text-embedding-3-small (optional, text search fallback) |
-| Containers | Docker Compose (PostgreSQL + Redis) |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind v4, Zustand, `@xyflow/react`, Recharts, Shiki |
+| Backend | Python 3.11+, FastAPI, SQLAlchemy async, Alembic |
+| Database | PostgreSQL 16 + pgvector |
+| Cache | Redis (optional) |
+| LLM | Anthropic Claude (SDK or Claude Code CLI) |
+| Embeddings | Local BGE (`bge-large-en-v1.5`, 1024-dim) |
+| Containers | Docker Compose (Postgres **5433**, Redis 6379) |
 
 ## What Makes It Different
 
 | Other tools | This platform |
 |---|---|
-| Static comparison tables | Live architecture building, node by node |
-| Text-wall recommendations | Interactive option cards, clickable diagrams |
-| Hallucinated opinions | Structured data with scored justifications |
-| Single code snippets | Complete multi-file starter projects |
-| Manual updates | Self-improving — add a YAML, platform updates |
+| Static comparison tables | Live decision surface + architecture canvas |
+| Text-wall recommendations | Option cards + intent clarification |
+| Hallucinated opinions | Scored specs + pipeline traces + explainability drawer |
+| Single code snippets | Multi-file `code_project` panel |
+| Manual updates | Add YAML → seed → advisor knows immediately |
 | Web-only | Web + API + SDK + CLI + MCP |
-| One-size-fits-all | Personalized to your budget, scale, team, and constraints |
+| One-size-fits-all | Constraint slots + playbook-specific scoring |
 
 ## The Vision
 
 **Make AI infrastructure decisions easy, data-driven, and visual.**
 
-Every developer building an AI application should be able to describe what they need and watch a senior architect design the system in front of them — grounded in real data, interactive, and immediately actionable with starter code.
+Every developer building an AI application should describe what they need and see a senior-architect-quality recommendation — grounded in structured data, inspectable scoring, and immediately actionable starter code.
+
+---
+
+See [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) for remaining gaps (placeholder panels, MCP expansion, SDK polish).

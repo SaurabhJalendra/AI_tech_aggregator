@@ -49,11 +49,14 @@ flowchart TB
   LOGIN -->|success| advisor
 
   A_RIGHT --> W["welcome"]
-  A_RIGHT --> AD["architecture_diagram"]
+  A_RIGHT --> AD["architecture_diagram / interactive_architecture"]
   A_RIGHT --> CT["comparison_table"]
-  A_RIGHT --> CC["comparison_chart"]
-  A_RIGHT --> CP["code_preview"]
+  A_RIGHT --> CC["comparison_chart → ComparisonDecisionSurface"]
+  A_RIGHT --> CP["code_preview / code_project"]
+  A_RIGHT --> OC["option_cards"]
   A_RIGHT --> PL["module_detail / recommendation / document (placeholders)"]
+  A_LEFT --> IC["IntentClarification"]
+  A_LEFT --> TD["TraceDebugPanel"]
 ```
 
 **Reading the diagram**
@@ -73,7 +76,8 @@ flowchart TB
 | React | 19 |
 | Styling | **Tailwind CSS v4** (`@import "tailwindcss"` in CSS; no separate `tailwind.config.ts` in repo) |
 | Global CSS variables | `@theme inline` in `globals.css` |
-| State | Zustand (`chatStore`, `panelStore`) |
+| State | Zustand (`chatStore`, `panelStore`, `themeStore`, `visualIdentityStore`) |
+| Architecture graph | `@xyflow/react` (canvas, stage groups, node drawer) |
 | Auth UI | NextAuth (`signIn` on login page) |
 | Markdown in chat | `react-markdown` + `remark-gfm` |
 | Class names | `clsx` (chat bubbles) |
@@ -87,28 +91,27 @@ flowchart TB
 
 ### 2.1 CSS variables (`:root`)
 
-| Variable | Light mode | Dark mode (`prefers-color-scheme: dark`) |
-|----------|------------|------------------------------------------|
-| `--background` | `#ffffff` | `#0a0a0a` |
-| `--foreground` | `#171717` | `#ededed` |
+Semantic tokens in `globals.css` (light/dark via `themeStore` + `data-theme` on `<html>`):
 
-### 2.2 Tailwind theme bridge
+| Variable | Role |
+|----------|------|
+| `--background`, `--foreground` | Page text/background |
+| `--surface-panel`, `--surface-hover` | Advisor panel chrome |
+| `--border-subtle` | Dividers |
+| `--text-muted` | Secondary copy |
+| `--accent` | Primary actions / links |
 
-- `@theme inline` maps:
-  - `--color-background` → `var(--background)`
-  - `--color-foreground` → `var(--foreground)`
+`ThemeProvider` runs `THEME_INIT_SCRIPT` before paint to avoid flash.
 
-### 2.3 `body`
+### 2.2 Tailwind
 
-- `background: var(--background)`
-- `color: var(--foreground)`
-- `font-family: Arial, Helvetica, sans-serif`
+- Tailwind v4: `@import "tailwindcss"` in `globals.css`
+- Advisor panels use `bg-[var(--surface-panel)]` and related arbitrary properties
 
-### 2.4 Root layout body classes (`src/app/layout.tsx`)
+### 2.3 Root layout (`src/app/layout.tsx`)
 
+- `ThemeProvider` wraps children
 - `min-h-screen bg-background text-foreground antialiased`
-
-**Note:** Most screens additionally use explicit Tailwind grays and `dark:` variants; the design is a **hybrid** of semantic `background`/`foreground` and utility grays/blues.
 
 ---
 
@@ -150,7 +153,8 @@ flowchart TB
 **Right cluster**
 
 - **Pricing** — `Link` `/pricing`: hidden on small screens (`hidden md:block`), same gray link styles.
-- **Avatar placeholder** — `hidden h-8 w-8 rounded-full bg-gray-200 md:block dark:bg-gray-700` (TODO in code: real user avatar).
+- **`ThemeToggle`** — light / dark / system (`components/shared/ThemeToggle.tsx`)
+- **Avatar placeholder** — `hidden h-8 w-8 rounded-full bg-gray-200 md:block dark:bg-gray-700` (TODO: real user avatar).
 - **Mobile menu toggle** — `button`, `md:hidden`, `aria-label="Toggle menu"`:
   - `inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100`
   - Icon: Heroicons-style hamburger or X (SVG `stroke`).
@@ -373,16 +377,15 @@ Landing **does not** show Dashboard, History, or Login in the nav.
 
 **Split**
 
-- **Left — `ChatPanel`** (~30%): `w-[30%] min-w-[320px] flex-col border-r border-gray-200 dark:border-gray-800`
-- **Right — `MainPanel`** (~70%): `flex-1 flex-col overflow-hidden`
+- **Left — `ChatPanel`** (~35%): `w-[35%] min-w-[320px]` + border using `--border-subtle`
+- **Right — `MainPanel`** (~65%): `flex-1 flex-col overflow-hidden`
 
 #### ChatPanel (`components/advisor/ChatPanel.tsx`)
 
-- Scroll area: `flex-1 overflow-y-auto p-4 space-y-4`
-- Empty state: centered `text-sm text-gray-400` — “Start a conversation with your AI advisor”
-- Streaming indicator: blue pulsing dot + “Thinking…”
-- **`ChatMessage`** per message (see below)
-- **`ChatInput`** at bottom
+- Scroll area: messages + streaming indicator (“Thinking…”)
+- **`IntentClarification`** — chip buttons when backend sets `awaitingIntentClarification` (semantic intent)
+- **`TraceDebugPanel`** — collapsible `advisor_trace` / `recommendation_explain` JSON; `EntityChip` for shortlist slugs
+- **`ChatMessage`** + **`ChatInput`** at bottom
 
 #### ChatMessage (`components/advisor/ChatMessage.tsx`)
 
@@ -395,11 +398,12 @@ Landing **does not** show Dashboard, History, or Login in the nav.
 
 #### ChatInput (`components/advisor/ChatInput.tsx`)
 
-- Container: `border-t border-gray-200 p-4 dark:border-gray-800`
-- **Textarea:** 2 rows, `resize-none`, placeholder “Ask about AI technologies…”, disabled while streaming
-- **Send** button: primary blue, `self-end`, disabled when empty or streaming; **Enter** sends (Shift+Enter newline)
+- Auto-resizing textarea; cycling placeholders; **Enter** send, **Shift+Enter** newline
+- **Stop** control while streaming (abort `fetch`)
+- Character hint when message length > 500
+- Sends `{ message, session_id, client_context }` — constraints, panel snapshot, trace, option answers
 
-**Network:** `POST /api/chat` (Next.js BFF) — documented in **§12**.
+**Network:** `POST /api/chat` (BFF) — **§12**.
 
 #### MainPanel (`components/advisor/MainPanel.tsx`)
 
@@ -409,27 +413,48 @@ Landing **does not** show Dashboard, History, or Login in the nav.
 
 | Panel type | Component / behavior |
 |------------|----------------------|
-| `welcome` | `WelcomePanel` |
-| `architecture_diagram` | `ArchitectureDiagram` |
-| `comparison_table` | `ComparisonTable` |
-| `comparison_chart` | `ComparisonChart` |
-| `code_preview` | `CodePreview` |
-| `module_detail` | Placeholder text |
-| `recommendation` | Placeholder text |
-| `document` | Placeholder text |
+| `welcome` | `WelcomePanel` — starter prompts |
+| `architecture_diagram` | `ArchitectureDiagram` → `ArchitectureCanvas` (React Flow) |
+| `interactive_architecture` | `InteractiveArchitecture` — canvas + optional bottom `CodeBlock` drawer |
+| `comparison_table` | `ComparisonTable` — matrix + `EntityChip` |
+| `comparison_chart` | `ComparisonChart` → **`ComparisonDecisionSurface`** |
+| `code_preview` | `CodePreview` → `CodeBlock` (Shiki) |
+| `code_project` | `CodeProject` — file tree + Shiki per file |
+| `option_cards` | `OptionCards` — sends `option_answer` in `client_context` |
+| `module_detail` | Placeholder |
+| `recommendation` | Placeholder |
+| `document` | Placeholder |
 | default | `WelcomePanel` |
+
+#### ComparisonDecisionSurface (`panels/comparison/`)
+
+Orchestrates the primary comparison UX (panel type remains `comparison_chart` for API compatibility):
+
+| Subcomponent | Role |
+|--------------|------|
+| `RecommendationHero` | Top pick, confidence, pipeline vs matrix divergence |
+| `CapabilityComparisonBars` | Horizontal bars; dimensions emphasized from constraints |
+| `TradeoffSpectrum` | Cost/perf and simplicity/scale sliders |
+| `ExplainabilityDrawer` | Filters, scores, reasoning steps (internal filter reasons hidden) |
+| `RadarAdvancedView` | Optional Recharts radar |
+| `ComparisonTable` | Used when table-only data is needed |
+
+Parsing/helpers: `frontend/src/lib/comparisonPanel.ts`, colors via `visualIdentityStore`.
+
+#### Architecture canvas (`architecture/`)
+
+| Component | Role |
+|-----------|------|
+| `ArchitectureCanvas` | React Flow graph, simple vs advanced view, focus dimming |
+| `ArchModuleNode` / `ArchStageGroupNode` | Custom nodes; stage grouping from `architectureStages.ts` |
+| `NodeDetailsDrawer` | Learn / Swap / Code → `sendMessage` with `client_context.architecture_node` |
+
+Layout/payload: `architecturePayload.ts`, `architectureLayout.ts`, `architectureFocus.ts`, `architectureColors.ts`.
 
 #### WelcomePanel (`panels/WelcomePanel.tsx`)
 
 - Centered: `h2` “Welcome to AI Tech Advisor”, gray intro paragraph
 - Four **suggestion buttons** (full-width cards): border, hover `hover:border-blue-300 hover:bg-blue-50` (+ dark variants), disabled while streaming; click calls `sendMessage(prompt)`
-
-#### ArchitectureDiagram (`panels/ArchitectureDiagram.tsx`)
-
-- SVG graph: nodes as rounded rects with **category-based colors** (`CATEGORY_COLORS` map: fill/stroke/text hex per category)
-- Edges: gray lines + arrow marker
-- Scrollable container `overflow-auto p-6`
-- Empty: “No architecture data to display”
 
 #### ComparisonTable (`panels/ComparisonTable.tsx`)
 
@@ -439,9 +464,7 @@ Landing **does not** show Dashboard, History, or Login in the nav.
 
 #### ComparisonChart (`panels/ComparisonChart.tsx`)
 
-- **Recharts** — default **radar** or **bar** (`chart_type` in data)
-- Ranking pills: colored per `COLORS` array (`#3b82f6`, `#ef4444`, etc.) with translucent background
-- Recommendation box (same blue border treatment as table)
+- Thin wrapper delegating to **`ComparisonDecisionSurface`** (see above). Legacy radar/bar paths may still exist in payload for advanced view toggle.
 
 #### CodePreview (`panels/CodePreview.tsx`)
 
@@ -455,15 +478,22 @@ Landing **does not** show Dashboard, History, or Login in the nav.
 
 ### 6.1 `chatStore` (`stores/chatStore.ts`)
 
-- Holds `messages`, `sessionId`, `isStreaming`, `abortController`
-- Drives chat UI updates and SSE parsing from `/api/chat`
-- Integrates with `panelStore` when panel commands arrive
+- `messages`, `sessionId`, `isStreaming`, `abortController`
+- Intent: `awaitingIntentClarification`, `intentAlternatives`, `resolvedIntentId`, `activePlaybookId`
+- `constraintState`, `lastAdvisorTrace`, `lastRecommendationExplain`
+- `sendMessage`, `sendClarificationChoice`, `resolveOutgoingConstraintState`
+- SSE → `panelStore`; meta → constraint/trace state
 
 ### 6.2 `panelStore` (`stores/panelStore.ts`)
 
-- `currentPanel`, `panelData`, `panelTitle`, `panelHistory`
-- `renderPanel(command)`: supports actions `render`, `update`, `clear`
-- `goBack`: pops panel history (used by MainPanel header back button)
+- `renderPanel` (`render` / `update` / `clear`), debounced render (~80ms)
+- Architecture updates: `add_node`, `add_edge`, `highlight`
+- `goBack`, `clearCodeDrawer`, `panelHistory`
+
+### 6.3 `themeStore` + `visualIdentityStore`
+
+- **Theme:** `light` | `dark` | `system` persisted in localStorage
+- **Visual identity:** per-session palette; `EntityChip` and Recharts use stable entity colors
 
 ---
 
@@ -507,10 +537,13 @@ Landing **does not** show Dashboard, History, or Login in the nav.
 | Dashboard shell | `frontend/src/app/(dashboard)/layout.tsx` |
 | Advisor split shell | `frontend/src/components/advisor/AdvisorLayout.tsx` |
 | Top nav | `frontend/src/components/shared/Header.tsx` |
-| Chat + panels | `frontend/src/components/advisor/*.tsx`, `panels/*.tsx` |
+| Chat + panels | `frontend/src/components/advisor/*.tsx`, `panels/*.tsx`, `architecture/`, `panels/comparison/` |
+| Stores | `frontend/src/stores/chatStore.ts`, `panelStore.ts`, `themeStore.ts`, `visualIdentityStore.ts` |
+| Lib | `frontend/src/lib/comparisonPanel.ts`, `constraintState.ts`, `architecture*.ts` |
 | Chat BFF | `frontend/src/app/api/chat/route.ts` |
+| Tests | `frontend/src/__tests__/` |
 | NextAuth | `frontend/src/app/api/auth/[...nextauth]/route.ts` |
-| Types | `frontend/src/types/chat.ts`, `frontend/src/types/module.ts` |
+| Types | `frontend/src/types/chat.ts`, `module.ts` |
 
 ---
 
@@ -545,7 +578,7 @@ This route is the **Backend-for-Frontend (BFF)** for the advisor chat. The brows
 | 1 | Import `NextRequest` from `next/server` for typed request access. |
 | 3 | `BACKEND_URL` = env override or `http://localhost:8000`. |
 | 5–6 | `POST` handler starts; `try` wraps all logic for unified error handling. |
-| 7 | `await request.json()` — parses JSON body. Expected shape matches backend: `{ message: string, session_id?: string }` (see `chatStore` body). **Note:** invalid JSON throws → caught at 50–60. |
+| 7 | `await request.json()` — body `{ message, session_id?, client_context? }` (see `chatStore`). Invalid JSON → 500 catch. |
 | 9–10 | Reads `authorization` header case-insensitively via `request.headers.get('authorization')`; if missing, uses **`Bearer dev@example.com`** (dev convenience; must be replaced for production auth). |
 | 12–19 | `fetch` to **`${BACKEND_URL}/api/v1/advisor/chat`** with POST, `Content-Type: application/json`, `Authorization: authHeader`, and **same JSON body** stringified again. |
 | 21–29 | If `!backendResponse.ok`: read body as **text**, return JSON error `{ error, details }` with **backend’s HTTP status** and `Content-Type: application/json`. Client sees JSON, not SSE. |
@@ -562,7 +595,15 @@ POST /api/chat
 Content-Type: application/json
 Authorization: Bearer dev@example.com
 
-{"message":"...","session_id":null|<uuid>}
+{
+  "message": "...",
+  "session_id": null,
+  "client_context": {
+    "constraint_state": { "slots": {} },
+    "current_panel": "comparison_chart",
+    "option_answer": { "answer_id": "...", "answer_label": "..." }
+  }
+}
 ```
 
 The BFF forwards that to FastAPI; the response stream is SSE (`data: {...}\n\n`).

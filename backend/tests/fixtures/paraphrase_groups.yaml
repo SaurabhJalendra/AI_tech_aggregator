@@ -1,0 +1,58 @@
+# Paraphrase regression groups — each group must route to the same intent/playbook/slots.
+version: "1"
+
+groups:
+  vector_db_family:
+    messages:
+      - "Need a vector database"
+      - "Need semantic retrieval infrastructure"
+      - "Looking for an ANN search backend for embeddings"
+      - "Need embedding retrieval stack with approximate nearest neighbors"
+    expected:
+      intent_id: "category:vector_databases"
+      playbook_id: vector_db_comparison
+      first_required_slot: budget
+      category: vector_databases
+
+  rag_pipeline_family:
+    messages:
+      - "Design a full RAG pipeline from ingestion to deployment"
+      - "End to end retrieval augmented generation architecture"
+      - "Help me build a RAG pipeline with chunking and embeddings"
+    expected:
+      intent_id: rag_pipeline
+      playbook_id: rag_pipeline_design
+      first_required_slot: scale
+
+  module_code_family:
+    messages:
+      - "Show me integration code for LangChain Text Splitters"
+      - "Show integration code for Qdrant"
+      - "How to integrate with Pinecone — sample code"
+    expected:
+      intent_id: module_code
+      playbook_id: module_code
+      first_required_slot: null
+
+  architecture_review_family:
+    messages:
+      - "Review my RAG architecture diagram for issues"
+      - "What is wrong with this architecture diagram"
+    expected:
+      intent_id: architecture_review
+      playbook_id: architecture_review
+      first_required_slot: null
+
+# Fixed shortlist snapshot for vector DB comparisons (deterministic ranking inputs).
+vector_db_shortlist_snapshot:
+  constraints:
+    budget: low
+    scale: growing_application
+    deployment_preference: managed
+  expected_slugs:
+    - qdrant
+    - chromadb
+    - weaviate
+  excluded_slugs:
+    - pinecone
+    - milvus

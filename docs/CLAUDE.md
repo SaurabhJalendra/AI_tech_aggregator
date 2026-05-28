@@ -1,12 +1,14 @@
 # AI Infrastructure Advisor Platform
 
+**Canonical copy:** Mirrors `CLAUDE.md` at the repo root; keep both in sync.
+
 ## Quick Start
 
 ### Prerequisites
 - Node.js 20+
 - Python 3.11+
 - Docker Desktop (for PostgreSQL + pgvector + Redis)
-- Claude Code CLI (for local dev with Max subscription)
+- Claude Code CLI (for local dev with Max subscription) **or** `ANTHROPIC_API_KEY` with `USE_CLAUDE_CODE=false`
 
 ### Setup
 ```bash
@@ -19,7 +21,7 @@ python -m venv .venv
 source .venv/Scripts/activate  # Windows Git Bash
 pip install -r requirements.txt
 cp ../.env.example .env
-# Edit .env: set ANTHROPIC_API_KEY or USE_CLAUDE_CODE=true
+# Edit .env: ANTHROPIC_API_KEY and/or USE_CLAUDE_CODE=true; EMBEDDINGS_ENABLED=true for semantic intent
 python ../scripts/seed_db.py
 uvicorn src.main:app --reload --port 8000
 
@@ -40,42 +42,69 @@ npm run dev
 
 ### Monorepo Layout
 ```
-frontend/          Next.js 16 App Router (TypeScript, Tailwind, Zustand)
-backend/           Python FastAPI (SQLAlchemy async, Alembic)
-  src/agent/       LLM agent — dual-mode (Claude Code CLI or Anthropic SDK)
-  src/api/v1/      REST + SSE endpoints
-  src/models/      SQLAlchemy ORM models
-  src/services/    Business logic
-  src/modules/     Module loader + comparison engine
-modules_registry/  86 YAML specs (source of truth for modules)
-scripts/           Database seeding, embedding generation
+frontend/              Next.js 16 App Router (TypeScript, Tailwind v4, Zustand)
+backend/               Python FastAPI (SQLAlchemy async, Alembic)
+  src/agent/           LLM agent — dual-mode (Claude Code CLI or Anthropic SDK)
+  src/api/v1/          REST + SSE endpoints
+  src/services/        Chat, planner, pipelines, scoring, semantic intent
+  src/advisor_playbooks/   Playbook definitions (YAML)
+  src/advisor_registry/    Decision metadata + comparison universe (YAML)
+  src/advisor_intent/      Intent exemplars (YAML)
+  src/models/          SQLAlchemy ORM
+  src/modules/         Module loader + comparison engine
+modules_registry/      102 YAML specs (source of truth for modules)
+scripts/               seed_db, generate_embeddings, sync_decision_metadata, scaffold specs
+sdk/ cli/ mcp_server/  API clients and MCP integration
 ```
 
-### Core Pattern: Agent-Driven Panel
-The chat agent streams SSE events with two types:
-1. `{"type": "text", "content": "..."}` -> chat panel (left)
-2. `{"type": "panel_command", "command": {...}}` -> main panel (right: diagrams, charts, code)
+### Core Pattern: Planner + Agent-Driven Panel
+
+Chat is **not** LLM-only. Each turn:
+
+1. **Semantic intent** (BGE embeddings vs exemplars in `advisor_intent/registry.yaml`) may ask for clarification.
+2. **`RecommendationPlanner`** runs deterministic **playbooks** and **pipelines** (vector DB compare, RAG design, module code, architecture review, local AI stack, category comparison).
+3. Pipelines emit SSE **`text`** and **`panel_command`** events with scored shortlists and **`advisor_trace`** for explainability.
+4. If the planner produces no events and `llm_fallback_enabled`, **`AdvisorAgent`** streams (tools in SDK mode; panel markers in Claude Code mode). LLM panel commands are **restricted** when a playbook is active (`planner_authority_strict`).
+
+SSE event types:
+| Type | Role |
+|------|------|
+| `meta` | `session_id`, `constraint_state`, `advisor_trace`, `recommendation_explain`, intent fields |
+| `text` | Streamed assistant text |
+| `panel_command` | Right-hand panel update |
+| `tool_activity` | Tool progress (SDK mode) |
+| `done` | Stream finished |
+| `error` | Error payload |
 
 ### Module Pattern
-Every module is a YAML spec in `modules_registry/specs/{slug}.yaml` validated against `modules_registry/schema.yaml`. The loader (`backend/src/modules/loader.py`) reads specs into PostgreSQL.
+Every module is a YAML spec in `modules_registry/specs/{slug}.yaml` validated against `modules_registry/schema.yaml`. The loader (`backend/src/modules/loader.py`) reads specs into PostgreSQL and merges **decision metadata** from `backend/src/advisor_registry/`.
 
-### API Endpoints
-- `POST /api/v1/advisor/chat` — SSE streaming chat (requires auth)
-- `GET /api/v1/modules` — List modules (paginated, filterable)
-- `GET /api/v1/modules/{slug}` — Module detail with knowledge
-- `POST /api/v1/compare` — Compare modules across 8 dimensions
-- `GET /api/v1/modules/categories` — List all categories
-- `GET /api/v1/sessions` — User conversation history
-- `GET /api/v1/health` — Health check
+### API Endpoints (`/api/v1`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/advisor/chat` | SSE streaming chat (auth required) |
+| `GET` | `/advisor/playbooks` | List playbooks + Phase-2 flags |
+| `GET` | `/advisor/trace/schema` | JSON schema for advisor trace |
+| `GET` | `/advisor/sessions/{id}/trace/latest` | Latest trace from session messages |
+| `GET` | `/modules` | Paginated list (Redis cache) |
+| `GET` | `/modules/categories` | Categories + counts |
+| `GET` | `/modules/{slug}` | Module detail |
+| `GET` | `/modules/{slug}/knowledge` | Knowledge entries |
+| `POST` | `/compare` | Compare 2–5 modules, 8 dimensions |
+| `GET` | `/sessions` | User conversations |
+| `GET` | `/sessions/{id}/messages` | Message history + `panel_commands` |
+| `GET` | `/users/me` | Profile + stats |
+| `GET` | `/health`, `/health/detailed` | Liveness + DB/pgvector |
 
 ### Database
-- PostgreSQL 16 + pgvector on Docker port **5433** (not 5432 — avoids local PG conflict)
-- Redis on port 6379 (optional, graceful fallback for caching)
-- 86 modules across 18 categories seeded from YAML specs
+- PostgreSQL 16 + pgvector on Docker port **5433** (not 5432)
+- Redis on port 6379 (optional; graceful cache miss)
+- **102 modules** across **18 categories** (17 categories have specs; `infrastructure_comparison` is empty)
+- Knowledge embeddings: **BAAI/bge-large-en-v1.5**, **1024 dimensions** (`module_knowledge.embedding`)
 
 ### Auth (Dev Mode)
 - `Authorization: Bearer dev@example.com` auto-creates a pro-tier user
-- No real auth needed for local development
 
 ---
 
@@ -83,71 +112,62 @@ Every module is a YAML spec in `modules_registry/specs/{slug}.yaml` validated ag
 
 ### 1. Plan Mode Default
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
-- If something goes sideways, STOP and re-plan immediately — don't keep pushing
+- If something goes sideways, STOP and re-plan immediately
 - Use plan mode for verification steps, not just building
-- Write detailed specs upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
-- Offload research, exploration, and parallel analysis to subagents
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution
+- Offload research and parallel analysis to subagents
 - Keep main context window clean
 
 ### 3. Self-Improvement Loop
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
-- Write rules for yourself that prevent the same mistake
-- Ruthlessly iterate on these lessons until mistake rate drops
-- Review `tasks/lessons.md` at session start for relevant patterns
+- After corrections: update `tasks/lessons.md`
+- Review `tasks/lessons.md` at session start
 
 ### 4. Verification Before Done
-- Never mark a task complete without proving it works
-- Run `npm run build` for frontend changes, `python -c "from src.main import app"` for backend
-- Test endpoints with curl after API changes
-- Ask yourself: "Would a staff engineer approve this?"
+- `npm run build` (frontend), `pytest -v` (backend)
+- `python -c "from src.main import app"` for import sanity
 
 ### 5. Demand Elegance (Balanced)
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes — don't over-engineer
+- Prefer simple correct diffs; avoid over-engineering obvious fixes
 
 ### 6. Autonomous Bug Fixing
-- When given a bug report: just fix it. Don't ask for hand-holding
-- Point at logs, errors, failing tests -> then resolve them
-- Zero context switching required from the user
+- Fix bugs from logs/tests without hand-holding
 
 ---
 
 ## Development Rules
 
 ### Backend
-- Always use `async/await` — the entire backend is async
-- Database sessions via `get_db` dependency injection
-- All models inherit from `Base` in `src/db/base.py`
-- Agent tools in `src/agent/tools.py`, prompts in `src/agent/prompts.py`
+- Always `async/await`; `get_db` for sessions
+- Agent tools: `src/agent/tools.py`; prompts: `src/agent/prompts.py`
 - Run tests: `cd backend && pytest -v`
 
 ### Frontend
-- All interactive components must be `'use client'`
-- State management: Zustand stores only (no Redux, no Context for state)
-- Styling: Tailwind only — no CSS modules, no styled-components
-- Markdown rendering: `react-markdown` + `remark-gfm`
-- Code highlighting: `shiki` package (NOT `@shikijs/core`)
+- `'use client'` on interactive components
+- Zustand for state; Tailwind + CSS variables
+- `shiki` for code highlighting (NOT `@shikijs/core`)
 - Run tests: `cd frontend && npm test`
-- Build check: `cd frontend && npm run build`
+- Build: `cd frontend && npm run build`
 
 ### Git
-- Commit messages: `type: description` (feat, fix, chore, refactor, test, docs)
-- Never commit `.env` files — `.env.example` is the template
-- No `Co-Authored-By` lines in commits
-
-### Testing
-- Backend: pytest with async fixtures (`conftest.py`)
-- Frontend: vitest + @testing-library/react
-- Always test after making changes — don't trust it works without proof
+- Commit messages: `type: description`
+- Never commit `.env`
 
 ### Common Pitfalls
-- Port 5432 conflict: local PostgreSQL vs Docker. Always use **5433**
-- `@shikijs/core/engines/oniguruma` not found: use `shiki` package instead
-- Multiple zombie uvicorn on Windows: `taskkill //F //PID` to clean up
-- Claude CLI takes 8-15s per response (hook/plugin init overhead)
-- SSE events need `data: {...}\n\n` format with double newline
+- Postgres port **5433** with Docker Compose
+- Stale docs saying "86 modules" — use **102**
+- Claude CLI 8–15s startup overhead
+- SSE: `data: {...}\n\n` with double newline
+- Embeddings dimension is **1024**, not 1536
+
+---
+
+## Related docs
+
+| Document | Content |
+|----------|---------|
+| [APPLICATION_DATA.md](./APPLICATION_DATA.md) | Data model, SSE, constraints, trace |
+| [BACKEND_IMPLEMENTATION.md](./BACKEND_IMPLEMENTATION.md) | Backend layers and services |
+| [APPLICATION_REPOSITORY_GUIDE.md](./APPLICATION_REPOSITORY_GUIDE.md) | Full repo tour |
+| [UI_design.md](./UI_design.md) | Frontend UI inventory |
+| [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) | Planned vs shipped features |

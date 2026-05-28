@@ -30,7 +30,7 @@ This document consolidates an end-to-end description of the **AI_tech_aggregator
 
 ### 1.1 Elevator pitch
 
-**AI Infrastructure Advisor** is a platform that helps people choose and reason about **AI/ML infrastructure** (vector databases, embeddings, RAG patterns, LLMs, agents, evaluation tools, etc.). The knowledge base is a **catalog of “modules”**—each module is a real-world technology or pattern, described in **YAML**, loaded into **PostgreSQL**. Users interact primarily through an **AI chat advisor** that can search the catalog, compare options semantically or by scores, and drive a **visual panel** (architecture diagrams, comparison charts/tables, code snippets, interactive option cards, multi-file code projects).
+**AI Infrastructure Advisor** is a platform that helps people choose and reason about **AI/ML infrastructure** (vector databases, embeddings, RAG patterns, LLMs, agents, evaluation tools, etc.). The knowledge base is a **catalog of 102 “modules”**—each module is a real-world technology or pattern, described in **YAML**, loaded into **PostgreSQL**. Users interact through an **AI chat advisor** that runs **deterministic playbooks and pipelines** (scored shortlists, traces, explainability) and optionally an **LLM agent** for open-ended narration and tools. The right-hand **visual panel** shows architecture canvases (React Flow), comparison decision surfaces, option cards, code previews, and multi-file projects.
 
 ### 1.2 Problem it solves
 
@@ -45,7 +45,7 @@ This document consolidates an end-to-end description of the **AI_tech_aggregator
 | Frontend | Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS, Zustand, next-auth |
 | Backend | Python 3.13, FastAPI, SQLAlchemy async, Alembic, PostgreSQL 16 + pgvector, Redis |
 | LLM | Anthropic Claude (via **Claude Code CLI** or **Anthropic Messages API** with tools) |
-| Embeddings (optional) | OpenAI API for vector search over `module_knowledge` |
+| Embeddings | Local **BGE** (`bge-large-en-v1.5`, 1024-dim) for `module_knowledge` search and semantic intent |
 | Infra (local) | `docker-compose.yml`: Postgres (mapped to host port **5433**), Redis **6379** |
 
 ---
@@ -58,7 +58,10 @@ This document consolidates an end-to-end description of the **AI_tech_aggregator
 | `backend/` | FastAPI app: REST + SSE, agent, services, models, tests |
 | `modules_registry/specs/` | One YAML file per technology/module |
 | `modules_registry/schema.yaml` | JSON-schema-style contract for specs |
-| `scripts/` | Operational scripts: `seed_db.py`, `generate_embeddings.py`, `generate_module.py` |
+| `scripts/` | `seed_db.py`, `generate_embeddings.py`, `sync_decision_metadata.py`, `scaffold_foundation_model_specs.py`, `check_db_state.py`, `generate_module.py` |
+| `backend/src/advisor_playbooks/` | Playbook YAML + loader |
+| `backend/src/advisor_registry/` | Decision metadata + comparison universe YAML |
+| `backend/src/advisor_intent/` | Intent exemplar registry |
 | `sdk/` | Python HTTP client (`ai_advisor`) for the public API |
 | `cli/` | Command-line entry point wrapping SDK-style usage |
 | `mcp_server/` | MCP (stdio JSON-RPC) server exposing a subset of API as tools |
@@ -107,7 +110,8 @@ This document consolidates an end-to-end description of the **AI_tech_aggregator
 - **FastAPI** owns persistence (conversations, messages, modules), business rules (comparison, module listing), and the **SSE** streaming contract.
 - **PostgreSQL** stores modules, categories, knowledge (with optional embeddings), users, conversations, messages, benchmarks, comparisons cache, etc.
 - **Redis** caches expensive read paths (e.g. module list responses).
-- **Claude** reasons over user messages and (in SDK mode) calls **tools** that read/write logical results and emit **panel commands** for the UI.
+- **RecommendationPlanner** runs playbook **pipelines** (retrieve → filter → score → shortlist) and emits **panel commands** with **AdvisorTrace**.
+- **Claude** (fallback or open-ended turns) reasons over user messages; SDK mode uses **tools**; panel commands are **gated** when a playbook is active.
 
 ---
 
@@ -116,24 +120,22 @@ This document consolidates an end-to-end description of the **AI_tech_aggregator
 ### 4.1 Chat flow (primary user journey)
 
 1. User types in the advisor UI; **`chatStore`** (`frontend/src/stores/chatStore.ts`) appends a user message and creates an empty assistant message.
-2. Client **`POST /api/chat`** with JSON `{ message, session_id }` and `Authorization` header.
+2. Client **`POST /api/chat`** with JSON `{ message, session_id, client_context }` and `Authorization` header.
 3. Next.js **BFF** (`frontend/src/app/api/chat/route.ts`) forwards to **`POST {BACKEND_URL}/api/v1/advisor/chat`** with the same body and auth header.
 4. **`ChatService`** (`backend/src/services/chat_service.py`):
-   - Resolves or creates a **`Conversation`** by `session_id` (UUID) or creates new.
-   - Persists the user **`Message`**.
-   - Builds Claude message list from prior messages (text only in history).
-   - Loads module/category counts and a **catalog section** (categories + module slugs) for the system prompt.
-   - Emits first SSE event: **`meta`** with `session_id`.
-   - Instantiates **`AdvisorAgent`** and streams all agent SSE events through.
-   - On completion (or partial failure), persists assistant **`Message`** with accumulated text and **`panel_commands`** array.
+   - Resolves or creates **`Conversation`**; persists user **`Message`**.
+   - Emits **`meta`** with `session_id`.
+   - **`SemanticIntentDetector`** — may return intent clarification (user picks chip → `intent_clarification_choice` in `client_context`).
+   - **`RecommendationPlanner.plan`** — constraint state, slot-impact questions, playbook pipelines → SSE `text` + `panel_command` + trace in meta.
+   - If no planner events and **`llm_fallback_enabled`**: **`AdvisorAgent`** streams; **`panel_validator`** filters LLM panels under active playbook.
+   - Persists assistant **`Message`** with text, **`panel_commands`**, **`constraint_state`**, **`advisor_trace`** in `content`.
 
 5. Client parses each `data: {...}` line:
-   - **`text`** → append to assistant bubble.
-   - **`panel_command`** → attach to message and call **`panelStore.renderPanel(command)`**.
-   - **`meta`** → store `session_id` for thread continuity.
-   - **`tool_activity`** (SDK path) → show running/complete tool indicators on the assistant message.
-   - **`done`** → stream finished.
-   - **`error`** → surfaced as error content.
+   - **`text`** → assistant bubble (markdown).
+   - **`panel_command`** → `panelStore.renderPanel`.
+   - **`meta`** → `session_id`, `constraint_state`, `advisor_trace`, `recommendation_explain`, intent/playbook fields.
+   - **`tool_activity`** → tool indicators (SDK path).
+   - **`done`** / **`error`** → stream end / error.
 
 ### 4.2 Panel command protocol (contract between backend and UI)
 
@@ -141,7 +143,7 @@ Backend emits Server-Sent Events. Payload types include:
 
 | Type | Role |
 |------|------|
-| `meta` | `{ session_id }` — client should reuse for the same conversation |
+| `meta` | `session_id`, optional `constraint_state`, `advisor_trace`, `recommendation_explain`, intent fields |
 | `text` | Streamed assistant tokens |
 | `panel_command` | `{ command: { action, panel, data?, title? } }` — drives right-hand panel |
 | `tool_activity` | `{ tool, status: running\|complete, message? }` |
@@ -185,11 +187,31 @@ ModuleService + ComparisonEngine + agent tools + REST /modules
 **File:** `backend/src/services/chat_service.py`
 
 - Owns **conversation lifecycle** and **message persistence**.
-- Builds **Claude-compatible** history from DB (user/assistant text only).
-- Injects **catalog** into the agent context via `build_catalog_section` / `ModuleService.list_categories_with_slugs`.
-- **Does not** implement LLM logic itself — delegates to **`AdvisorAgent`**.
+- Orchestrates **semantic intent**, **`RecommendationPlanner`**, optional **`AdvisorAgent`** fallback.
+- Sanitizes text (`response_sanitizer`); validates panels (`panel_validator`).
+- Persists **constraint state** and **advisor trace** on assistant messages.
 
-### 5.3 AdvisorAgent
+### 5.3 RecommendationPlanner & pipelines
+
+**Files:** `services/recommendation_planner.py`, `services/pipelines/*.py`, `services/pipeline_registry.py`
+
+- **`detect_task`**: heuristics + semantic intent → task type (vector DB, RAG, module code, architecture review, local stack, category comparison).
+- **`plan`**: builds `ConstraintState`, applies **`SlotImpactPolicy`**, runs playbook pipeline, yields SSE events.
+- **Pipelines:** `VectorDbRecommendationPipeline`, `RagPipelineDesignPipeline`, `ModuleCodePipeline`, `ArchitectureReviewPipeline`, `LocalAiStackPipeline`, `CategoryComparisonPipeline`.
+- Uses **`scoring`**, **`decision_metadata`**, **`comparison_universe`** for layered shortlists.
+
+### 5.4 Supporting advisor services
+
+| Service | Role |
+|---------|------|
+| `semantic_intent.py` | BGE exemplar matching, clarification, keyword overrides |
+| `constraint_state_service.py` | Slot merge from text + `client_context` |
+| `slot_impact_policy.py` | Impactful missing-slot questions only |
+| `explanation_fidelity.py` | LLM narration vs trace |
+| `comparison_universe.py` | Same-layer comparison members |
+| `decision_metadata.py` | YAML overlay merge into modules |
+
+### 5.5 AdvisorAgent
 
 **File:** `backend/src/agent/advisor.py`
 
@@ -198,7 +220,7 @@ ModuleService + ComparisonEngine + agent tools + REST /modules
 - **Claude Code path:** streams text and parses **`<!--PANEL_CMD:...-->`** markers into `panel_command` events (see `PANEL_COMMAND_INSTRUCTIONS` in the same file).
 - Implements tool handlers: search modules, get detail, compare, search knowledge, list categories, render panels, benchmarks, suggest stack, present options, incremental architecture steps, code project.
 
-### 5.4 ModuleService
+### 5.6 ModuleService
 
 **File:** `backend/src/services/module_service.py`
 
@@ -207,7 +229,7 @@ ModuleService + ComparisonEngine + agent tools + REST /modules
 - **list_categories** / **list_categories_with_slugs** (for UI and system prompt).
 - **search_knowledge:** tries **vector** search if embeddings can be generated; otherwise **ILIKE** fallback.
 
-### 5.5 ComparisonEngine
+### 5.7 ComparisonEngine
 
 **File:** `backend/src/modules/comparison_engine.py`
 
@@ -215,7 +237,7 @@ ModuleService + ComparisonEngine + agent tools + REST /modules
 - Reads **`comparison_scores`** (8 dimensions by default) from DB JSON.
 - Produces **`ComparisonResult`**: per-dimension matrix, rankings, weighted overall ranking, highlights — used by REST `/compare` and agent tool `compare_modules`.
 
-### 5.6 Module loader
+### 5.8 Module loader
 
 **File:** `backend/src/modules/loader.py`
 
@@ -223,7 +245,7 @@ ModuleService + ComparisonEngine + agent tools + REST /modules
 - Computes **`spec_hash`** to skip unchanged files.
 - Upserts **`Module`**, **`ModuleKnowledge`**, **`Benchmark`**, integrations, etc.
 
-### 5.7 Core utilities
+### 5.9 Core utilities
 
 | Module | Role |
 |--------|------|
@@ -233,7 +255,7 @@ ModuleService + ComparisonEngine + agent tools + REST /modules
 | `backend/src/core/embeddings.py` | Embedding generation for knowledge search (when configured) |
 | `backend/src/db/session.py` | Async SQLAlchemy session dependency **`get_db`** |
 
-### 5.8 Agent tools (definitions)
+### 5.10 Agent tools (definitions)
 
 **File:** `backend/src/agent/tools.py` — schemas for Claude **tool_use** (SDK mode). Tool names: `search_modules`, `get_module_detail`, `compare_modules`, `search_knowledge`, `list_categories`, `render_architecture_diagram`, `render_comparison`, `render_code_example`, `get_benchmarks`, `suggest_stack`, `present_options`, `build_architecture_step`, `render_code_project`.
 
@@ -295,9 +317,12 @@ Described in `docs/architecture/README.md` and enforced by SQLAlchemy models und
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/seed_db.py` | Load/update YAML specs into DB (team workflow in `AGENTS.md`) |
-| `scripts/generate_embeddings.py` | Populate embeddings for knowledge search |
-| `scripts/generate_module.py` | AI-assisted generation of new specs (see `docs/modules/README.md`) |
+| `scripts/seed_db.py` | Load/update 102 YAML specs into DB |
+| `scripts/generate_embeddings.py` | BGE 1024-dim embeddings for `module_knowledge` |
+| `scripts/sync_decision_metadata.py` | Backfill `technical_specs.decision` from advisor_registry |
+| `scripts/scaffold_foundation_model_specs.py` | Generate `llm_layer` foundation model YAMLs |
+| `scripts/check_db_state.py` | Dev diagnostic: alembic version, embedding coverage |
+| `scripts/generate_module.py` | AI-assisted new spec generation |
 
 ---
 
@@ -318,16 +343,22 @@ Described in `docs/architecture/README.md` and enforced by SQLAlchemy models und
 
 | Store | Responsibility |
 |--------|------------------|
-| `chatStore` | Messages, streaming chunks, session id, abort controller, tool activity list on messages |
-| `panelStore` | Current panel type, data, title, history stack, `render` / `update` / `goBack` |
+| `chatStore` | Messages, streaming, session id, intent clarification, `constraintState`, `lastAdvisorTrace`, `lastRecommendationExplain`, abort |
+| `panelStore` | Panel type/data/title/history, debounced render, arch `add_node`/`add_edge`/`highlight`, `clearCodeDrawer` |
+| `themeStore` | Light/dark/system preference |
+| `visualIdentityStore` | Session-stable entity colors for comparisons and chips |
 
 **Project rules (from `AGENTS.md`):** client components use `'use client'`; Tailwind only for styling; Zustand for this state (not Redux).
 
 ### 8.4 Implemented vs placeholder panels
 
-**Fully wired panel types:** welcome, architecture_diagram, comparison_table, comparison_chart, code_preview, option_cards, interactive_architecture, code_project.
+**Fully wired panel types:** welcome, architecture_diagram (React Flow), comparison_table, comparison_chart (`ComparisonDecisionSurface`), code_preview, option_cards, interactive_architecture, code_project.
 
-**Placeholder UI** (static text in `MainPanel.tsx`): `module_detail`, `recommendation`, `document` — types exist in the switch but are not full implementations.
+**Advisor-only UI (chat column):** `IntentClarification`, `TraceDebugPanel`, `EntityChip`, `ToolActivityIndicator`.
+
+**Placeholder UI:** `module_detail`, `recommendation`, `document` in `MainPanel.tsx`.
+
+**Shared:** `Header` + `ThemeToggle`; landing page has its own nav (no shared Header).
 
 ---
 
@@ -341,9 +372,10 @@ Base URL: **`http://localhost:8000/api/v1`** (see `docs/api/README.md` for table
 | Auth | `/auth/login` (POST), `/auth/me` (GET) | Dev-oriented login; prod uses NextAuth |
 | Modules | `/modules`, `/modules/categories`, `/modules/{slug}`, `/modules/{slug}/knowledge` | List uses Redis cache |
 | Compare | `POST /compare` | Body: slugs, optional dimensions/weights |
-| Chat | `POST /advisor/chat` | **SSE** stream, not JSON body response |
+| Chat | `POST /advisor/chat` | **SSE** stream; body includes `client_context` |
+| Advisor | `GET /advisor/playbooks`, `GET /advisor/trace/schema`, `GET /advisor/sessions/{id}/trace/latest` | Playbooks + trace tooling |
 | Sessions | `GET /sessions`, `GET /sessions/{id}/messages` | Conversation history API |
-| Users | `GET /users/me` | Profile / usage (per `docs/api/README.md`) |
+| Users | `GET /users/me` | Profile / usage |
 
 ---
 
@@ -406,9 +438,11 @@ Base URL: **`http://localhost:8000/api/v1`** (see `docs/api/README.md` for table
 ### 12.1 User-facing (product)
 
 - Browse/explore modules and categories (public routes + API).
-- Chat with an **AI advisor** that reasons about infrastructure choices.
-- **Streaming** answers with optional **tool activity** visibility (SDK mode).
-- **Visual panel:** architecture graphs, comparisons (radar/bar/table), code preview, option cards, incremental interactive architecture, multi-file code project.
+- Chat with **deterministic playbooks** (vector DB, RAG design, module code, architecture review, local stack, category compare) plus **LLM fallback**.
+- **Semantic intent** clarification chips when confidence is low.
+- **Constraint memory** via option cards and slot accumulation.
+- **Visual panel:** React Flow architecture, comparison decision surface (hero, bars, tradeoffs, explainability), tables/charts, code preview/project, option cards.
+- **Trace debug** panel for developers (scores, shortlist, filters).
 - **Conversation sessions** with persistence (backend conversations/messages; frontend stores `session_id` from SSE `meta`).
 - **History / dashboard** routes exist under `(dashboard)` (implementation depth may vary—verify UI when demoing).
 
@@ -421,7 +455,7 @@ Base URL: **`http://localhost:8000/api/v1`** (see `docs/api/README.md` for table
 
 ### 12.3 Content operations
 
-- Large library of YAML specs under `modules_registry/specs/`.
+- **102** YAML specs under `modules_registry/specs/` (18 categories; `infrastructure_comparison` empty).
 - Loader supports **idempotent** updates via content hash.
 - Optional embedding pipeline for semantic knowledge retrieval.
 
@@ -436,8 +470,9 @@ Base URL: **`http://localhost:8000/api/v1`** (see `docs/api/README.md` for table
 | **Placeholder panels** (`module_detail`, `recommendation`, `document`) | User sees stub UI if agent targets those panel types | Implement components or restrict agent from emitting those types until ready |
 | **Dev auth is not production security** | Easy local testing but must not ship as-is | Enforce JWT path in prod; remove or protect dev login endpoints |
 | **DB port default vs Docker** | Misconfiguration causes connection errors | Standardize `.env.example` on 5433 for Compose; document in README |
-| **Knowledge search without embeddings** | Weaker retrieval (ILIKE fallback) | Run `generate_embeddings.py` when OpenAI key available; monitor quality |
-| **suggest_stack heuristic** | Picks “first/top” modules per category with simple budget bias—not a full recommender | Replace with scored retrieval, user constraints, or dedicated tool + tests |
+| **Knowledge search without embeddings** | ILIKE fallback when `EMBEDDINGS_ENABLED=false` | Run `generate_embeddings.py` with BGE enabled |
+| **suggest_stack agent tool** | Simpler than pipeline scoring | Align tool with `scoring.py` / pipeline shortlists (see roadmap Item 1) |
+| **Trace endpoint auth** | `/trace/latest` lacks user ownership check | Add auth or restrict to development |
 | **Large YAML corpus** | Impossible to “read all specs” in onboarding | Rely on schema + loader + one exemplar spec + category list |
 | **MCP/SDK scope** | Smaller than full agent tool surface | Document which features are API-only vs MCP-only |
 
@@ -504,6 +539,9 @@ This section expands the **time-boxed learning plan** (~2.5 hours) into actionab
 | API mount | `backend/src/api/v1/router.py` |
 | SSE chat endpoint | `backend/src/api/v1/chat.py` |
 | Chat orchestration | `backend/src/services/chat_service.py` |
+| Recommendation planner | `backend/src/services/recommendation_planner.py` |
+| Pipelines | `backend/src/services/pipelines/` |
+| Playbooks YAML | `backend/src/advisor_playbooks/playbooks.yaml` |
 | Agent + tools execution | `backend/src/agent/advisor.py` |
 | Tool schemas | `backend/src/agent/tools.py` |
 | System prompt helpers | `backend/src/agent/prompts.py` |
@@ -517,7 +555,9 @@ This section expands the **time-boxed learning plan** (~2.5 hours) into actionab
 | Chat UI state | `frontend/src/stores/chatStore.ts` |
 | Panel UI state | `frontend/src/stores/panelStore.ts` |
 | Panel router UI | `frontend/src/components/advisor/MainPanel.tsx` |
-| Team conventions | `AGENTS.md` |
+| Comparison decision surface | `frontend/src/components/advisor/panels/comparison/` |
+| Architecture canvas | `frontend/src/components/advisor/architecture/` |
+| Team conventions | `docs/AGENTS.md` (mirror of root `AGENTS.md`) |
 
 ---
 

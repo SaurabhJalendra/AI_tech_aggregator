@@ -1,12 +1,59 @@
 """Deterministic planning layer for advisor recommendations."""
 
 import json
+import logging
+import re
+import uuid
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.advisor_playbooks.loader import (
+    get_playbook,
+    playbook_required_slots,
+    resolve_playbook_id,
+)
+from src.core.config import settings
 from src.models.module import Module
 from src.modules.comparison_engine import ComparisonEngine
+from src.schemas.intent import IntentResult
+from src.schemas.constraint_state import ConstraintState
+from src.services.constraint_state_service import ConstraintStateService
 from src.services.module_service import ModuleService
+from src.services.pipeline_registry import get_pipeline
+from src.services.architecture_consulting import build_architecture_consulting
+from src.services.architecture_simulation import (
+    apply_simulation_to_state,
+    build_simulation_narrative,
+    detect_architecture_simulation,
+)
+from src.services.consulting_memory import (
+    get_pinned_strategies,
+    list_evolution_history,
+    pin_current_architecture,
+    record_evolution_snapshot,
+)
+from src.services.phase6_intelligence import (
+    SANDBOX_POSTURES,
+    TRADEOFF_LEVERS,
+    apply_tradeoff_lever,
+)
+from src.services.strategic_consulting import (
+    apply_branch_slots,
+    build_dual_strategy_comparison,
+    detect_dual_strategy_request,
+    enrich_architecture_consulting,
+)
+from src.services.pipelines.base import attach_pipeline_context
+from src.services.pipelines.vector_db import VectorDbRecommendationPipeline
+from src.services.comparison_universe import (
+    apply_comparison_layer_to_state,
+    get_layer_label,
+    resolve_comparison_layer,
+)
+from src.services.slot_impact_policy import SlotImpactPolicy
+
+logger = logging.getLogger(__name__)
 
 
 CATEGORY_ALIASES = {
@@ -68,31 +115,149 @@ class RecommendationPlanner:
         self.module_service = ModuleService(db)
         self.comparison_engine = ComparisonEngine(db)
 
-    async def plan(self, message: str, client_context: dict | None) -> list[str] | None:
-        task = self.detect_task(message, client_context)
+    async def plan(
+        self,
+        message: str,
+        client_context: dict | None,
+        intent_result: IntentResult | None = None,
+        user_id: uuid.UUID | None = None,
+    ) -> list[str] | None:
+        task = self.detect_task(message, client_context, intent_result)
         if not task:
-            return None
+            return self.playbook_guidance_fallback(message, client_context)
 
-        constraints = self.extract_constraints(message, client_context)
-        if task["type"] == "architecture_review":
-            return self._architecture_review_events(client_context)
+        playbook_id = task.get("playbook_id")
+        state = ConstraintStateService.build(
+            message,
+            client_context,
+            playbook_id=str(playbook_id) if playbook_id else None,
+        )
+        if client_context is not None:
+            client_context["constraint_state"] = state.model_dump(mode="json")
 
-        missing_question = self.next_missing_question(task, constraints)
+        pb_id = playbook_id or (
+            "vector_db_comparison"
+            if task.get("category") == "vector_databases"
+            else f"category_{task.get('category', 'unknown')}"
+        )
+        missing_question = await SlotImpactPolicy(self.db).next_impactful_question(
+            pb_id,
+            state,
+            task["required_constraints"],
+            self.constraint_questions(),
+            category=task.get("category"),
+        )
+
         if missing_question:
+            if client_context is not None:
+                client_context["advisor_trace"] = {
+                    "playbook_id": playbook_id,
+                    "missing_slot_asked": missing_question["id"],
+                    "constraint_snapshot": state.model_dump(mode="json"),
+                    "steps": [f"slot_policy: ask {missing_question['id']}"],
+                }
             return self._option_card_events(task, missing_question)
 
-        if task["type"] == "rag_pipeline":
-            return await self._rag_pipeline_events(task, constraints)
+        workspace_events = await self._maybe_workspace_action_events(
+            message, client_context, state, user_id=user_id
+        )
+        if workspace_events:
+            return workspace_events
+
+        branch_events = await self._maybe_strategy_branch_events(
+            message, client_context, state, user_id=user_id
+        )
+        if branch_events:
+            return branch_events
+
+        dual_events = await self._maybe_dual_strategy_events(
+            message, client_context, state, user_id=user_id
+        )
+        if dual_events:
+            return dual_events
+
+        sim_events = await self._maybe_architecture_simulation_events(
+            message, client_context, state, intent_result=intent_result, user_id=user_id
+        )
+        if sim_events:
+            return sim_events
+
+        if task["type"] == "module_code":
+            return await self._module_code_events_v2(message, client_context, state)
+
+        if task["type"] == "architecture_review":
+            return await self._architecture_review_events_v2(client_context, state)
+
+        if task["type"] == "rag_pipeline" or playbook_id == "rag_pipeline_design":
+            return await self._rag_pipeline_events_v2(
+                task, state, client_context, user_id=user_id
+            )
 
         if task["type"] == "category_comparison":
-            return await self._category_comparison_events(task, constraints)
+            return await self._category_comparison_events_v2(
+                message, task, state, client_context
+            )
 
-        if task["type"] == "local_ai_stack":
-            return self._local_ai_stack_events(constraints)
+        if task["type"] == "local_ai_stack" or playbook_id == "local_ai_stack":
+            return await self._local_ai_stack_events_v2(state, client_context)
 
-        return None
+        return self.playbook_guidance_fallback(message, client_context)
 
-    def detect_task(self, message: str, client_context: dict | None) -> dict | None:
+    def playbook_guidance_fallback(
+        self,
+        message: str,
+        client_context: dict | None,
+    ) -> list[str] | None:
+        """Text-only continuation when no deterministic branch matched but playbook is active."""
+        if not client_context:
+            return None
+        playbook_id = client_context.get("active_playbook_id")
+        if not playbook_id:
+            return None
+        playbook = get_playbook(str(playbook_id))
+        if not playbook:
+            return None
+        label = str(playbook.get("task_type", playbook_id)).replace("_", " ")
+        text = (
+            f"I'm continuing the **{label}** workflow from your earlier choices. "
+            "Use the panel, option cards, or name a specific module for a focused follow-up."
+        )
+        logger.info(
+            "planner playbook fallback playbook_id=%s message_len=%d",
+            playbook_id,
+            len(message),
+        )
+        return self._text_only_events(text)
+
+    def detect_task(
+        self,
+        message: str,
+        client_context: dict | None,
+        intent_result: IntentResult | None = None,
+    ) -> dict | None:
+        heuristic = self._detect_task_heuristic(message, client_context)
+        if intent_result is None or intent_result.intent_id in ("unknown", "ambiguous"):
+            return self._attach_playbook_metadata(heuristic) if heuristic else None
+
+        semantic = self._task_from_intent_result(intent_result)
+        merged = self._merge_heuristic_and_semantic(heuristic, semantic, intent_result)
+        return self._attach_playbook_metadata(merged) if merged else None
+
+    def _attach_playbook_metadata(self, task: dict | None) -> dict | None:
+        if not task:
+            return None
+        playbook_id = resolve_playbook_id(
+            task_type=task.get("type"),
+            category=task.get("category"),
+        )
+        if playbook_id:
+            task["playbook_id"] = playbook_id
+            slots = playbook_required_slots(playbook_id)
+            if slots:
+                task["required_constraints"] = slots
+        return task
+
+    def _detect_task_heuristic(self, message: str, client_context: dict | None) -> dict | None:
         active_task = ""
         if client_context:
             active_task = str(client_context.get("active_task") or "")
@@ -101,6 +266,13 @@ class RecommendationPlanner:
         has_option_answer = bool(
             client_context and isinstance(client_context.get("option_answer"), dict)
         )
+
+        if self._is_module_code_request(combined, client_context):
+            return {
+                "type": "module_code",
+                "label": "module integration code",
+                "required_constraints": [],
+            }
 
         if self._is_architecture_review_request(combined, client_context):
             return {
@@ -117,6 +289,28 @@ class RecommendationPlanner:
             }
 
         if "rag" in combined or "retrieval augmented" in combined:
+            return {
+                "type": "rag_pipeline",
+                "label": "RAG pipeline",
+                "required_constraints": [
+                    "scale",
+                    "budget",
+                    "implementation_preference",
+                ],
+            }
+
+        if any(
+            term in combined
+            for term in (
+                "designing",
+                "design a",
+                "design an",
+                "design the",
+                "build a pipeline",
+                "end to end",
+                "end-to-end",
+            )
+        ) and any(term in combined for term in ("rag", "pipeline", "retrieval", "ingestion")):
             return {
                 "type": "rag_pipeline",
                 "label": "RAG pipeline",
@@ -154,6 +348,80 @@ class RecommendationPlanner:
             "required_constraints": self._required_constraints_for_category(category),
         }
 
+    def _task_from_intent_result(self, intent_result: IntentResult) -> dict | None:
+        iid = intent_result.intent_id
+        if iid == "module_code":
+            return {
+                "type": "module_code",
+                "label": "module integration code",
+                "required_constraints": [],
+            }
+        if iid == "architecture_review":
+            return {
+                "type": "architecture_review",
+                "label": "architecture review",
+                "required_constraints": [],
+            }
+        if iid == "local_ai_stack":
+            return {
+                "type": "local_ai_stack",
+                "label": "local LLM + agent stack",
+                "required_constraints": ["hardware", "agent_complexity"],
+            }
+        if iid == "rag_pipeline":
+            return {
+                "type": "rag_pipeline",
+                "label": "RAG pipeline",
+                "required_constraints": [
+                    "scale",
+                    "budget",
+                    "implementation_preference",
+                ],
+            }
+        if iid.startswith("category:"):
+            cat = iid.split(":", 1)[1]
+            return {
+                "type": "category_comparison",
+                "category": cat,
+                "label": cat.replace("_", " "),
+                "required_constraints": self._required_constraints_for_category(cat),
+            }
+        return None
+
+    def _merge_heuristic_and_semantic(
+        self,
+        heuristic: dict | None,
+        semantic: dict | None,
+        intent_result: IntentResult,
+    ) -> dict | None:
+        if intent_result.intent_id in ("unknown", "ambiguous"):
+            return heuristic
+        if semantic is None:
+            return heuristic
+        if intent_result.confidence < settings.semantic_intent_min_confidence:
+            return heuristic
+
+        if heuristic and semantic:
+            st = semantic["type"]
+            if st in ("module_code", "architecture_review") and intent_result.intent_id == st:
+                return semantic
+        if heuristic:
+            ht = heuristic["type"]
+            if ht in ("module_code", "architecture_review", "local_ai_stack", "rag_pipeline"):
+                return self._attach_playbook_metadata(heuristic)
+            if ht == "category_comparison":
+                if (
+                    semantic["type"] == "category_comparison"
+                    and intent_result.confidence >= settings.semantic_intent_override_confidence
+                    and intent_result.margin is not None
+                    and intent_result.margin >= settings.semantic_intent_override_margin
+                    and semantic["category"] != heuristic["category"]
+                ):
+                    return semantic
+                return heuristic
+
+        return semantic
+
     def _is_local_llm_agent_stack_request(self, combined: str) -> bool:
         wants_llm = any(term in combined for term in ("llm", "language model", "model"))
         wants_agent = any(
@@ -175,101 +443,10 @@ class RecommendationPlanner:
         )
         return wants_llm and wants_agent and wants_local_or_low_cost
 
-    def extract_constraints(
-        self,
-        message: str,
-        client_context: dict | None,
-    ) -> dict:
-        constraints: dict = {}
-        combined = message.lower()
-
-        if client_context:
-            combined = f"{client_context.get('active_task', '')} {message}".lower()
-            option_answer = client_context.get("option_answer")
-            if isinstance(option_answer, dict):
-                metadata = option_answer.get("metadata")
-                if isinstance(metadata, dict):
-                    constraints.update(metadata)
-
-                question_id = option_answer.get("question_id")
-                answer_id = option_answer.get("answer_id")
-                if question_id and answer_id:
-                    constraints[str(question_id)] = answer_id
-
-            accumulated = client_context.get("constraints")
-            if isinstance(accumulated, dict):
-                constraints.update(accumulated)
-
-        if "python" in combined:
-            constraints["python_sdk"] = True
-            constraints.setdefault("implementation_preference", "python")
-            constraints.setdefault("implementation_language", "python")
-        if "typescript" in combined or "javascript" in combined:
-            constraints.setdefault("implementation_preference", "typescript")
-            constraints.setdefault("implementation_language", "typescript")
-        if "api only" in combined or "rest api" in combined:
-            constraints.setdefault("implementation_preference", "api_only")
-            constraints.setdefault("implementation_language", "api_only")
-
-        if "cpu" in combined or "cpu-only" in combined:
-            constraints.setdefault("hardware", "cpu_only")
-        if "consumer gpu" in combined or "rtx" in combined or "gpu" in combined:
-            constraints.setdefault("hardware", "consumer_gpu")
-        if (
-            "apple silicon" in combined
-            or "macbook" in combined
-            or "m1" in combined
-            or "m2" in combined
-            or "m3" in combined
-        ):
-            constraints.setdefault("hardware", "apple_silicon")
-        if "cloud vm" in combined or "vps" in combined:
-            constraints.setdefault("hardware", "cloud_vm")
-
-        if "single agent" in combined or "simple agent" in combined:
-            constraints.setdefault("agent_complexity", "single_agent")
-        if "multi-agent" in combined or "multi agent" in combined or "orchestration" in combined:
-            constraints.setdefault("agent_complexity", "multi_agent")
-
-        if "growing" in combined or "production" in combined:
-            constraints.setdefault("scale", "growing_application")
-        if "enterprise" in combined or "mission-critical" in combined:
-            constraints["scale"] = "enterprise"
-        if "prototype" in combined or "demo" in combined or "small" in combined:
-            constraints.setdefault("scale", "prototype")
-
-        if (
-            "startup budget" in combined
-            or "low budget" in combined
-            or "under $50" in combined
-            or "$50/mo" in combined
-            or "lowest cost" in combined
-            or "absolute lowest" in combined
-        ):
-            constraints["budget"] = "low"
-        if "moderate cost" in combined or "balanced budget" in combined:
-            constraints.setdefault("budget", "medium")
-        if "performance first" in combined or "growth budget" in combined:
-            constraints.setdefault("budget", "high")
-
-        if "managed" in combined or "cloud" in combined:
-            constraints.setdefault("deployment_preference", "managed")
-        if "self-host" in combined or "on-prem" in combined or "private" in combined:
-            constraints["deployment_preference"] = "self_hosted"
-
-        if "reasoning" in combined:
-            constraints.setdefault("quality_priority", "reasoning")
-        if "low latency" in combined or "latency" in combined:
-            constraints.setdefault("quality_priority", "low_latency")
-        if "accuracy" in combined:
-            constraints.setdefault("quality_priority", "accuracy")
-
-        return constraints
-
-    def next_missing_question(self, task: dict, constraints: dict) -> dict | None:
+    def next_missing_question(self, task: dict, state: ConstraintState) -> dict | None:
         questions = self.constraint_questions()
         for question_id in task["required_constraints"]:
-            if constraints.get(question_id):
+            if state.has(question_id):
                 continue
             question = questions[question_id]
             return {"id": question_id, **question}
@@ -504,180 +681,938 @@ class RecommendationPlanner:
             },
         }
 
-    async def _category_comparison_events(
+    async def _vector_db_comparison_events(
         self,
         task: dict,
-        constraints: dict,
+        state: ConstraintState,
+        client_context: dict | None,
     ) -> list[str] | None:
-        slugs, weights = await self.rank_category_finalists(
-            task["category"],
-            constraints,
-        )
+        """Phase-2 pipeline: retrieve → filter → score → shortlist → comparison panel."""
+        playbook = get_playbook("vector_db_comparison") or {}
+        retrieval = playbook.get("retrieval_config") or {}
+        limit = int(retrieval.get("finalist_limit_default", 4))
+        if state.get("budget") == "low":
+            limit = int(retrieval.get("finalist_limit_low_budget", 3))
+
+        pipeline = VectorDbRecommendationPipeline(self.db)
+        result = await pipeline.run(state, finalist_limit=limit)
+        trace = result.trace
+
+        if client_context is not None:
+            client_context["advisor_trace"] = trace.model_dump(mode="json")
+            client_context["recommendation_explain"] = trace.to_explain_payload()
+
+        if result.extra.get("filter_exhausted"):
+            from src.services.constraint_negotiation import build_negotiation_option_cards
+
+            negotiation = build_negotiation_option_cards(state, trace)
+            text = (
+                "No vector databases satisfy all of your hard constraints together. "
+                "This is a constraint conflict, not a missing catalog — pick which "
+                "requirement to relax first and I will re-run the comparison deterministically."
+            )
+            panel_command = {
+                "action": "render",
+                "panel": "option_cards",
+                "title": "Constraint negotiation",
+                "source": "planner",
+                "data": negotiation,
+            }
+            return self._events(text, panel_command)
+
+        slugs = result.shortlist
         if len(slugs) < 2:
-            return None
+            return self._text_only_events(
+                "I could not build a meaningful comparison shortlist from the registry "
+                "with your current constraints. Try relaxing budget or deployment filters."
+            )
 
         comparison = await self.comparison_engine.compare(
             slugs=slugs,
             dimensions=COMPARISON_DIMENSIONS,
-            weights=weights,
+            weights=result.weights,
         )
         comparison_data = comparison.model_dump()
-        comparison_data["recommendation"] = self._constraint_aware_recommendation(
-            task,
-            constraints,
-            comparison_data["overall_ranking"],
+        comparison_data["recommendation"] = self._pipeline_recommendation(
+            state,
+            slugs,
+            trace,
         )
+        comparison_data["pipeline_scores"] = {r.slug: r.score for r in trace.scores}
+        comparison_data["weights"] = result.weights
+        comparison_data["shortlist"] = slugs
+        ui = playbook.get("ui_behavior") or {}
         panel_command = {
             "action": "render",
-            "panel": "comparison_chart",
+            "panel": ui.get("comparison_panel", "comparison_chart"),
             "title": f"{task['label'].title()} Comparison",
             "data": {
                 "comparison": comparison_data,
-                "chart_type": "radar",
+                "chart_type": ui.get("chart_type", "decision_surface"),
             },
         }
         text = (
-            f"I filtered first, then ranked the {task['label']} finalists that match "
-            "your constraints. The panel shows only viable options."
+            "I retrieved vector database modules, applied hard filters from your constraints, "
+            "scored survivors deterministically, and ranked the shortlist below. "
+            f"Top pick: **{slugs[0]}**."
+        )
+        logger.info("vector_db_comparison trace=%s", trace.steps)
+        return self._events(text, panel_command)
+
+    async def _category_comparison_events_v2(
+        self,
+        message: str,
+        task: dict,
+        state: ConstraintState,
+        client_context: dict | None,
+    ) -> list[str] | None:
+        category = task.get("category", "")
+        playbook_id = task.get("playbook_id") or (
+            "vector_db_comparison" if category == "vector_databases" else f"category_{category}"
+        )
+        if category == "vector_databases":
+            return await self._vector_db_comparison_events(task, state, client_context)
+
+        limit = 4
+
+        comparison_layer = resolve_comparison_layer(
+            category, message, state=state, client_context=client_context
+        )
+        if comparison_layer:
+            apply_comparison_layer_to_state(state, category, comparison_layer)
+            if client_context is not None:
+                client_context["comparison_layer"] = comparison_layer
+                client_context["constraint_state"] = state.model_dump(mode="json")
+
+        pipeline = get_pipeline(self.db, playbook_id, category=category)
+        if pipeline is None:
+            return self._pipeline_unavailable_events(playbook_id, "category comparison")
+
+        result = await pipeline.run(
+            state,
+            finalist_limit=limit,
+            comparison_layer=comparison_layer,
+        )
+        attach_pipeline_context(client_context, result, playbook_id=playbook_id)
+        slugs = result.shortlist
+        if len(slugs) < 2:
+            layer_hint = ""
+            if comparison_layer:
+                layer_hint = (
+                    f" for **{get_layer_label(category, comparison_layer)}** "
+                    f"(layer: `{comparison_layer}`)"
+                )
+            return self._text_only_events(
+                "Not enough comparable candidates passed filters"
+                f"{layer_hint}. "
+                "Try narrowing your question to one abstraction layer — e.g. rerankers only, "
+                "hybrid retrieval strategies only, or orchestration frameworks only."
+            )
+
+        comparison = await self.comparison_engine.compare(
+            slugs=slugs,
+            dimensions=COMPARISON_DIMENSIONS,
+            weights=result.weights,
+        )
+        comparison_data = comparison.model_dump()
+        comparison_data["recommendation"] = self._pipeline_recommendation(state, slugs, result.trace)
+        comparison_data["pipeline_scores"] = {r.slug: r.score for r in result.trace.scores}
+        comparison_data["weights"] = result.weights
+        comparison_data["shortlist"] = slugs
+        title_suffix = task["label"].title()
+        if comparison_layer:
+            title_suffix = get_layer_label(category, comparison_layer)
+        panel_command = {
+            "action": "render",
+            "panel": "comparison_chart",
+            "title": f"{title_suffix} Comparison",
+            "data": {"comparison": comparison_data, "chart_type": "decision_surface"},
+        }
+        text = (
+            f"I deterministically ranked **{category.replace('_', ' ')}** modules for your constraints. "
+            f"Top pick: **{slugs[0]}**."
         )
         return self._events(text, panel_command)
 
-    async def _rag_pipeline_events(
+    async def _maybe_workspace_action_events(
         self,
-        task: dict,
-        constraints: dict,
+        message: str,
+        client_context: dict | None,
+        state: ConstraintState,
+        *,
+        user_id: uuid.UUID | None = None,
     ) -> list[str] | None:
-        nodes = []
-        edges = []
-        selected = {}
-
-        for category in RAG_PIPELINE:
-            modules, _ = await self.module_service.list_modules(
-                category=category,
-                per_page=100,
-            )
-            if not modules:
-                continue
-            module = self.rank_modules(modules, constraints)[0]
-            selected[category] = module
-            nodes.append({
-                "id": category,
-                "label": module.name,
-                "slug": module.slug,
-                "category": category,
-                "description": self._short_node_description(module),
-            })
-
-        for source, target in zip(RAG_PIPELINE, RAG_PIPELINE[1:], strict=False):
-            if source in selected and target in selected:
-                edges.append({"from": source, "to": target})
-
-        if not nodes:
+        if not client_context:
             return None
+
+        profile = dict(client_context.get("consulting_profile") or {})
+
+        if client_context.get("pin_current_strategy"):
+            panel = client_context.get("current_panel_data")
+            if not isinstance(panel, dict):
+                return self._text_only_events(
+                    "Open an architecture blueprint before pinning a strategy."
+                )
+            title = str(panel.get("title") or "Architecture strategy")
+            profile = pin_current_architecture(
+                profile,
+                title=title,
+                panel_data=panel,
+                constraint_snapshot=state.model_dump(mode="json"),
+            )
+            client_context["consulting_profile"] = profile
+            count = len(get_pinned_strategies(profile))
+            text = (
+                f"**Pinned** — “{title}” is saved to your strategy workspace ({count} pinned). "
+                "Select two pinned futures to compare operational paths."
+            )
+            if isinstance(panel, dict) and panel.get("nodes"):
+                panel_data = dict(panel)
+                consulting = dict(panel_data.get("architecture_consulting") or {})
+                consulting["strategy_workspace"] = {
+                    "pinned": get_pinned_strategies(profile),
+                    "count": count,
+                }
+                panel_data["architecture_consulting"] = consulting
+                cmd = {
+                    "action": "render",
+                    "panel": "interactive_architecture",
+                    "title": panel_data.get("title") or title,
+                    "data": panel_data,
+                }
+                return self._events(text, cmd)
+            return self._text_only_events(text)
+
+        compare_ids = client_context.get("compare_pin_ids")
+        if isinstance(compare_ids, list) and len(compare_ids) >= 2:
+            pins = [p for p in get_pinned_strategies(profile) if p.get("id") in compare_ids]
+            if len(pins) >= 2:
+                from src.services.strategic_consulting import build_multi_pin_strategy_overview
+
+                pipeline = get_pipeline(self.db, "rag_pipeline_design")
+                if pipeline:
+                    overview = await build_multi_pin_strategy_overview(
+                        self.db, pipeline, pins[:3], state
+                    )
+                    if overview:
+                        panel = client_context.get("current_panel_data")
+                        if isinstance(panel, dict):
+                            panel_data = dict(panel)
+                            panel_data["strategy_mode"] = "multi"
+                            consulting = panel_data.get("architecture_consulting") or {}
+                            consulting["multi_strategy_overview"] = overview
+                            panel_data["architecture_consulting"] = consulting
+                            cmd = {
+                                "action": "render",
+                                "panel": "interactive_architecture",
+                                "title": overview.get("theme", "Strategy workspace"),
+                                "data": panel_data,
+                            }
+                            text = (
+                                "**Strategy workspace** — comparing pinned architecture futures. "
+                                "Review operational posture, cost evolution, and organizational fit."
+                            )
+                            return self._events(text, cmd)
+
+        lever = client_context.get("tradeoff_lever")
+        if lever:
+            trial = apply_tradeoff_lever(state, str(lever))
+            if trial:
+                from src.services.architecture_simulation import ArchitectureSimulationSpec
+
+                meta = TRADEOFF_LEVERS.get(str(lever), {})
+                spec = ArchitectureSimulationSpec(
+                    scenario_id=f"tradeoff_{lever}",
+                    label=meta.get("label", "Tradeoff exploration"),
+                    slot_updates={},
+                    user_message_excerpt=message[:200],
+                )
+                return await self._architecture_simulation_events_v2(
+                    message, client_context, trial, spec, user_id=user_id
+                )
+
+        posture_id = client_context.get("sandbox_posture")
+        if posture_id:
+            posture = next((p for p in SANDBOX_POSTURES if p["id"] == posture_id), None)
+            if posture:
+                from src.schemas.constraint_state import ConstraintSource
+                from src.services.architecture_simulation import ArchitectureSimulationSpec
+
+                trial = state.model_copy(deep=True)
+                for key, value in posture["slots"].items():
+                    trial.set_slot(
+                        key,
+                        value,
+                        source=ConstraintSource.EXPLICIT,
+                        confidence=1.0,
+                        force=True,
+                    )
+                spec = ArchitectureSimulationSpec(
+                    scenario_id=f"posture_{posture_id}",
+                    label=posture["label"],
+                    slot_updates={},
+                    user_message_excerpt=message[:200],
+                )
+                return await self._architecture_simulation_events_v2(
+                    message, client_context, trial, spec, user_id=user_id
+                )
+
+        return None
+
+    async def _maybe_strategy_branch_events(
+        self,
+        message: str,
+        client_context: dict | None,
+        state: ConstraintState,
+        *,
+        user_id: uuid.UUID | None = None,
+    ) -> list[str] | None:
+        if not client_context:
+            return None
+        branch_id = client_context.get("strategy_branch_id")
+        if not branch_id:
+            from src.services.strategic_consulting import detect_strategy_branch_from_message
+
+            branch_id = detect_strategy_branch_from_message(message)
+            if branch_id:
+                client_context["strategy_branch_id"] = branch_id
+        if not branch_id:
+            return None
+        trial = apply_branch_slots(state, str(branch_id))
+        if trial is None:
+            return None
+        from src.services.architecture_simulation import ArchitectureSimulationSpec
+
+        spec = ArchitectureSimulationSpec(
+            scenario_id=f"branch_{branch_id}",
+            label=f"Strategy branch: {branch_id.replace('_', ' ')}",
+            slot_updates={},
+            user_message_excerpt=message[:200],
+        )
+        return await self._architecture_simulation_events_v2(
+            message,
+            client_context,
+            trial,
+            spec,
+            user_id=user_id,
+        )
+
+    async def _maybe_dual_strategy_events(
+        self,
+        message: str,
+        client_context: dict | None,
+        state: ConstraintState,
+        *,
+        user_id: uuid.UUID | None = None,
+    ) -> list[str] | None:
+        spec = detect_dual_strategy_request(message)
+        if not spec:
+            return None
+        pipeline = get_pipeline(self.db, "rag_pipeline_design")
+        if pipeline is None:
+            return None
+        comparison = await build_dual_strategy_comparison(
+            self.db, pipeline, state, spec, playbook_id="rag_pipeline_design"
+        )
+        if not comparison:
+            return None
+
+        primary = comparison["left_architecture"]
+        panel_data = {
+            "nodes": primary.get("nodes") or [],
+            "edges": primary.get("edges") or [],
+            "title": comparison["theme"],
+            "selections": primary.get("selections") or {},
+            "strategy_mode": "dual",
+        }
+        evolution_history = None
+        if user_id:
+            evolution_history = await list_evolution_history(self.db, user_id, limit=8)
+        consulting = dict(primary.get("architecture_consulting") or {})
+        consulting = enrich_architecture_consulting(
+            consulting,
+            state=state,
+            trace=comparison.get("left_trace"),
+            selections=primary.get("selections") or {},
+            consulting_profile=(
+                client_context.get("consulting_profile") if client_context else None
+            ),
+            evolution_history=evolution_history,
+            strategy_comparison=comparison,
+        )
+        panel_data["architecture_consulting"] = consulting
+        if user_id:
+            await self._persist_evolution_snapshot(
+                user_id,
+                client_context,
+                panel_data,
+                state,
+                transition_reason=f"Dual strategy: {comparison['theme']}",
+            )
+        if client_context is not None:
+            client_context["strategy_comparison"] = comparison
 
         panel_command = {
             "action": "render",
             "panel": "interactive_architecture",
-            "title": "Recommended RAG Architecture",
-            "data": {
-                "nodes": nodes,
-                "edges": edges,
-                "title": "Recommended RAG Architecture",
-            },
+            "title": comparison["theme"],
+            "data": panel_data,
         }
         text = (
-            "I have enough constraints now. Here is a deterministic RAG stack "
-            "optimized for your scale, budget, and implementation preference."
+            f"**Strategic architecture comparison** — {comparison['theme']}. "
+            f"{comparison.get('consulting_summary', '')} "
+            "Review operational posture, scaling, and long-term complexity side by side."
         )
         return self._events(text, panel_command)
 
-    def _architecture_review_events(self, client_context: dict | None) -> list[str]:
+    async def _maybe_architecture_simulation_events(
+        self,
+        message: str,
+        client_context: dict | None,
+        state: ConstraintState,
+        *,
+        intent_result: IntentResult | None = None,
+        user_id: uuid.UUID | None = None,
+    ) -> list[str] | None:
+        if not client_context:
+            return None
+        on_architecture = client_context.get("current_panel") == "interactive_architecture"
+        sim_intent = bool(
+            intent_result
+            and (intent_result.intent_id or "").startswith("architecture_simulation:")
+        )
+        if not on_architecture and not sim_intent:
+            return None
+        spec = detect_architecture_simulation(message, intent_result)
+        if not spec:
+            return None
+        return await self._architecture_simulation_events_v2(
+            message, client_context, state, spec, user_id=user_id
+        )
+
+    async def _architecture_simulation_events_v2(
+        self,
+        message: str,
+        client_context: dict | None,
+        state: ConstraintState,
+        spec,
+        *,
+        user_id: uuid.UUID | None = None,
+    ) -> list[str] | None:
+        pipeline = get_pipeline(self.db, "rag_pipeline_design")
+        if pipeline is None:
+            return self._pipeline_unavailable_events("rag_pipeline_design", "architecture simulation")
+
+        trial_state = apply_simulation_to_state(state, spec)
+        if client_context is not None:
+            client_context["constraint_state"] = trial_state.model_dump(mode="json")
+
+        baseline_panel: dict[str, Any] = {}
+        if isinstance(client_context.get("current_panel_data"), dict):
+            baseline_panel = dict(client_context["current_panel_data"])
+
+        result = await pipeline.run(trial_state)
+        attach_pipeline_context(client_context, result, playbook_id="rag_pipeline_design")
+        extra = result.extra or {}
+        nodes = extra.get("nodes") or []
+        edges = extra.get("edges") or []
+        if not nodes:
+            return self._text_only_events(
+                "I could not simulate that scenario — no pipeline stages resolved. "
+                "Try refining constraints or asking about a specific layer."
+            )
+
+        panel_data = {
+            "nodes": nodes,
+            "edges": edges,
+            "title": f"Simulated: {spec.label}",
+            "selections": extra.get("selections") or {},
+            "comparison_baseline": {
+                "title": baseline_panel.get("title") or "Current architecture",
+                "nodes": baseline_panel.get("nodes") or [],
+                "edges": baseline_panel.get("edges") or [],
+                "selections": baseline_panel.get("selections") or {},
+            },
+        }
+        panel_data = await self._attach_architecture_consulting(
+            panel_data,
+            trace=result.trace,
+            state=trial_state,
+            playbook_id="rag_pipeline_design",
+            stage_decisions=extra.get("stage_decisions"),
+            client_context=client_context,
+            simulation_active=True,
+            user_id=user_id,
+        )
+        consulting = panel_data.get("architecture_consulting") or {}
+        replacements = (consulting.get("evolution") or {}).get("replacements") or []
+        consulting["simulation"] = {
+            "scenario_id": spec.scenario_id,
+            "label": spec.label,
+            "slot_updates": spec.slot_updates,
+            "narrative": build_simulation_narrative(spec, replacements),
+        }
+        from src.services.phase6_intelligence import build_simulation_reasoning
+
+        consulting["simulation_reasoning"] = build_simulation_reasoning(
+            spec.label,
+            trial_state,
+            replacements,
+            selections=extra.get("selections") or {},
+        )
+        panel_data["architecture_consulting"] = consulting
+
+        panel_command = {
+            "action": "render",
+            "panel": "interactive_architecture",
+            "title": panel_data["title"],
+            "data": panel_data,
+        }
+        text = (
+            f"**Architecture simulation** — {spec.label}. "
+            "The blueprint shows your updated stack; compare against the prior architecture below. "
+            f"{consulting['simulation']['narrative']}"
+        )
+        return self._events(text, panel_command)
+
+    async def _rag_pipeline_events_v2(
+        self,
+        task: dict,
+        state: ConstraintState,
+        client_context: dict | None,
+        *,
+        user_id: uuid.UUID | None = None,
+    ) -> list[str] | None:
+        pipeline = get_pipeline(self.db, "rag_pipeline_design")
+        if pipeline is None:
+            return self._pipeline_unavailable_events("rag_pipeline_design", "RAG architecture")
+
+        result = await pipeline.run(state)
+        attach_pipeline_context(client_context, result, playbook_id="rag_pipeline_design")
+        extra = result.extra or {}
+        nodes = extra.get("nodes") or []
+        edges = extra.get("edges") or []
+        if not nodes:
+            return None
+
+        panel_data = {
+            "nodes": nodes,
+            "edges": edges,
+            "title": "Recommended RAG Architecture",
+            "selections": extra.get("selections") or {},
+        }
+        panel_data = await self._attach_architecture_consulting(
+            panel_data,
+            trace=result.trace,
+            state=state,
+            playbook_id="rag_pipeline_design",
+            stage_decisions=extra.get("stage_decisions"),
+            client_context=client_context,
+            user_id=user_id,
+        )
+        panel_command = {
+            "action": "render",
+            "panel": "interactive_architecture",
+            "title": "Recommended RAG Architecture",
+            "data": panel_data,
+        }
+        text = (
+            "I retrieved modules per RAG stage, filtered and scored each layer, and assembled "
+            "this deterministic stack from your constraints."
+        )
+        return self._events(text, panel_command)
+
+    async def _module_code_events_v2(
+        self,
+        message: str,
+        client_context: dict | None,
+        state: ConstraintState,
+    ) -> list[str] | None:
+        from src.services.pipelines.module_code import ModuleCodePipeline
+
+        focus = None
+        if client_context:
+            focus = client_context.get("focus_module_slug")
+            node = client_context.get("architecture_node")
+            if isinstance(node, dict) and node.get("slug"):
+                focus = str(node["slug"])
+
+        pipeline = ModuleCodePipeline(self.db)
+        result = await pipeline.run(state, message=message, focus_slug=str(focus) if focus else None)
+        attach_pipeline_context(client_context, result, playbook_id="module_code")
+        module = (result.extra or {}).get("module")
+        if not module:
+            return self._text_only_events(
+                "I could not match that component to a module in the registry. "
+                "Click **Show code** on an architecture node or name the module explicitly."
+            )
+
+        constraints = state.slot_values()
+        example = self._pick_code_example(module, constraints)
+        if not example:
+            return self._text_only_events(f"No code example stored for **{module.name}** yet.")
+
+        code_payload = {
+            "title": example.get("title", module.name),
+            "language": example.get("language", "python"),
+            "code": example.get("code", ""),
+            "filename": f"{module.slug}.{example.get('language', 'py')}",
+            "moduleName": module.name,
+        }
+        on_architecture = (
+            client_context
+            and client_context.get("current_panel") == "interactive_architecture"
+        )
+        if on_architecture:
+            panel_command = {
+                "action": "update",
+                "panel": "interactive_architecture",
+                "title": f"{module.name} — Integration",
+                "data": {"codeDrawer": code_payload},
+            }
+        else:
+            panel_command = {
+                "action": "render",
+                "panel": "code_preview",
+                "title": f"{module.name} — Integration",
+                "data": code_payload,
+            }
+        text = f"Registry-backed integration code for **{module.name}** (deterministic module match)."
+        return self._events(text, panel_command)
+
+    async def _architecture_review_events_v2(
+        self,
+        client_context: dict | None,
+        state: ConstraintState,
+    ) -> list[str] | None:
+        from src.services.pipelines.architecture_review import ArchitectureReviewPipeline
+
         panel_data = {}
         if client_context and isinstance(client_context.get("current_panel_data"), dict):
             panel_data = client_context["current_panel_data"]
 
-        findings = self._review_rag_architecture(panel_data)
+        pipeline = ArchitectureReviewPipeline(self.db)
+        result = await pipeline.run(state, panel_data=panel_data)
+        attach_pipeline_context(client_context, result, playbook_id="architecture_review")
+        findings = (result.extra or {}).get("findings") or []
         corrected = self._corrected_rag_architecture()
-        findings_text = "\n".join(
-            f"- {finding['severity']}: {finding['message']}" for finding in findings
-        )
+        findings_text = "\n".join(f"- {f['severity']}: {f['message']}" for f in findings)
         text = (
-            "I found the main gaps and replaced the panel with a corrected interactive "
-            "RAG architecture. Keep using the node hover menu for Learn more, Swap "
-            f"component, and Show code.\n\n{findings_text}"
+            "Deterministic architecture review complete. The panel shows a corrected reference stack.\n\n"
+            f"{findings_text}"
+        )
+        panel_data = await self._attach_architecture_consulting(
+            dict(corrected),
+            trace=result.trace,
+            state=state,
+            playbook_id="architecture_review",
+            client_context=client_context,
         )
         panel_command = {
             "action": "render",
             "panel": "interactive_architecture",
             "title": "Corrected RAG Architecture",
-            "data": corrected,
+            "data": panel_data,
         }
         return self._events(text, panel_command)
 
-    def _local_ai_stack_events(self, constraints: dict) -> list[str]:
-        agent_label = (
-            "LangChain Agent"
-            if constraints.get("agent_complexity") == "single_agent"
-            else "CrewAI"
-        )
-        agent_slug = "langchain" if agent_label == "LangChain Agent" else "crewai"
-        model_label = "Llama 3.2/3.3 8B"
-        if constraints.get("hardware") == "cpu_only":
-            model_label = "Llama 3.2 3B/8B"
+    async def _local_ai_stack_events_v2(
+        self,
+        state: ConstraintState,
+        client_context: dict | None,
+    ) -> list[str] | None:
+        pipeline = get_pipeline(self.db, "local_ai_stack")
+        if pipeline is None:
+            return self._pipeline_unavailable_events("local_ai_stack", "local AI stack")
 
+        result = await pipeline.run(state)
+        attach_pipeline_context(client_context, result, playbook_id="local_ai_stack")
+        extra = result.extra or {}
+        panel_data = {
+            "title": "Lowest-Cost Private LLM Agent Stack",
+            "nodes": extra.get("nodes") or [],
+            "edges": extra.get("edges") or [],
+        }
+        panel_data = await self._attach_architecture_consulting(
+            panel_data,
+            trace=result.trace,
+            state=state,
+            playbook_id="local_ai_stack",
+            client_context=client_context,
+        )
         panel_command = {
             "action": "render",
             "panel": "interactive_architecture",
             "title": "Lowest-Cost Private LLM Agent Stack",
-            "data": {
-                "title": "Lowest-Cost Private LLM Agent Stack",
-                "nodes": [
-                    {
-                        "id": "app",
-                        "label": "Your App",
-                        "category": "agent_systems",
-                        "description": "user task",
-                    },
-                    {
-                        "id": "agent",
-                        "label": agent_label,
-                        "slug": agent_slug,
-                        "category": "agent_systems",
-                        "description": "orchestrate tools",
-                    },
-                    {
-                        "id": "ollama",
-                        "label": "Ollama",
-                        "slug": "ollama",
-                        "category": "llm_layer",
-                        "description": "local runtime",
-                    },
-                    {
-                        "id": "model",
-                        "label": model_label,
-                        "category": "llm_layer",
-                        "description": "open model",
-                    },
-                    {
-                        "id": "tools",
-                        "label": "Local Tools",
-                        "category": "agent_systems",
-                        "description": "private actions",
-                    },
-                ],
-                "edges": [
-                    {"from": "app", "to": "agent", "label": "task"},
-                    {"from": "agent", "to": "ollama", "label": "chat API"},
-                    {"from": "ollama", "to": "model", "label": "runs"},
-                    {"from": "agent", "to": "tools", "label": "tool calls"},
-                ],
-            },
+            "data": panel_data,
         }
         text = (
-            "For lowest-cost + self-hosted privacy, start with a local architecture first. "
-            "The panel shows the stack; ask for code after you confirm the shape."
+            "Deterministic local LLM + agent stack for your hardware and complexity constraints."
         )
         return self._events(text, panel_command)
+
+    async def _attach_architecture_consulting(
+        self,
+        panel_data: dict,
+        *,
+        trace,
+        state: ConstraintState,
+        playbook_id: str,
+        stage_decisions: dict | None = None,
+        client_context: dict | None = None,
+        simulation_active: bool = False,
+        strategy_comparison: dict | None = None,
+        user_id: uuid.UUID | None = None,
+    ) -> dict:
+        previous_panel_data = None
+        previous_snapshot = None
+        if client_context and isinstance(client_context.get("current_panel_data"), dict):
+            previous_panel_data = client_context["current_panel_data"]
+            prior = previous_panel_data.get("architecture_consulting") or {}
+            previous_snapshot = prior.get("constraint_snapshot")
+
+        selections = panel_data.get("selections")
+        if not selections and stage_decisions:
+            selections = {
+                cat: detail.get("selected_slug")
+                for cat, detail in stage_decisions.items()
+                if isinstance(detail, dict) and detail.get("selected_slug")
+            }
+
+        from src.schemas.advisor_trace import AdvisorTrace
+
+        effective_trace = trace or AdvisorTrace(
+            playbook_id=playbook_id,
+            constraint_snapshot=state.slot_values(),
+        )
+
+        consulting = build_architecture_consulting(
+            trace=effective_trace,
+            state=state,
+            playbook_id=playbook_id,
+            selections=selections,
+            stage_decisions=stage_decisions,
+            previous_snapshot=previous_snapshot,
+            previous_panel_data=previous_panel_data,
+            current_nodes=panel_data.get("nodes"),
+        )
+
+        evolution_history = None
+        if user_id:
+            evolution_history = await list_evolution_history(self.db, user_id, limit=8)
+
+        consulting = enrich_architecture_consulting(
+            consulting,
+            state=state,
+            trace=effective_trace,
+            selections=selections or {},
+            simulation_active=simulation_active,
+            consulting_profile=(
+                client_context.get("consulting_profile") if client_context else None
+            ),
+            evolution_history=evolution_history,
+            strategy_comparison=strategy_comparison,
+        )
+        panel_data["architecture_consulting"] = consulting
+        if selections:
+            panel_data["selections"] = selections
+
+        if user_id and not strategy_comparison:
+            reason = None
+            evolution = (consulting or {}).get("evolution") or {}
+            if simulation_active:
+                reason = "Scenario simulation"
+            elif evolution.get("replacements"):
+                reason = evolution.get("summary")
+            await self._persist_evolution_snapshot(
+                user_id,
+                client_context,
+                panel_data,
+                state,
+                transition_reason=reason,
+            )
+        return panel_data
+
+    async def _persist_evolution_snapshot(
+        self,
+        user_id: uuid.UUID,
+        client_context: dict | None,
+        panel_data: dict,
+        state: ConstraintState,
+        *,
+        transition_reason: str | None = None,
+    ) -> None:
+        conv_id = None
+        if client_context and client_context.get("session_id"):
+            try:
+                conv_id = uuid.UUID(str(client_context["session_id"]))
+            except ValueError:
+                conv_id = None
+        consulting = panel_data.get("architecture_consulting") or {}
+        evolution = consulting.get("evolution") or {}
+        await record_evolution_snapshot(
+            self.db,
+            user_id=user_id,
+            conversation_id=conv_id,
+            title=str(panel_data.get("title") or "Architecture")[:300],
+            summary=evolution.get("summary") or consulting.get("continuity_framing"),
+            selections=panel_data.get("selections") or {},
+            nodes=panel_data.get("nodes") or [],
+            constraint_snapshot=state.model_dump(mode="json"),
+            transition_reason=(transition_reason or "")[:500] or None,
+        )
+
+    def _pipeline_recommendation(
+        self,
+        state: ConstraintState,
+        shortlist: list[str],
+        trace,
+    ) -> str:
+        top = shortlist[0] if shortlist else "the top option"
+        parts = []
+        if state.get("budget"):
+            parts.append(f"{state.get('budget')} budget")
+        if state.get("deployment_preference"):
+            parts.append(str(state.get("deployment_preference")).replace("_", " "))
+        if state.get("scale"):
+            parts.append(str(state.get("scale")).replace("_", " "))
+        constraint_text = " + ".join(parts) if parts else "your constraints"
+
+        filter_note = ""
+        if trace.filtered_out:
+            names = ", ".join(f.slug for f in trace.filtered_out[:3])
+            filter_note = f" Filtered out: {names}."
+
+        score_note = ""
+        top_score = next((r for r in trace.scores if r.slug == top), None)
+        if top_score:
+            score_note = f" Pipeline score {top_score.score:.2f}."
+
+        return (
+            f"Given {constraint_text}, **{top}** leads the deterministic shortlist."
+            f"{filter_note}{score_note}"
+        )
+
+    def _pipeline_unavailable_events(self, playbook_id: str, label: str) -> list[str]:
+        logger.error("pipeline unavailable playbook_id=%s", playbook_id)
+        return self._text_only_events(
+            f"The deterministic **{label}** engine is unavailable. "
+            "Please retry or contact support — rankings are not shown without pipeline evidence."
+        )
+
+    def _is_module_code_request(self, combined: str, client_context: dict | None) -> bool:
+        lower = combined.lower()
+        code_patterns = (
+            "show me integration code",
+            "show integration code",
+            "integration code for",
+            "show code for",
+            "code for",
+            "code example",
+            "sample code",
+            "example code",
+            "how to integrate",
+        )
+        if not any(pattern in lower for pattern in code_patterns) and "show code" not in lower:
+            return False
+
+        if any(
+            phrase in lower
+            for phrase in (
+                "build a rag",
+                "design a rag",
+                "create a rag pipeline",
+                "help me build a rag",
+            )
+        ) and "code for" not in lower and "integration code" not in lower:
+            return False
+
+        if not client_context:
+            return False
+
+        if client_context.get("focus_module_slug") or client_context.get("architecture_node"):
+            return True
+        if client_context.get("current_panel") == "interactive_architecture":
+            return True
+        serialized = client_context.get("constraint_state")
+        if isinstance(serialized, dict):
+            try:
+                rag_state = ConstraintState.model_validate(serialized)
+                if self._rag_constraints_complete(rag_state):
+                    return True
+            except Exception:
+                pass
+        active = str(client_context.get("active_task") or "").lower()
+        return "rag" in active and any(
+            term in lower for term in ("code", "integration", "example", "snippet")
+        )
+
+    def _rag_constraints_complete(self, state: ConstraintState) -> bool:
+        return all(state.has(key) for key in ("scale", "budget", "implementation_preference"))
+
+    async def _resolve_module_slug_for_code(
+        self,
+        message: str,
+        client_context: dict | None,
+    ) -> str | None:
+        if client_context:
+            focus = client_context.get("focus_module_slug")
+            if focus:
+                return str(focus)
+
+            node = client_context.get("architecture_node")
+            if isinstance(node, dict) and node.get("slug"):
+                return str(node["slug"])
+
+            panel_data = client_context.get("current_panel_data")
+            if isinstance(panel_data, dict):
+                for raw_node in panel_data.get("nodes") or []:
+                    if not isinstance(raw_node, dict):
+                        continue
+                    label = str(raw_node.get("label") or "")
+                    slug = raw_node.get("slug")
+                    if label and label.lower() in message.lower() and slug:
+                        return str(slug)
+
+        match = re.search(
+            r"(?:integration code for|code for|show (?:me )?(?:integration )?code for)\s+(.+?)(?:[.?]|$)",
+            message,
+            re.IGNORECASE,
+        )
+        query = match.group(1).strip() if match else message.strip()
+        if not query:
+            return None
+
+        slug_guess = query.lower().replace(" ", "_").replace("-", "_")
+        module = await self.module_service.get_by_slug(slug_guess)
+        if module:
+            return module.slug
+
+        modules, _ = await self.module_service.list_modules(search=query, per_page=10)
+        if not modules:
+            return None
+
+        query_lower = query.lower()
+        for candidate in modules:
+            if candidate.name.lower() == query_lower:
+                return candidate.slug
+        return modules[0].slug
+
+    def _pick_code_example(self, module: Module, constraints: dict) -> dict | None:
+        examples = module.code_examples or []
+        if not examples:
+            return None
+
+        pref = constraints.get("implementation_preference")
+        if pref == "python":
+            for example in examples:
+                if example.get("language") == "python":
+                    return example
+        if pref == "typescript":
+            for example in examples:
+                if example.get("language") in ("typescript", "javascript"):
+                    return example
+        return examples[0]
 
     def _review_rag_architecture(self, panel_data: dict) -> list[dict[str, str]]:
         nodes = panel_data.get("nodes") if isinstance(panel_data, dict) else []
@@ -819,164 +1754,12 @@ class RecommendationPlanner:
             "edges": edges,
         }
 
-    async def rank_category_finalists(
-        self,
-        category: str,
-        constraints: dict,
-    ) -> tuple[list[str], dict[str, float]]:
-        modules, _ = await self.module_service.list_modules(category=category, per_page=100)
-        modules = self._apply_hard_filters(category, modules, constraints)
-        ranked = self.rank_modules(modules, constraints)
-        limit = 3 if category == "vector_databases" and constraints.get("budget") == "low" else 4
-        return [module.slug for module in ranked[:limit]], self.weights_for_constraints(constraints)
-
-    def _apply_hard_filters(
-        self,
-        category: str,
-        modules: list[Module],
-        constraints: dict,
-    ) -> list[Module]:
-        if category != "vector_databases":
-            return modules
-
-        excluded: set[str] = set()
-        if constraints.get("budget") == "low":
-            # Startup / under-$50 vector DB path: exclude options that need
-            # higher managed tiers or non-trivial self-hosted clusters.
-            excluded.update({"pinecone", "milvus"})
-
-        if constraints.get("deployment_preference") == "self_hosted":
-            excluded.update({"pinecone"})
-
-        filtered = [module for module in modules if module.slug not in excluded]
-        return filtered or modules
-
-    def rank_modules(self, modules: list[Module], constraints: dict) -> list[Module]:
-        weights = self.weights_for_constraints(constraints)
-
-        def score(module: Module) -> float:
-            scores = module.comparison_scores or {}
-            total = 0.0
-            total_weight = 0.0
-            for dimension, weight in weights.items():
-                dim_data = scores.get(dimension, {})
-                raw_score = dim_data.get("score", 5) if isinstance(dim_data, dict) else 5
-                total += raw_score * weight
-                total_weight += weight
-
-            total = total / total_weight if total_weight else 0
-            pricing = module.pricing_model or ""
-            text = " ".join([
-                module.name,
-                module.tagline or "",
-                module.description or "",
-                json.dumps(module.technical_specs or {}),
-                json.dumps(module.supported_operations or []),
-            ]).lower()
-
-            if constraints.get("budget") == "low" and pricing in {"open_source", "free"}:
-                total += 0.5
-            if constraints.get("deployment_preference") == "self_hosted" and pricing == "open_source":
-                total += 0.5
-            if constraints.get("python_sdk") and "python" in text:
-                total += 0.4
-            if constraints.get("typescript_sdk") and any(term in text for term in ("typescript", "javascript", "node")):
-                total += 0.4
-            return total
-
-        return sorted(modules, key=score, reverse=True)
-
-    def weights_for_constraints(self, constraints: dict) -> dict[str, float]:
-        weights = {
-            "performance": 1.3,
-            "scalability": 1.4,
-            "ease_of_use": 1.2,
-            "cost_efficiency": 1.0,
-            "community": 1.0,
-            "maturity": 1.1,
-            "flexibility": 1.0,
-            "data_privacy": 1.0,
-        }
-
-        scale = constraints.get("scale")
-        if scale in {"growing_application", "enterprise"}:
-            weights.update({"scalability": 2.5, "performance": 2.0, "maturity": 1.7})
-        elif scale == "prototype":
-            weights.update({"ease_of_use": 2.2, "cost_efficiency": 1.7})
-
-        if constraints.get("budget") == "low":
-            weights["cost_efficiency"] = 2.5
-        elif constraints.get("budget") == "high":
-            weights["performance"] = 2.2
-            weights["maturity"] = 1.8
-
-        if constraints.get("python_sdk") or constraints.get("typescript_sdk"):
-            weights["ease_of_use"] = max(weights["ease_of_use"], 2.0)
-            weights["community"] = 1.3
-
-        if constraints.get("deployment_preference") == "self_hosted":
-            weights["data_privacy"] = 2.4
-            weights["flexibility"] = 1.8
-
-        priority = constraints.get("quality_priority")
-        if priority == "reasoning" or priority == "accuracy":
-            weights["performance"] = max(weights["performance"], 2.5)
-            weights["maturity"] = max(weights["maturity"], 1.8)
-        elif priority == "low_latency":
-            weights["performance"] = max(weights["performance"], 2.8)
-            weights["cost_efficiency"] = max(weights["cost_efficiency"], 1.5)
-        elif priority == "cost_efficiency":
-            weights["cost_efficiency"] = max(weights["cost_efficiency"], 2.8)
-
-        return weights
-
-    def _constraint_aware_recommendation(
-        self,
-        task: dict,
-        constraints: dict,
-        overall_ranking: list[str],
-    ) -> str:
-        top = overall_ranking[0] if overall_ranking else "the top option"
-        constraint_text = self._constraint_summary(constraints)
-        reasons = []
-
-        if constraints.get("budget") == "low":
-            reasons.append("startup budget -> excluded candidates that exceed the low-cost path")
-        if constraints.get("scale"):
-            reasons.append(f"{constraints['scale']} scale -> weighted scalability and performance appropriately")
-        if constraints.get("deployment_preference"):
-            reasons.append(f"{constraints['deployment_preference']} hosting -> filtered by deployment fit")
-        if constraints.get("quality_priority"):
-            reasons.append(f"{constraints['quality_priority']} priority -> weighted the matching quality dimension")
-
-        if not reasons:
-            reasons.append("your stated constraints -> ranked only relevant finalists")
-
-        alternative = overall_ranking[1] if len(overall_ranking) > 1 else "the runner-up"
-        bullet_text = "\n".join(f"- {reason}" for reason in reasons[:2])
-        return (
-            f"Given your {constraint_text}, I recommend {top} because:\n"
-            f"{bullet_text}\n\n"
-            f"If that constraint changes, consider {alternative} instead."
-        )
-
-    def _constraint_summary(self, constraints: dict) -> str:
-        parts = []
-        if constraints.get("budget") == "low":
-            parts.append("startup budget")
-        elif constraints.get("budget"):
-            parts.append(f"{constraints['budget']} budget")
-        if constraints.get("scale"):
-            parts.append(str(constraints["scale"]).replace("_", " "))
-        if constraints.get("deployment_preference"):
-            parts.append(str(constraints["deployment_preference"]).replace("_", " "))
-        if constraints.get("implementation_preference"):
-            parts.append(str(constraints["implementation_preference"]).replace("_", " "))
-        if constraints.get("quality_priority"):
-            parts.append(str(constraints["quality_priority"]).replace("_", " "))
-        return " + ".join(parts) if parts else "constraints"
-
     def _required_constraints_for_category(self, category: str) -> list[str]:
+        playbook_id = resolve_playbook_id(task_type="category_comparison", category=category)
+        if playbook_id:
+            slots = playbook_required_slots(playbook_id)
+            if slots:
+                return slots
         if category == "llm_layer":
             return ["quality_priority", "budget", "implementation_preference"]
         if category == "vector_databases":
@@ -1028,7 +1811,14 @@ class RecommendationPlanner:
             f"I'll keep this focused on {context}. I need one decision-critical constraint.",
         )
 
+    def _text_only_events(self, text: str) -> list[str]:
+        return [
+            self.sse_event("text", {"content": text}),
+            self.sse_event("done", {}),
+        ]
+
     def _events(self, text: str, panel_command: dict) -> list[str]:
+        panel_command = {**panel_command, "source": "planner"}
         return [
             self.sse_event("text", {"content": text}),
             self.sse_event("panel_command", {"command": panel_command}),

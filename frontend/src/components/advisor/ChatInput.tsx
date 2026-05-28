@@ -21,7 +21,7 @@ export default function ChatInput() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const isStreaming = useChatStore((s) => s.isStreaming);
-  const abortController = useChatStore((s) => s.abortController);
+  const stopStreaming = useChatStore((s) => s.stopStreaming);
 
   // Cycle placeholder text
   useEffect(() => {
@@ -49,10 +49,8 @@ export default function ChatInput() {
   }, [input, isStreaming, sendMessage]);
 
   const handleStop = useCallback(() => {
-    if (abortController) {
-      abortController.abort();
-    }
-  }, [abortController]);
+    stopStreaming();
+  }, [stopStreaming]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -65,7 +63,7 @@ export default function ChatInput() {
   );
 
   return (
-    <div className="border-t border-gray-200 p-4 dark:border-gray-800">
+    <div className="border-t border-[var(--border-subtle)] p-4">
       <div className="flex gap-2">
         <div className="relative flex-1">
           <textarea
@@ -75,7 +73,7 @@ export default function ChatInput() {
             onKeyDown={handleKeyDown}
             placeholder={PLACEHOLDERS[placeholderIndex]}
             rows={1}
-            className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 pr-12 text-sm leading-6 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+            className="w-full resize-none rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] px-3 py-2 pr-12 text-sm leading-6 text-[var(--foreground)] placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)]"
           />
           {input.length > 500 && (
             <span className="absolute bottom-1.5 right-2 text-xs text-gray-400">
@@ -86,7 +84,7 @@ export default function ChatInput() {
         {isStreaming ? (
           <button
             onClick={handleStop}
-            className="self-end rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+            className="self-end rounded-lg border border-[var(--border-strong)] bg-[var(--surface-secondary)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"
           >
             Stop
           </button>
@@ -94,13 +92,13 @@ export default function ChatInput() {
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="self-end rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Send
           </button>
         )}
       </div>
-      <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mt-1.5 text-xs text-[var(--text-muted)]">
         Enter to send, Shift+Enter for new line
       </p>
     </div>

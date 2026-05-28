@@ -1,0 +1,151 @@
+meta:
+  slug: gemini_flash
+  name: Gemini Flash
+  version: 1.0.0
+  category: llm_layer
+  subcategory: foundation_model
+  status: stable
+  last_updated: '2026-05-22'
+  maintainer: system
+identity:
+  tagline: Fast, cost-efficient Gemini tier for high-throughput and latency-sensitive
+    apps
+  description: 'Gemini Flash is a foundation model family in the Google ecosystem,
+    catalogued
+
+    for architecture decisions at the generation step of AI pipelines. This module
+    covers
+
+    model capabilities, context, modalities, deployment fit, and trade-offs — not
+    API vendor
+
+    integration (see cloud_api modules such as openai or google_gemini for that layer).
+
+
+    Strengths: Low cost per token, Large context at Flash pricing, Strong speed.
+
+    Tradeoffs: Less depth than Pro/Opus on hard reasoning.'
+  logo_url: /assets/modules/gemini_flash.svg
+  website: https://deepmind.google/technologies/gemini/
+  documentation: https://ai.google.dev/docs
+  github: https://github.com/google-gemini/generative-ai-python
+  license: Proprietary
+  pricing_model: freemium
+capabilities:
+  primary_use_cases:
+  - High-volume classification
+  - Routing
+  - Chat at scale
+  - Lightweight agents
+  supported_operations:
+  - text_generation
+  - chat_completion
+  - tool_use
+  - streaming
+  - json_mode
+  integrations:
+  - slug: langchain
+    type: compatible
+  - slug: llamaindex
+    type: compatible
+technical_specs:
+  model_family: Google
+  foundation_model_layer: true
+  supported_modalities:
+  - text
+  deployment_modes:
+  - cloud_api
+  - self_hosted
+  - hybrid
+  decision:
+    latency_score: 8
+    scalability_score: 9
+    ease_of_use_score: 9
+    pricing_tier: medium
+comparison_dimensions:
+  performance:
+    score: 8
+    justification: Benchmark-tier capability on reasoning, coding, and instruction
+      following for this model class.
+  scalability:
+    score: 9
+    justification: Throughput, hosting options, and enterprise scaling paths appropriate
+      to the family.
+  ease_of_use:
+    score: 9
+    justification: Developer experience via APIs, docs, and framework integrations.
+  cost_efficiency:
+    score: 9
+    justification: Typical $/token or self-host TCO relative to peers in the same
+      tier.
+  community:
+    score: 8
+    justification: Ecosystem size, examples, and third-party tooling.
+  maturity:
+    score: 8
+    justification: Production history, stability, and enterprise adoption.
+  flexibility:
+    score: 8
+    justification: Modalities, fine-tuning, tool use, and deployment modes.
+  data_privacy:
+    score: 7
+    justification: Self-host option, residency controls, and data handling policies.
+knowledge:
+  entries:
+  - topic: When to choose Gemini Flash
+    content: 'Choose Gemini Flash when your architecture needs high-volume classification
+
+      and you can accept tradeoffs: Less depth than Pro/Opus on hard reasoning.
+
+      Pair with retrieval and evaluation modules; use cloud_api entries only
+
+      when the decision is specifically about API routing, billing, or VPC — not
+
+      model family selection.'
+    tags:
+    - model-selection
+    - architecture
+    - foundation_model
+  - topic: Gemini Flash vs alternatives
+    content: 'Compare against claude_sonnet, gpt4_1, gemini_1_5_pro at the foundation_model
+      layer only.
+
+      Do not compare to inference hosts (groq_inference), local runners (ollama),
+      or
+
+      provider APIs (openai) in the same shortlist — the advisor enforces layer separation.'
+    tags:
+    - comparison
+    - trade-offs
+code_examples:
+- title: Reference architecture slot — Gemini Flash
+  language: python
+  code: '# Foundation model slot: gemini_flash
+
+    # Generation step follows retrieval; outputs go to evaluation.
+
+    PIPELINE_LLM = "gemini_flash"'
+relationships:
+  alternatives:
+  - slug: claude_sonnet
+    note: Alternative foundation model in the same comparison layer
+  - slug: gpt4_1
+    note: Alternative foundation model in the same comparison layer
+  - slug: gemini_1_5_pro
+    note: Alternative foundation model in the same comparison layer
+  complements:
+  - slug: langchain
+    role: Orchestration around the model
+  - slug: hybrid_search
+    role: Retrieval feeding context
+  - slug: langfuse
+    role: Observability for generations
+  typical_pipeline_position: llm_generation
+  pipeline_predecessors:
+  - retrieval
+  - reranking_models
+  - prompt_construction
+  pipeline_successors:
+  - evaluation
+  - deployment
+  - caching

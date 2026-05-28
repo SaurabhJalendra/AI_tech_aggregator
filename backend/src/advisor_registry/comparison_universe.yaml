@@ -1,0 +1,90 @@
+# Canonical comparison layers — entities in the same shortlist must share one layer.
+version: "1"
+
+categories:
+  retrieval:
+    default_layer: retrieval_strategy
+    layer_keywords:
+      reranker:
+        - rerank
+        - reranking
+        - reranker
+        - cohere rerank
+      orchestration_framework:
+        - llamaindex
+        - haystack
+        - langchain retrieval
+        - orchestration framework
+        - retrieval framework
+      query_optimization_technique:
+        - query transform
+        - query transformation
+        - hyde
+        - multi-query
+        - step-back
+        - query rewrite
+      retrieval_strategy:
+        - hybrid search
+        - hybrid retrieval
+        - bm25
+        - sparse dense
+        - lexical semantic
+    layers:
+      retrieval_strategy:
+        label: Retrieval strategies
+        module_slugs:
+          - hybrid_search
+      orchestration_framework:
+        label: Orchestration frameworks
+        module_slugs:
+          - llamaindex
+          - haystack
+      reranker:
+        label: Rerankers
+        module_slugs:
+          - reranking_models
+      query_optimization_technique:
+        label: Query optimization techniques
+        module_slugs:
+          - query_transformation
+
+  llm_layer:
+    default_layer: foundation_model
+    layer_keywords:
+      cloud_api:
+        - openai api
+        - chat completions api
+        - vertex ai
+        - anthropic api
+        - google ai studio api
+        - cloud api
+        - provider api
+      inference_provider:
+        - groq
+        - together ai
+        - inference provider
+        - hosted inference
+      self_hosted:
+        - ollama
+        - local llm
+        - self-hosted llm
+        - on-prem llm
+      open_source:
+        - llama
+        - open-weight
+        - open source model
+      structured_output:
+        - instructor
+        - structured output
+        - outlines
+        - constrained generation
+      programming_framework:
+        - dspy
+        - prompt programming
+    layers:
+      foundation_model:
+        label: Foundation models
+        subcategory: foundation_model
+      cloud_api:
+        label: Cloud LLM APIs
+        subcategory: cloud_api

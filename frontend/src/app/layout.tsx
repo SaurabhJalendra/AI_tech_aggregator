@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import ThemeProvider from '@/components/shared/ThemeProvider';
+import { THEME_INIT_SCRIPT } from '@/lib/theme';
 
 export const metadata: Metadata = {
   title: 'AI Tech Aggregator',
@@ -12,9 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

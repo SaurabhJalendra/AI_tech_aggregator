@@ -5,11 +5,16 @@ Uses the user's Max subscription — no API key required.
 
 import asyncio
 import json
+import logging
 import os
 import shutil
 import subprocess
 from collections.abc import AsyncGenerator
 from pathlib import Path
+
+from src.agent.subprocess_lifecycle import terminate_subprocess
+
+logger = logging.getLogger(__name__)
 
 
 class ClaudeCodeAdapter:
@@ -123,14 +128,15 @@ class ClaudeCodeAdapter:
         stderr_task = asyncio.create_task(_collect_stderr())
 
         try:
-            deadline = asyncio.get_event_loop().time() + 120
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + 120
 
             if process.stdout is None:
                 yield {"type": "text", "content": "\n\n*Error: Claude Code subprocess did not provide stdout.*"}
                 return
 
             async for line in process.stdout:
-                if asyncio.get_event_loop().time() > deadline:
+                if loop.time() > deadline:
                     yield {"type": "text", "content": "\n\n*Error: Claude Code subprocess timed out after 120 seconds.*"}
                     break
 
@@ -171,11 +177,14 @@ class ClaudeCodeAdapter:
             if process.returncode is None:
                 try:
                     process.kill()
+                    await asyncio.wait_for(process.wait(), timeout=10.0)
+                except (ProcessLookupError, TimeoutError):
+                    pass
+            else:
+                try:
                     await process.wait()
                 except ProcessLookupError:
                     pass
-            else:
-                await process.wait()
 
             try:
                 await asyncio.wait_for(stderr_task, timeout=1)
@@ -199,18 +208,25 @@ class ClaudeCodeAdapter:
         the CLI in a worker thread keeps the request path async while avoiding
         the event-loop subprocess limitation.
         """
-        process = subprocess.Popen(
-            [executable, *args],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-
         events: list[dict] = []
         accumulated_text = ""
+
+        try:
+            process = subprocess.Popen(
+                [executable, *args],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+        except OSError as exc:
+            events.append({
+                "type": "text",
+                "content": f"\n\n*Error starting Claude Code CLI: {exc}*",
+            })
+            return events
 
         if process.stdout is not None:
             for line in process.stdout:
@@ -237,7 +253,22 @@ class ClaudeCodeAdapter:
                         events.extend(self._extract_panel_commands(result_text))
                     break
 
-        _, stderr = process.communicate(timeout=5)
+        try:
+            try:
+                _, stderr = process.communicate(timeout=120)
+            except subprocess.TimeoutExpired:
+                trace = terminate_subprocess(process, reason="claude_cli_timeout_120s")
+                logger.warning("claude_code_blocking_timeout trace=%s", trace)
+                events.append({
+                    "type": "text",
+                    "content": "\n\n*Error: Claude Code subprocess timed out after 120 seconds.*",
+                })
+                events.append({"type": "adapter_trace", "trace": trace})
+                return events
+        finally:
+            if process.poll() is None:
+                terminate_subprocess(process, reason="claude_cli_finally_cleanup")
+
         if not events and process.returncode not in (0, None):
             detail = f": {stderr.strip()}" if stderr and stderr.strip() else ""
             events.append({

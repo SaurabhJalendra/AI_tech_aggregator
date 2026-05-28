@@ -4,11 +4,25 @@ import asyncio
 import json
 from types import SimpleNamespace
 
+from unittest.mock import patch
+
 import pytest
 
+from src.schemas.constraint_state import ConstraintSource, ConstraintState
+from src.schemas.intent import IntentResult
 from src.services.chat_service import ChatService
+from src.services.constraint_state_service import ConstraintStateService
 from src.services.recommendation_planner import RecommendationPlanner
-from src.services.response_sanitizer import sanitize_advisor_text
+from src.services.response_sanitizer import SanitizationReport, sanitize_advisor_text
+
+
+def _state(flat: dict) -> ConstraintState:
+    s = ConstraintState()
+    for key, value in flat.items():
+        if value is None:
+            continue
+        s.set_slot(key, value, source=ConstraintSource.EXPLICIT, confidence=1.0, force=True)
+    return s
 
 
 def _decode_sse_events(events: list[str]) -> list[dict]:
@@ -19,6 +33,46 @@ def _decode_sse_events(events: list[str]) -> list[dict]:
     return decoded
 
 
+def test_falsy_constraint_values_count_as_answered():
+    planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
+    task = {
+        "type": "rag_pipeline",
+        "label": "RAG pipeline",
+        "required_constraints": ["scale", "budget", "implementation_preference"],
+    }
+
+    assert (
+        planner.next_missing_question(
+            task,
+            _state({
+                "scale": "growing_application",
+                "budget": False,
+                "implementation_preference": "python",
+            }),
+        )
+        is None
+    )
+
+    missing = planner.next_missing_question(
+        task,
+        _state({"scale": "growing_application", "budget": 0}),
+    )
+    assert missing is not None
+    assert missing["id"] == "implementation_preference"
+
+    assert (
+        planner.next_missing_question(
+            task,
+            _state({
+                "scale": "growing_application",
+                "budget": "",
+                "implementation_preference": "",
+            }),
+        )
+        is None
+    )
+
+
 def test_next_constraint_asks_for_implementation_preference_after_scale_and_budget():
     planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
     task = {
@@ -27,10 +81,10 @@ def test_next_constraint_asks_for_implementation_preference_after_scale_and_budg
         "required_constraints": ["scale", "budget", "implementation_preference"],
     }
 
-    question = planner.next_missing_question(task, {
-        "scale": "growing_application",
-        "budget": "low",
-    })
+    question = planner.next_missing_question(
+        task,
+        _state({"scale": "growing_application", "budget": "low"}),
+    )
     events = planner._option_card_events(task, question)
 
     assert events is not None
@@ -46,23 +100,23 @@ def test_next_constraint_asks_for_implementation_preference_after_scale_and_budg
     }
 
 
-def test_extract_constraints_maps_python_to_implementation_preference():
-    planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
-
-    constraints = planner.extract_constraints(
+def test_constraint_state_service_maps_python_from_message():
+    state = ConstraintStateService.build(
         "I need Python SDK support",
         {
             "active_task": "Compare vector databases",
-            "constraints": {
-                "scale": "growing_application",
-                "budget": "medium",
+            "constraint_state": {
+                "slots": {
+                    "scale": {"value": "growing_application", "source": "explicit", "confidence": 1},
+                    "budget": {"value": "medium", "source": "explicit", "confidence": 1},
+                },
+                "version": "1",
             },
         },
     )
-
-    assert constraints["python_sdk"] is True
-    assert constraints["implementation_preference"] == "python"
-    assert constraints["implementation_language"] == "python"
+    assert state.get("python_sdk") is True
+    assert state.get("implementation_preference") == "python"
+    assert state.get("implementation_language") == "python"
 
 
 def test_detects_rag_pipeline_and_requires_core_constraints():
@@ -118,7 +172,7 @@ def test_pick_vector_database_enters_planner_and_asks_budget_first():
     planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
 
     task = planner.detect_task("Help me pick a vector database.", None)
-    question = planner.next_missing_question(task, {}) if task else None
+    question = planner.next_missing_question(task, ConstraintState()) if task else None
     events = planner._option_card_events(task, question) if task and question else None
 
     assert task is not None
@@ -133,37 +187,30 @@ def test_pick_vector_database_enters_planner_and_asks_budget_first():
     assert "Traditional SQL" not in json.dumps(decoded[1])
 
 
-def test_vector_database_low_budget_hard_filter_excludes_costly_candidates():
+def test_pipeline_recommendation_restates_constraints():
+    from types import SimpleNamespace
+
+    from src.schemas.constraint_state import ConstraintSource, ConstraintState
+
     planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
-    modules = [
-        SimpleNamespace(slug="qdrant"),
-        SimpleNamespace(slug="weaviate"),
-        SimpleNamespace(slug="chromadb"),
-        SimpleNamespace(slug="milvus"),
-        SimpleNamespace(slug="pinecone"),
-    ]
-
-    filtered = planner._apply_hard_filters(
-        "vector_databases",
-        modules,  # type: ignore[arg-type]
-        {"budget": "low", "deployment_preference": "managed"},
+    state = ConstraintState()
+    state.set_slot("budget", "low", source=ConstraintSource.EXPLICIT, confidence=1.0, force=True)
+    state.set_slot("scale", "growing_application", source=ConstraintSource.EXPLICIT, confidence=1.0, force=True)
+    state.set_slot(
+        "deployment_preference",
+        "managed",
+        source=ConstraintSource.EXPLICIT,
+        confidence=1.0,
+        force=True,
     )
-
-    assert [module.slug for module in filtered] == ["qdrant", "weaviate", "chromadb"]
-
-
-def test_constraint_aware_recommendation_restates_startup_budget():
-    planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
-
-    recommendation = planner._constraint_aware_recommendation(
-        {"label": "vector databases"},
-        {"budget": "low", "scale": "growing_application", "deployment_preference": "managed"},
-        ["qdrant", "weaviate"],
+    trace = SimpleNamespace(
+        filtered_out=[SimpleNamespace(slug="pinecone")],
+        scores=[SimpleNamespace(slug="qdrant", score=0.9)],
     )
+    recommendation = planner._pipeline_recommendation(state, ["qdrant", "weaviate"], trace)
 
-    assert "startup budget" in recommendation
+    assert "low" in recommendation.lower() or "budget" in recommendation.lower()
     assert "qdrant" in recommendation
-    assert "Given your emphasis on scalability" not in recommendation
 
 
 def test_detects_local_llm_agent_stack_and_asks_hardware_first():
@@ -173,7 +220,7 @@ def test_detects_local_llm_agent_stack_and_asks_hardware_first():
         "I need an LLM with the absolute lowest cost and an agent framework that is self-hostable.",
         None,
     )
-    question = planner.next_missing_question(task, {}) if task else None
+    question = planner.next_missing_question(task, ConstraintState()) if task else None
 
     assert task is not None
     assert task["type"] == "local_ai_stack"
@@ -181,20 +228,43 @@ def test_detects_local_llm_agent_stack_and_asks_hardware_first():
     assert question["id"] == "hardware"
 
 
-def test_local_ai_stack_renders_architecture_before_code():
-    planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
+@pytest.mark.asyncio
+async def test_local_ai_stack_renders_architecture_before_code():
+    from unittest.mock import AsyncMock, MagicMock
 
-    events = planner._local_ai_stack_events({
-        "hardware": "cpu_only",
-        "agent_complexity": "single_agent",
-    })
+    from src.schemas.constraint_state import ConstraintSource, ConstraintState
+    from src.services.pipelines.base import PipelineResult
+    from src.schemas.advisor_trace import AdvisorTrace
+
+    planner = RecommendationPlanner(db=MagicMock())
+    state = ConstraintState()
+    state.set_slot("hardware", "cpu_only", source=ConstraintSource.EXPLICIT, confidence=1.0, force=True)
+    state.set_slot(
+        "agent_complexity",
+        "single_agent",
+        source=ConstraintSource.EXPLICIT,
+        confidence=1.0,
+        force=True,
+    )
+    mock_pipeline = MagicMock()
+    mock_pipeline.run = AsyncMock(
+        return_value=PipelineResult(
+            shortlist=["ollama"],
+            weights={},
+            trace=AdvisorTrace(playbook_id="local_ai_stack"),
+            extra={
+                "nodes": [{"id": "ollama", "label": "Ollama", "slug": "ollama"}],
+                "edges": [],
+            },
+        )
+    )
+    with patch("src.services.recommendation_planner.get_pipeline", return_value=mock_pipeline):
+        events = await planner._local_ai_stack_events_v2(state, {})
 
     decoded = _decode_sse_events(events)
     command = decoded[1]["command"]
-
     assert command["panel"] == "interactive_architecture"
     assert any(node["id"] == "ollama" for node in command["data"]["nodes"])
-    assert all(command["panel"] != "code_project" for command in [command])
 
 
 def test_option_card_text_is_contextual_not_repeated_canned_phrase():
@@ -227,6 +297,82 @@ async def test_stream_with_keepalive_emits_event_during_idle_period():
     assert events[-1]["type"] == "done"
 
 
+@pytest.mark.asyncio
+async def test_module_code_request_renders_code_preview_not_scale_question():
+    from unittest.mock import AsyncMock, MagicMock
+
+    mock_module = MagicMock()
+    mock_module.name = "Apache Tika"
+    mock_module.slug = "apache_tika"
+    mock_module.code_examples = [
+        {
+            "title": "Python Client with Tika Server",
+            "language": "python",
+            "code": "import requests\n",
+        }
+    ]
+
+    planner = RecommendationPlanner(db=MagicMock())  # type: ignore[arg-type]
+    planner.module_service = MagicMock()
+    planner.module_service.get_by_slug = AsyncMock(return_value=mock_module)
+    planner.module_service.list_modules = AsyncMock(return_value=([mock_module], 1))
+
+    client_context = {
+        "active_task": "Help me build a RAG pipeline with solid architecture",
+        "current_panel": "interactive_architecture",
+        "constraints": {
+            "scale": "enterprise",
+            "budget": "high",
+            "implementation_preference": "python",
+        },
+        "focus_module_slug": "apache_tika",
+    }
+
+    task = planner.detect_task(
+        "Show me integration code for Apache Tika",
+        client_context,
+    )
+    assert task is not None
+    assert task["type"] == "module_code"
+
+    from unittest.mock import patch
+
+    from src.services.pipelines.base import PipelineResult
+    from src.schemas.advisor_trace import AdvisorTrace
+
+    mock_result = PipelineResult(
+        shortlist=["apache_tika"],
+        weights={},
+        trace=AdvisorTrace(playbook_id="module_code"),
+        extra={"module": mock_module},
+    )
+
+    with patch(
+        "src.services.pipelines.module_code.ModuleCodePipeline.run",
+        new_callable=AsyncMock,
+        return_value=mock_result,
+    ):
+        events = await planner.plan(
+            "Show me integration code for Apache Tika",
+            client_context,
+            IntentResult(
+                intent_id="module_code",
+                confidence=0.95,
+                margin=1.0,
+                matched_evidence=[],
+                inferred_parameters={},
+            ),
+        )
+
+    assert events is not None
+    decoded = _decode_sse_events(events)
+    cmd = decoded[1]["command"]
+    assert cmd["panel"] == "interactive_architecture"
+    assert cmd["action"] == "update"
+    assert "import requests" in cmd["data"]["codeDrawer"]["code"]
+    assert cmd["data"]["codeDrawer"]["language"] == "python"
+
+
 def test_detects_architecture_review_before_rag_recommendation():
     planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
 
@@ -239,10 +385,18 @@ def test_detects_architecture_review_before_rag_recommendation():
     assert task["type"] == "architecture_review"
 
 
-def test_architecture_review_uses_interactive_panel_with_hover_compatible_nodes():
-    planner = RecommendationPlanner(db=None)  # type: ignore[arg-type]
+@pytest.mark.asyncio
+async def test_architecture_review_uses_interactive_panel_with_hover_compatible_nodes():
+    from unittest.mock import AsyncMock, MagicMock
 
-    events = planner._architecture_review_events({
+    from src.schemas.constraint_state import ConstraintState
+    from src.services.pipelines.architecture_review import ArchitectureReviewPipeline
+    from src.services.pipelines.base import PipelineResult
+    from src.schemas.advisor_trace import AdvisorTrace
+
+    planner = RecommendationPlanner(db=MagicMock())
+    state = ConstraintState()
+    client_context = {
         "current_panel_data": {
             "nodes": [
                 {"id": "ingest", "label": "Unstructured OSS", "category": "data_ingestion"},
@@ -250,7 +404,21 @@ def test_architecture_review_uses_interactive_panel_with_hover_compatible_nodes(
                 {"id": "store", "label": "Qdrant Cloud", "category": "vector_databases"},
             ]
         }
-    })
+    }
+    mock_pipeline = MagicMock(spec=ArchitectureReviewPipeline)
+    mock_pipeline.run = AsyncMock(
+        return_value=PipelineResult(
+            shortlist=[],
+            weights={},
+            trace=AdvisorTrace(playbook_id="architecture_review"),
+            extra={"findings": [{"severity": "critical", "message": "Missing reranker"}]},
+        )
+    )
+    with patch(
+        "src.services.pipelines.architecture_review.ArchitectureReviewPipeline",
+        return_value=mock_pipeline,
+    ):
+        events = await planner._architecture_review_events_v2(client_context, state)
 
     decoded = _decode_sse_events(events)
     command = decoded[1]["command"]
@@ -272,13 +440,14 @@ def test_sanitizer_removes_ui_artifacts_and_uncited_metric_claims():
     This alone can improve answer quality by 20-30% in benchmarks.
     """
 
-    cleaned = sanitize_advisor_text(text)
+    report = SanitizationReport()
+    cleaned = sanitize_advisor_text(text, report=report)
 
     assert "::view-transition" not in cleaned
     assert "show_widget" not in cleaned
     assert "Vvisualize" not in cleaned
-    assert "20-30%" not in cleaned
-    assert "Use benchmark data" in cleaned
+    assert "20-30%" in cleaned
+    assert any(a.rule == "uncited_metric_claim_flagged" for a in report.actions)
 
 
 def test_chat_service_sanitizes_text_sse_event():

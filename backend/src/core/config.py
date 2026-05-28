@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     debug: bool = True
 
     # Database
-    database_url: str = "postgresql+asyncpg://advisor:advisor_dev_password@localhost:5432/ai_advisor"
-    database_url_sync: str = "postgresql://advisor:advisor_dev_password@localhost:5432/ai_advisor"
+    database_url: str = "postgresql+asyncpg://advisor:advisor_dev_password@localhost:5433/ai_advisor"
+    database_url_sync: str = "postgresql://advisor:advisor_dev_password@localhost:5433/ai_advisor"
 
     # Redis
     redis_url: str = "redis://localhost:6379"
@@ -23,8 +23,25 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-opus-4-20250514"
     use_claude_code: bool = True
 
-    # OpenAI (for embeddings)
+    # Embeddings (local BGE via sentence-transformers; see src/core/embeddings.py)
+    embeddings_enabled: bool = True
+
+    # Legacy — unused when using local BGE; kept for optional future API providers
     openai_api_key: str = ""
+
+    # Semantic intent (embedding + exemplars; heuristic planner remains fallback)
+    semantic_intent_enabled: bool = True
+    semantic_intent_min_confidence: float = 0.32
+    semantic_intent_override_confidence: float = 0.48
+    semantic_intent_override_margin: float = 0.05
+    semantic_intent_clarify_low: float = 0.38
+    semantic_intent_clarify_margin: float = 0.03
+
+    # Planner authority (Phase-1): restrict LLM panel commands when playbook is active
+    planner_authority_strict: bool = True
+    llm_fallback_enabled: bool = True
+    # Planner rollout: off | shadow | on
+    planner_mode: str = "on"
 
     # Auth
     nextauth_secret: str = "dev-secret-change-in-production"
@@ -60,6 +77,13 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",")]
+
+    @property
+    def planner_mode_normalized(self) -> str:
+        mode = (self.planner_mode or "on").lower().strip()
+        if mode not in ("off", "shadow", "on"):
+            return "on"
+        return mode
 
 
 settings = Settings()
