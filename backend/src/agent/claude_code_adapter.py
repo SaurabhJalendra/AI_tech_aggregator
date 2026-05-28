@@ -12,7 +12,9 @@ import subprocess
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
+from src.agent.claude_code_concurrency import get_windows_cli_semaphore
 from src.agent.subprocess_lifecycle import terminate_subprocess
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +98,15 @@ class ClaudeCodeAdapter:
                 return
 
         if os.name == "nt":
-            for event in await asyncio.to_thread(self._run_blocking, executable, cmd[1:]):
+            timeout_s = settings.claude_code_timeout_seconds
+            async with get_windows_cli_semaphore():
+                events = await asyncio.to_thread(
+                    self._run_blocking,
+                    executable,
+                    cmd[1:],
+                    timeout_s,
+                )
+            for event in events:
                 yield event
             yield {"type": "done"}
             return
@@ -129,7 +139,8 @@ class ClaudeCodeAdapter:
 
         try:
             loop = asyncio.get_running_loop()
-            deadline = loop.time() + 120
+            timeout_s = settings.claude_code_timeout_seconds
+            deadline = loop.time() + timeout_s
 
             if process.stdout is None:
                 yield {"type": "text", "content": "\n\n*Error: Claude Code subprocess did not provide stdout.*"}
@@ -137,7 +148,10 @@ class ClaudeCodeAdapter:
 
             async for line in process.stdout:
                 if loop.time() > deadline:
-                    yield {"type": "text", "content": "\n\n*Error: Claude Code subprocess timed out after 120 seconds.*"}
+                    yield {
+                        "type": "text",
+                        "content": f"\n\n*Error: Claude Code subprocess timed out after {timeout_s} seconds.*",
+                    }
                     break
 
                 decoded = line.decode("utf-8").strip()
@@ -198,10 +212,18 @@ class ClaudeCodeAdapter:
                 "type": "text",
                 "content": f"\n\n*Claude Code exited with status {process.returncode}{detail}*",
             }
+            yield {
+                "type": "adapter_trace",
+                "trace": {
+                    "exit_code": process.returncode,
+                    "stderr_tail": stderr_lines[-5:],
+                    "platform": "posix",
+                },
+            }
 
         yield {"type": "done"}
 
-    def _run_blocking(self, executable: str, args: list[str]) -> list[dict]:
+    def _run_blocking(self, executable: str, args: list[str], timeout_s: int) -> list[dict]:
         """Run Claude Code synchronously.
 
         Uvicorn's Windows event loop may not support async subprocesses. Running
@@ -253,27 +275,50 @@ class ClaudeCodeAdapter:
                         events.extend(self._extract_panel_commands(result_text))
                     break
 
+        stderr = ""
         try:
             try:
-                _, stderr = process.communicate(timeout=120)
+                _, stderr = process.communicate(timeout=timeout_s)
             except subprocess.TimeoutExpired:
-                trace = terminate_subprocess(process, reason="claude_cli_timeout_120s")
-                logger.warning("claude_code_blocking_timeout trace=%s", trace)
+                trace = terminate_subprocess(
+                    process,
+                    reason=f"claude_cli_timeout_{timeout_s}s",
+                )
+                logger.warning(
+                    "claude_code_blocking_timeout timeout_s=%s exit_code=%s trace=%s",
+                    timeout_s,
+                    trace.get("exit_code"),
+                    trace,
+                )
                 events.append({
                     "type": "text",
-                    "content": "\n\n*Error: Claude Code subprocess timed out after 120 seconds.*",
+                    "content": f"\n\n*Error: Claude Code subprocess timed out after {timeout_s} seconds.*",
                 })
-                events.append({"type": "adapter_trace", "trace": trace})
+                events.append({"type": "adapter_trace", "trace": {**trace, "platform": "windows"}})
                 return events
         finally:
             if process.poll() is None:
                 terminate_subprocess(process, reason="claude_cli_finally_cleanup")
 
         if not events and process.returncode not in (0, None):
+            stderr_tail = stderr.strip().splitlines()[-5:] if stderr else []
             detail = f": {stderr.strip()}" if stderr and stderr.strip() else ""
+            logger.warning(
+                "claude_code_blocking_exit exit_code=%s stderr_tail=%s",
+                process.returncode,
+                stderr_tail,
+            )
             events.append({
                 "type": "text",
                 "content": f"\n\n*Claude Code exited with status {process.returncode}{detail}*",
+            })
+            events.append({
+                "type": "adapter_trace",
+                "trace": {
+                    "exit_code": process.returncode,
+                    "stderr_tail": stderr_tail,
+                    "platform": "windows",
+                },
             })
 
         return events

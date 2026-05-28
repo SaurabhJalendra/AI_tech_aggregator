@@ -173,6 +173,39 @@ describe('panelStore', () => {
     expect(state.panelData.nodes).toEqual([{ id: 'n1', label: 'Node' }]);
   });
 
+  it('should not duplicate history on burst updates during debounce', () => {
+    usePanelStore.getState().renderPanel({
+      action: 'render',
+      panel: 'interactive_architecture',
+      data: { nodes: [], edges: [] },
+    });
+
+    usePanelStore.getState().renderPanel({
+      action: 'update',
+      panel: 'interactive_architecture',
+      data: {
+        subAction: 'add_node',
+        node: { id: 'n1', label: 'A' },
+      },
+    });
+    usePanelStore.getState().renderPanel({
+      action: 'update',
+      panel: 'interactive_architecture',
+      data: {
+        subAction: 'add_node',
+        node: { id: 'n2', label: 'B' },
+      },
+    });
+
+    const state = usePanelStore.getState();
+    expect(state.currentPanel).toBe('interactive_architecture');
+    expect(state.panelHistory).toHaveLength(1);
+    expect((state.panelData.nodes as { id: string }[]).map((n) => n.id)).toEqual([
+      'n1',
+      'n2',
+    ]);
+  });
+
   it('should set panel directly', () => {
     usePanelStore.getState().setPanel('architecture_diagram', { nodes: [] }, 'Arch');
 

@@ -437,7 +437,7 @@ def test_sanitizer_removes_ui_artifacts_and_uncited_metric_claims():
     Good answer.
     ::view-transition-group(*) { animation-duration: 0.25s; }
     VvisualizeVvisualize show_widget
-    This alone can improve answer quality by 20-30% in benchmarks.
+    This alone can improve answer quality by 20% faster with no proof cited.
     """
 
     report = SanitizationReport()
@@ -446,7 +446,7 @@ def test_sanitizer_removes_ui_artifacts_and_uncited_metric_claims():
     assert "::view-transition" not in cleaned
     assert "show_widget" not in cleaned
     assert "Vvisualize" not in cleaned
-    assert "20-30%" in cleaned
+    assert "20%" in cleaned
     assert any(a.rule == "uncited_metric_claim_flagged" for a in report.actions)
 
 

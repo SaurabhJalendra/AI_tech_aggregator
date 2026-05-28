@@ -1,5 +1,6 @@
 """Production hardening: client_context, sanitizer observability, adapter timeouts."""
 
+import json
 import subprocess
 from unittest.mock import MagicMock
 
@@ -65,6 +66,23 @@ def test_planner_mode_normalized(mode, expected):
     assert settings.planner_mode_normalized == expected
 
 
+def test_router_trace_sse_payload_shape():
+    payload = {
+        "type": "router_trace",
+        "router": "planner",
+        "intent_id": "compare_vector_dbs",
+        "playbook_id": "vector_db_compare",
+        "task": "Compare",
+        "outcome": "planner_intercepted",
+        "planner_mode": "on",
+    }
+    line = f"data: {json.dumps(payload)}\n\n"
+    data = json.loads(line[6:].strip())
+    assert data["type"] == "router_trace"
+    assert data["router"] == "planner"
+    assert data["intent_id"] == "compare_vector_dbs"
+
+
 def test_claude_adapter_blocking_handles_timeout(monkeypatch):
     adapter = ClaudeCodeAdapter()
 
@@ -95,7 +113,7 @@ def test_claude_adapter_blocking_handles_timeout(monkeypatch):
         "src.agent.claude_code_adapter.subprocess.Popen",
         lambda *a, **k: FakeProcess(),
     )
-    events = adapter._run_blocking(["-p", "test"], "hello")
+    events = adapter._run_blocking("claude.exe", ["-p", "test"], 120)
     assert any(
         "timed out" in (e.get("content") or "").lower()
         for e in events

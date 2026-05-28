@@ -229,6 +229,14 @@ class ChatService:
             planner_routing.get("planner_event_count"),
         )
 
+        router = "planner" if intercept else "agent"
+        yield self._router_trace_event(
+            router=router,
+            planner_routing=planner_routing,
+            intent_id=intent_result.intent_id,
+            merged_context=merged_context,
+        )
+
         if intercept:
             try:
                 if (
@@ -523,6 +531,30 @@ class ChatService:
             self._sse_event("text", {"content": text}),
             self._sse_event("done", {}),
         ]
+
+    def _router_trace_event(
+        self,
+        *,
+        router: str,
+        planner_routing: dict,
+        intent_id: str | None,
+        merged_context: dict,
+    ) -> str:
+        """Explicit router observability for planner vs agent path (SSE consumers / tests)."""
+        task = merged_context.get("active_task")
+        if not isinstance(task, str):
+            task = None
+        return self._sse_event(
+            "router_trace",
+            {
+                "router": router,
+                "intent_id": intent_id,
+                "playbook_id": merged_context.get("active_playbook_id"),
+                "task": task,
+                "outcome": planner_routing.get("outcome"),
+                "planner_mode": planner_routing.get("planner_mode"),
+            },
+        )
 
     def _sse_event(self, event_type: str, data: dict) -> str:
         payload = {"type": event_type, **data}

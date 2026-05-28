@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     # Planner rollout: off | shadow | on
     planner_mode: str = "on"
 
+    # Claude Code CLI (shared with SSE keepalive budget — allow headroom over keepalive interval)
+    claude_code_timeout_seconds: int = 180
+    claude_code_windows_max_concurrent: int = 8
+    sse_keepalive_interval_seconds: int = 15
+
     # Auth
     nextauth_secret: str = "dev-secret-change-in-production"
     nextauth_url: str = "http://localhost:3000"

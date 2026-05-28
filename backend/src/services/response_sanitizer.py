@@ -22,6 +22,18 @@ _KNOWN_ARTIFACTS: tuple[tuple[str, re.Pattern[str]], ...] = (
 
 _DUPLICATE_LINE_PATTERN = re.compile(r"^(.{20,80})\n\1\n", re.MULTILINE)
 
+# Bounded scan — avoid ReDoS on megabyte streams
+_MAX_METRIC_SCAN_CHARS = 12_000
+_CITATION_CUE = re.compile(
+    r"\b(?:according to|benchmark|study|report|documented|measured|uptime|recall|"
+    r"vendor|documented by|per\s+\w+\s+docs?|source:)\b",
+    re.IGNORECASE,
+)
+_UNCITED_METRIC = re.compile(
+    r"\b\d{1,3}(?:\.\d+)?\s*(?:%|percent).{0,40}\b(?:improve|faster|better|uptime|recall)\b",
+    re.IGNORECASE,
+)
+
 
 @dataclass
 class SanitizationRecord:
@@ -57,6 +69,26 @@ def _record(report: SanitizationReport | None, rule: str, original: str, sanitiz
     )
 
 
+def _flag_uncited_metrics(text: str, report: SanitizationReport | None) -> None:
+    """Flag suspicious uncited metrics in trace only; never delete cited prose."""
+    if report is None:
+        return
+
+    chunk = text[:_MAX_METRIC_SCAN_CHARS]
+    for match in _UNCITED_METRIC.finditer(chunk):
+        start = max(0, match.start() - 100)
+        end = min(len(chunk), match.end() + 60)
+        window = chunk[start:end]
+        if _CITATION_CUE.search(window):
+            continue
+        _record(
+            report,
+            "uncited_metric_claim_flagged",
+            match.group(0),
+            "(flagged — verify against benchmarks)",
+        )
+
+
 def sanitize_advisor_text(text: str, *, report: SanitizationReport | None = None) -> str:
     """Remove known UI artifacts; flag unsupported metrics without deleting reasoning."""
     cleaned = text
@@ -72,19 +104,7 @@ def sanitize_advisor_text(text: str, *, report: SanitizationReport | None = None
         _record(report, "duplicate_stream_fragment", dup.group(0), dup.group(1) + "\n")
         cleaned = _DUPLICATE_LINE_PATTERN.sub(r"\1\n", cleaned)
 
-    # Flag uncited benchmark claims in trace only — do not rewrite reasoning prose
-    metric_claim = re.search(
-        r"\d+\s*(?:%|percent).{0,40}(?:benchmark|improve|faster|better)",
-        cleaned,
-        re.IGNORECASE,
-    )
-    if metric_claim and report is not None:
-        _record(
-            report,
-            "uncited_metric_claim_flagged",
-            metric_claim.group(0),
-            "(flagged — verify against benchmarks)",
-        )
+    _flag_uncited_metrics(cleaned, report)
 
     cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
