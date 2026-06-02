@@ -299,6 +299,13 @@ TOOL_PRESENT_OPTIONS = {
     "input_schema": {
         "type": "object",
         "properties": {
+            "question_id": {
+                "type": "string",
+                "description": (
+                    "Stable snake_case id for the question, e.g. scale, budget, "
+                    "deployment_preference, application_type"
+                ),
+            },
             "question": {
                 "type": "string",
                 "description": "The question being asked of the user",
@@ -323,6 +330,13 @@ TOOL_PRESENT_OPTIONS = {
                         "icon": {
                             "type": "string",
                             "description": "Optional icon identifier for the card",
+                        },
+                        "metadata": {
+                            "type": "object",
+                            "description": (
+                                "Structured constraint values to preserve context, "
+                                "e.g. {'scale': 'growing_application'}"
+                            ),
                         },
                     },
                     "required": ["id", "label"],

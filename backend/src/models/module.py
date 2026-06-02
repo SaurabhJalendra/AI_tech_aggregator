@@ -96,7 +96,7 @@ class ModuleKnowledge(Base):
     topic: Mapped[str] = mapped_column(String(500), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[list] = mapped_column(ARRAY(String(50)), default=list)
-    embedding = mapped_column(Vector(1536), nullable=True)
+    embedding = mapped_column(Vector(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

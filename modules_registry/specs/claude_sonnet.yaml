@@ -1,0 +1,151 @@
+meta:
+  slug: claude_sonnet
+  name: Claude Sonnet
+  version: 1.0.0
+  category: llm_layer
+  subcategory: foundation_model
+  status: stable
+  last_updated: '2026-05-22'
+  maintainer: system
+identity:
+  tagline: Balanced Claude tier for production workloads — capability without Opus
+    cost
+  description: 'Claude Sonnet is a foundation model family in the Anthropic ecosystem,
+    catalogued
+
+    for architecture decisions at the generation step of AI pipelines. This module
+    covers
+
+    model capabilities, context, modalities, deployment fit, and trade-offs — not
+    API vendor
+
+    integration (see cloud_api modules such as openai or google_gemini for that layer).
+
+
+    Strengths: Cost-performance balance, Reliable instruction following, Prompt caching.
+
+    Tradeoffs: Less peak reasoning than Opus, No on-prem weights.'
+  logo_url: /assets/modules/claude_sonnet.svg
+  website: https://www.anthropic.com/claude
+  documentation: https://docs.anthropic.com
+  github: https://github.com/anthropics/anthropic-sdk-python
+  license: Proprietary
+  pricing_model: paid
+capabilities:
+  primary_use_cases:
+  - Production chat
+  - RAG answering
+  - Code review
+  - Data extraction
+  supported_operations:
+  - text_generation
+  - chat_completion
+  - tool_use
+  - streaming
+  - json_mode
+  integrations:
+  - slug: langchain
+    type: compatible
+  - slug: llamaindex
+    type: compatible
+technical_specs:
+  model_family: Anthropic
+  foundation_model_layer: true
+  supported_modalities:
+  - text
+  deployment_modes:
+  - cloud_api
+  - self_hosted
+  - hybrid
+  decision:
+    latency_score: 9
+    scalability_score: 8
+    ease_of_use_score: 9
+    pricing_tier: medium
+comparison_dimensions:
+  performance:
+    score: 9
+    justification: Benchmark-tier capability on reasoning, coding, and instruction
+      following for this model class.
+  scalability:
+    score: 8
+    justification: Throughput, hosting options, and enterprise scaling paths appropriate
+      to the family.
+  ease_of_use:
+    score: 9
+    justification: Developer experience via APIs, docs, and framework integrations.
+  cost_efficiency:
+    score: 7
+    justification: Typical $/token or self-host TCO relative to peers in the same
+      tier.
+  community:
+    score: 8
+    justification: Ecosystem size, examples, and third-party tooling.
+  maturity:
+    score: 8
+    justification: Production history, stability, and enterprise adoption.
+  flexibility:
+    score: 8
+    justification: Modalities, fine-tuning, tool use, and deployment modes.
+  data_privacy:
+    score: 8
+    justification: Self-host option, residency controls, and data handling policies.
+knowledge:
+  entries:
+  - topic: When to choose Claude Sonnet
+    content: 'Choose Claude Sonnet when your architecture needs production chat
+
+      and you can accept tradeoffs: Less peak reasoning than Opus.
+
+      Pair with retrieval and evaluation modules; use cloud_api entries only
+
+      when the decision is specifically about API routing, billing, or VPC — not
+
+      model family selection.'
+    tags:
+    - model-selection
+    - architecture
+    - foundation_model
+  - topic: Claude Sonnet vs alternatives
+    content: 'Compare against gpt4_1, gemini_flash, claude_opus at the foundation_model
+      layer only.
+
+      Do not compare to inference hosts (groq_inference), local runners (ollama),
+      or
+
+      provider APIs (openai) in the same shortlist — the advisor enforces layer separation.'
+    tags:
+    - comparison
+    - trade-offs
+code_examples:
+- title: Reference architecture slot — Claude Sonnet
+  language: python
+  code: '# Foundation model slot: claude_sonnet
+
+    # Generation step follows retrieval; outputs go to evaluation.
+
+    PIPELINE_LLM = "claude_sonnet"'
+relationships:
+  alternatives:
+  - slug: gpt4_1
+    note: Alternative foundation model in the same comparison layer
+  - slug: gemini_flash
+    note: Alternative foundation model in the same comparison layer
+  - slug: claude_opus
+    note: Alternative foundation model in the same comparison layer
+  complements:
+  - slug: langchain
+    role: Orchestration around the model
+  - slug: hybrid_search
+    role: Retrieval feeding context
+  - slug: langfuse
+    role: Observability for generations
+  typical_pipeline_position: llm_generation
+  pipeline_predecessors:
+  - retrieval
+  - reranking_models
+  - prompt_construction
+  pipeline_successors:
+  - evaluation
+  - deployment
+  - caching

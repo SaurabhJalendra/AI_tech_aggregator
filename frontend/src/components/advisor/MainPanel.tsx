@@ -22,6 +22,9 @@ export default function MainPanel() {
   const panelHistory = usePanelStore((s) => s.panelHistory);
   const goBack = usePanelStore((s) => s.goBack);
 
+  const isBlueprintPanel =
+    currentPanel === 'architecture_diagram' || currentPanel === 'interactive_architecture';
+
   const renderPanel = (panelType: PanelType) => {
     switch (panelType) {
       case 'welcome':
@@ -69,12 +72,12 @@ export default function MainPanel() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Panel header with back button and title */}
-      {currentPanel !== 'welcome' && (
-        <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-3 dark:border-gray-800">
+      {currentPanel !== 'welcome' && !isBlueprintPanel && (
+        <div className="flex items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-panel)] px-6 py-3">
           {panelHistory.length > 0 && (
             <button
               onClick={goBack}
-              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
               aria-label="Go back"
             >
               <svg
@@ -99,8 +102,24 @@ export default function MainPanel() {
       )}
 
       {/* Panel content */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className={`relative flex-1 bg-[var(--background)] ${
+          isBlueprintPanel
+            ? 'blueprint-workspace blueprint-workspace-immersive blueprint-workspace-scroll scrollbar-hidden overflow-y-auto overflow-x-hidden'
+            : 'scrollbar-hidden overflow-y-auto'
+        }`}
+      >
         {renderPanel(currentPanel)}
+        {isBlueprintPanel && panelHistory.length > 0 && (
+          <button
+            type="button"
+            onClick={goBack}
+            className="blueprint-floating-back absolute left-3 top-3 z-30 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)]/95 px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-sm hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+            aria-label="Go back"
+          >
+            ← Back
+          </button>
+        )}
       </div>
     </div>
   );

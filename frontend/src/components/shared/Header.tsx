@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import ThemeToggle from '@/components/shared/ThemeToggle';
 
 /**
  * Header is the top navigation bar used across the dashboard layout.
@@ -10,7 +11,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800">
+    <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-panel)]">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-8">
           <Link href="/" className="text-lg font-bold">
@@ -19,25 +20,25 @@ export default function Header() {
           <nav className="hidden items-center gap-6 md:flex">
             <Link
               href="/advisor"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
             >
               Advisor
             </Link>
             <Link
               href="/explore"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
             >
               Explore
             </Link>
             <Link
               href="/dashboard"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
             >
               Dashboard
             </Link>
             <Link
               href="/history"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
             >
               History
             </Link>
@@ -45,9 +46,10 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link
             href="/pricing"
-            className="hidden text-sm text-gray-600 hover:text-gray-900 md:block dark:text-gray-400 dark:hover:text-gray-100"
+            className="hidden text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)] md:block"
           >
             Pricing
           </Link>
@@ -57,7 +59,7 @@ export default function Header() {
           {/* Mobile hamburger button */}
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 md:hidden dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="inline-flex items-center justify-center rounded-md p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -76,39 +78,39 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <nav className="border-t border-gray-200 px-6 py-4 md:hidden dark:border-gray-800">
+        <nav className="border-t border-[var(--border-subtle)] px-6 py-4 md:hidden">
           <div className="flex flex-col gap-3">
             <Link
               href="/advisor"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
               onClick={() => setMobileMenuOpen(false)}
             >
               Advisor
             </Link>
             <Link
               href="/explore"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
               onClick={() => setMobileMenuOpen(false)}
             >
               Explore
             </Link>
             <Link
               href="/dashboard"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
               onClick={() => setMobileMenuOpen(false)}
             >
               Dashboard
             </Link>
             <Link
               href="/history"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
               onClick={() => setMobileMenuOpen(false)}
             >
               History
             </Link>
             <Link
               href="/pricing"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)]"
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing

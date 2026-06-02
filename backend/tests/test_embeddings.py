@@ -1,62 +1,66 @@
-"""Tests for the embeddings module."""
+"""Tests for the embeddings module (local BGE)."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from src.core.embeddings import generate_embedding, generate_embeddings_batch
+from src.core.embeddings import (
+    EMBEDDING_DIMENSIONS,
+    generate_embedding,
+    generate_embeddings_batch,
+)
 
 
 @pytest.mark.asyncio
-async def test_generate_embedding_no_api_key():
-    """Should return None when no OpenAI key is configured."""
+async def test_generate_embedding_disabled():
     with patch("src.core.embeddings.settings") as mock_settings:
-        mock_settings.openai_api_key = ""
+        mock_settings.embeddings_enabled = False
         result = await generate_embedding("test text")
         assert result is None
 
 
 @pytest.mark.asyncio
-async def test_generate_embeddings_batch_no_api_key():
-    """Should return None when no OpenAI key is configured."""
+async def test_generate_embeddings_batch_disabled():
     with patch("src.core.embeddings.settings") as mock_settings:
-        mock_settings.openai_api_key = ""
+        mock_settings.embeddings_enabled = False
         result = await generate_embeddings_batch(["text1", "text2"])
         assert result is None
 
 
 @pytest.mark.asyncio
 async def test_generate_embeddings_batch_empty_input():
-    """Should return None for empty input."""
     with patch("src.core.embeddings.settings") as mock_settings:
-        mock_settings.openai_api_key = "test-key"
+        mock_settings.embeddings_enabled = True
         result = await generate_embeddings_batch([])
         assert result is None
 
 
 @pytest.mark.asyncio
-async def test_generate_embedding_with_api_key():
-    """Should call OpenAI API when key is configured."""
-    mock_embedding = [0.1] * 1536
+async def test_generate_embedding_returns_vector():
+    mock_vector = [0.1] * EMBEDDING_DIMENSIONS
 
-    from unittest.mock import MagicMock
-    mock_response = MagicMock()
-    mock_response.raise_for_status = lambda: None
-    mock_response.json.return_value = {
-        "data": [{"embedding": mock_embedding, "index": 0}]
-    }
+    with patch("src.core.embeddings.settings") as mock_settings, patch(
+        "src.core.embeddings.asyncio.to_thread",
+        return_value=[mock_vector],  # _encode_sync returns list[list[float]]
+    ) as mock_thread:
+        mock_settings.embeddings_enabled = True
+        result = await generate_embedding("test text", for_query=True)
 
-    with patch("src.core.embeddings.settings") as mock_settings, \
-         patch("src.core.embeddings.httpx.AsyncClient") as MockClient:
-        mock_settings.openai_api_key = "test-key"
+        assert result == mock_vector
+        mock_thread.assert_called_once()
 
-        mock_client_instance = AsyncMock()
-        mock_client_instance.post.return_value = mock_response
-        mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
-        mock_client_instance.__aexit__ = AsyncMock(return_value=False)
-        MockClient.return_value = mock_client_instance
 
-        result = await generate_embedding("test text")
+@pytest.mark.asyncio
+async def test_generate_embeddings_batch_for_query_flag():
+    mock_vectors = [[0.1] * EMBEDDING_DIMENSIONS, [0.2] * EMBEDDING_DIMENSIONS]
 
-        assert result == mock_embedding
-        mock_client_instance.post.assert_called_once()
+    with patch("src.core.embeddings.settings") as mock_settings, patch(
+        "src.core.embeddings.asyncio.to_thread",
+        return_value=mock_vectors,
+    ) as mock_thread:
+        mock_settings.embeddings_enabled = True
+        result = await generate_embeddings_batch(["a", "b"], for_query=False)
+
+        assert result == mock_vectors
+        args, kwargs = mock_thread.call_args
+        assert kwargs.get("for_query") is False

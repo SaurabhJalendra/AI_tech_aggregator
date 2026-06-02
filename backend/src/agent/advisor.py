@@ -291,7 +291,7 @@ class AdvisorAgent:
             },
             "title": input["title"],
         }
-        return {"rendered": True, "panel": "architecture_diagram"}, panel_command
+        return {"ok": True}, panel_command
 
     def _tool_render_comparison(self, input: dict) -> tuple[dict, dict]:
         chart_type = input.get("chart_type", "radar")
@@ -306,7 +306,7 @@ class AdvisorAgent:
             },
             "title": "Technology Comparison",
         }
-        return {"rendered": True, "panel": panel_type}, panel_command
+        return {"ok": True}, panel_command
 
     def _tool_render_code(self, input: dict) -> tuple[dict, dict]:
         panel_command = {
@@ -320,7 +320,7 @@ class AdvisorAgent:
             },
             "title": input["title"],
         }
-        return {"rendered": True, "panel": "code_preview"}, panel_command
+        return {"ok": True}, panel_command
 
     def _tool_render_code_project(self, input: dict) -> tuple[dict, dict]:
         panel_command = {
@@ -332,7 +332,7 @@ class AdvisorAgent:
             },
             "title": input["title"],
         }
-        return {"rendered": True, "panel": "code_project"}, panel_command
+        return {"ok": True}, panel_command
 
     async def _tool_get_benchmarks(self, input: dict) -> tuple[dict, None]:
         results = {}
@@ -436,11 +436,12 @@ class AdvisorAgent:
             "action": "render",
             "panel": "option_cards",
             "data": {
+                "question_id": input.get("question_id"),
                 "question": question,
                 "options": options,
             },
         }
-        return {"status": "options_presented", "option_count": len(options)}, panel_command
+        return {"ok": True}, panel_command
 
     def _tool_build_architecture_step(self, input: dict) -> tuple[dict, dict]:
         """Incrementally build an interactive architecture diagram."""
@@ -457,40 +458,43 @@ class AdvisorAgent:
                     "title": title,
                 },
             }
-            return {"status": "diagram_initialized", "title": title}, panel_command
+            return {"ok": True}, panel_command
 
         elif action == "add_node":
             node = input["node"]
             panel_command = {
                 "action": "update",
+                "panel": "interactive_architecture",
                 "data": {
                     "subAction": "add_node",
                     "node": node,
                 },
             }
-            return {"status": "node_added", "node_id": node["id"]}, panel_command
+            return {"ok": True}, panel_command
 
         elif action == "connect":
             edge = input["edge"]
             panel_command = {
                 "action": "update",
+                "panel": "interactive_architecture",
                 "data": {
                     "subAction": "add_edge",
                     "edge": edge,
                 },
             }
-            return {"status": "edge_added", "from": edge["from"], "to": edge["to"]}, panel_command
+            return {"ok": True}, panel_command
 
         elif action == "highlight":
             node_id = input["node_id"]
             panel_command = {
                 "action": "update",
+                "panel": "interactive_architecture",
                 "data": {
                     "subAction": "highlight",
                     "nodeId": node_id,
                 },
             }
-            return {"status": "node_highlighted", "node_id": node_id}, panel_command
+            return {"ok": True}, panel_command
 
         else:
             return {"error": f"Unknown action: {action}"}, None
@@ -525,7 +529,7 @@ You can control a visual panel alongside the chat. To render visualizations, emi
 
 ### Option Cards (interactive choices)
 ```
-<!--PANEL_CMD:{"action":"render","panel":"option_cards","data":{"question":"What is your budget range?","options":[{"id":"low","label":"Low Budget","description":"Open source preferred"},{"id":"medium","label":"Medium Budget","description":"Mix of open source and managed"},{"id":"high","label":"High Budget","description":"Enterprise-grade managed services"}]}}-->
+<!--PANEL_CMD:{"action":"render","panel":"option_cards","data":{"question_id":"budget","question":"What is your budget range?","options":[{"id":"low","label":"Low Budget","description":"Open source preferred","metadata":{"budget":"low"}},{"id":"medium","label":"Medium Budget","description":"Mix of open source and managed","metadata":{"budget":"medium"}},{"id":"high","label":"High Budget","description":"Enterprise-grade managed services","metadata":{"budget":"high"}}]}}-->
 ```
 
 ### Code Project (multi-file)
@@ -540,15 +544,15 @@ Init:
 ```
 Add node:
 ```
-<!--PANEL_CMD:{"action":"update","data":{"subAction":"add_node","node":{"id":"embed","label":"OpenAI Embeddings","slug":"openai_embeddings","category":"embeddings"}}}-->
+<!--PANEL_CMD:{"action":"update","panel":"interactive_architecture","data":{"subAction":"add_node","node":{"id":"embed","label":"OpenAI Embeddings","slug":"openai_embeddings","category":"embeddings"}}}-->
 ```
 Connect:
 ```
-<!--PANEL_CMD:{"action":"update","data":{"subAction":"add_edge","edge":{"from":"embed","to":"vectordb","label":"store vectors"}}}-->
+<!--PANEL_CMD:{"action":"update","panel":"interactive_architecture","data":{"subAction":"add_edge","edge":{"from":"embed","to":"vectordb","label":"store vectors"}}}-->
 ```
 Highlight:
 ```
-<!--PANEL_CMD:{"action":"update","data":{"subAction":"highlight","nodeId":"embed"}}-->
+<!--PANEL_CMD:{"action":"update","panel":"interactive_architecture","data":{"subAction":"highlight","nodeId":"embed"}}-->
 ```
 
 RULES:
@@ -556,6 +560,8 @@ RULES:
 - The JSON must be valid and on a single line (no newlines inside the JSON)
 - Use these markers instead of just describing what should be shown
 - Always include the panel command when showing comparisons, diagrams, or code
+- Emit at most ONE render command per response. Use update commands only for the active panel.
+- Do not narrate panel details verbosely in chat. Keep text short and visual-first.
 """
 
 

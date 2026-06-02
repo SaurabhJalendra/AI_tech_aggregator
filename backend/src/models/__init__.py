@@ -4,6 +4,7 @@ from src.models.module import Module, ModuleCategory, ModuleKnowledge, ModuleInt
 from src.models.benchmark import Benchmark
 from src.models.comparison import Comparison
 from src.models.usage import UsageRecord, UsageAggregate
+from src.models.consulting import ArchitectureEvolutionSnapshot
 __all__ = [
     "User",
     "Team",
@@ -17,4 +18,5 @@ __all__ = [
     "Comparison",
     "UsageRecord",
     "UsageAggregate",
+    "ArchitectureEvolutionSnapshot",
 ]

@@ -2,9 +2,11 @@
 
 Usage:
     cd backend
+    alembic upgrade head   # if migrating from OpenAI 1536-d vectors
+    pip install -r requirements.txt
     python ../scripts/generate_embeddings.py
 
-Requires OPENAI_API_KEY in .env
+Uses local BAAI/bge-large-en-v1.5 (1024 dimensions). First run downloads the model.
 """
 
 import asyncio
@@ -18,24 +20,24 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from src.core.config import settings
-from src.core.embeddings import generate_embeddings_batch
+from src.core.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL, generate_embeddings_batch
 from src.models.module import ModuleKnowledge
 
 
-BATCH_SIZE = 50
+BATCH_SIZE = 32
 
 
 async def main():
-    if not settings.openai_api_key:
-        print("ERROR: OPENAI_API_KEY not set in .env")
-        print("Embeddings require an OpenAI API key for text-embedding-3-small.")
+    if not settings.embeddings_enabled:
+        print("ERROR: EMBEDDINGS_ENABLED=false in .env")
         sys.exit(1)
+
+    print(f"Model: {EMBEDDING_MODEL} ({EMBEDDING_DIMENSIONS} dimensions)")
 
     engine = create_async_engine(settings.database_url)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
 
     async with async_session() as session:
-        # Count entries without embeddings
         total = (await session.execute(
             select(func.count(ModuleKnowledge.id)).where(
                 ModuleKnowledge.embedding.is_(None)
@@ -48,11 +50,9 @@ async def main():
 
         print(f"Generating embeddings for {total} knowledge entries...")
 
-        offset = 0
         processed = 0
 
-        while offset < total:
-            # Fetch batch
+        while processed < total:
             result = await session.execute(
                 select(ModuleKnowledge)
                 .where(ModuleKnowledge.embedding.is_(None))
@@ -63,26 +63,31 @@ async def main():
             if not entries:
                 break
 
-            # Prepare texts
-            texts = [
-                f"{entry.topic}\n\n{entry.content}" for entry in entries
-            ]
+            texts = [f"{entry.topic}\n\n{entry.content}" for entry in entries]
 
-            # Generate embeddings
-            embeddings = await generate_embeddings_batch(texts)
+            embeddings = await generate_embeddings_batch(texts, for_query=False)
             if embeddings is None:
                 print("ERROR: Failed to generate embeddings")
                 break
 
-            # Update entries
-            for entry, embedding in zip(entries, embeddings):
+            if len(embeddings) != len(entries):
+                print(
+                    f"ERROR: Expected {len(entries)} vectors, got {len(embeddings)}"
+                )
+                break
+
+            for entry, embedding in zip(entries, embeddings, strict=True):
+                if len(embedding) != EMBEDDING_DIMENSIONS:
+                    print(
+                        f"ERROR: Wrong dimension {len(embedding)} for entry {entry.id}"
+                    )
+                    sys.exit(1)
                 entry.embedding = embedding
 
             await session.commit()
 
             processed += len(entries)
             print(f"  Processed {processed}/{total}")
-            offset += BATCH_SIZE
 
         print(f"Done. Generated embeddings for {processed} entries.")
 

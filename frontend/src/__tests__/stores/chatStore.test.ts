@@ -6,6 +6,10 @@ describe('chatStore', () => {
     useChatStore.setState({
       messages: [],
       sessionId: null,
+      activeTask: null,
+      constraintState: null,
+      awaitingIntentClarification: false,
+      intentAlternatives: [],
       isStreaming: false,
     });
   });
@@ -14,6 +18,8 @@ describe('chatStore', () => {
     const state = useChatStore.getState();
     expect(state.messages).toEqual([]);
     expect(state.sessionId).toBeNull();
+    expect(state.activeTask).toBeNull();
+    expect(state.constraintState).toBeNull();
     expect(state.isStreaming).toBe(false);
   });
 
@@ -48,15 +54,30 @@ describe('chatStore', () => {
     expect(useChatStore.getState().sessionId).toBe('session-123');
   });
 
-  it('should clear messages', () => {
+  it('should clear messages and constraint state', () => {
     useChatStore.getState().addUserMessage('test');
     useChatStore.getState().setSessionId('session-123');
+    useChatStore.getState().setConstraintState({
+      slots: { budget: { value: 'low', source: 'option_card', confidence: 1 } },
+      version: '1',
+    });
     useChatStore.getState().clearMessages();
 
     const state = useChatStore.getState();
     expect(state.messages).toEqual([]);
     expect(state.sessionId).toBeNull();
+    expect(state.activeTask).toBeNull();
+    expect(state.constraintState).toBeNull();
     expect(state.isStreaming).toBe(false);
+  });
+
+  it('finishStreaming clears isStreaming and abortController', () => {
+    const id = useChatStore.getState().addAssistantMessage();
+    useChatStore.setState({ isStreaming: true, abortController: new AbortController() });
+    useChatStore.getState().finishStreaming(id);
+    const state = useChatStore.getState();
+    expect(state.isStreaming).toBe(false);
+    expect(state.abortController).toBeNull();
   });
 
   it('should add panel commands to a message', () => {

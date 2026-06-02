@@ -1,0 +1,111 @@
+# Declarative playbook metadata (Phase-1). Imperative execution remains in RecommendationPlanner.
+version: "1"
+
+playbooks:
+  vector_db_comparison:
+    task_type: category_comparison
+    category: vector_databases
+    phase2_pipeline: true
+    slot_impact_values:
+      budget: [low, medium, high]
+      scale: [prototype, growing_application, enterprise]
+      deployment_preference: [managed, self_hosted, hybrid]
+    intent_ids:
+      - "category:vector_databases"
+    required_slots:
+      - budget
+      - scale
+      - deployment_preference
+    optional_slots:
+      - implementation_preference
+      - persistence_required
+    retrieval_config:
+      finalist_limit_default: 4
+      finalist_limit_low_budget: 3
+      hard_filter_category: vector_databases
+      pipeline: vector_db_v2
+    ui_behavior:
+      comparison_panel: comparison_chart
+      chart_type: decision_surface
+    clarification_policy:
+      allow_intent_clarification: true
+      skip_if_resolved: true
+
+  rag_pipeline_design:
+    task_type: rag_pipeline
+    phase2_pipeline: true
+    slot_impact_values:
+      scale: [prototype, growing_application, enterprise]
+      budget: [low, medium, high]
+      implementation_preference: [python, typescript, api_only, no_preference]
+    intent_ids:
+      - rag_pipeline
+    required_slots:
+      - scale
+      - budget
+      - implementation_preference
+    optional_slots:
+      - deployment_preference
+    retrieval_config:
+      pipeline_categories:
+        - data_ingestion
+        - chunking
+        - embeddings
+        - vector_databases
+        - retrieval
+        - llm_layer
+        - evaluation
+        - deployment
+    ui_behavior:
+      primary_panel: interactive_architecture
+    clarification_policy:
+      allow_intent_clarification: true
+      skip_if_resolved: true
+
+  module_code:
+    task_type: module_code
+    phase2_pipeline: true
+    intent_ids:
+      - module_code
+    required_slots: []
+    optional_slots:
+      - implementation_preference
+    retrieval_config: {}
+    ui_behavior:
+      code_panel: code_preview
+      architecture_code_drawer: true
+    clarification_policy:
+      allow_intent_clarification: false
+
+  architecture_review:
+    task_type: architecture_review
+    phase2_pipeline: true
+    intent_ids:
+      - architecture_review
+    required_slots: []
+    optional_slots: []
+    retrieval_config: {}
+    ui_behavior:
+      primary_panel: interactive_architecture
+    clarification_policy:
+      allow_intent_clarification: false
+
+  local_ai_stack:
+    task_type: local_ai_stack
+    phase2_pipeline: true
+    slot_impact_values:
+      hardware: [cpu_only, consumer_gpu, apple_silicon, cloud_vm]
+      agent_complexity: [single_agent, multi_agent]
+    intent_ids:
+      - local_ai_stack
+    required_slots:
+      - hardware
+      - agent_complexity
+    optional_slots:
+      - deployment_preference
+    retrieval_config: {}
+    ui_behavior:
+      primary_panel: interactive_architecture
+    clarification_policy:
+      allow_intent_clarification: true
+      skip_if_resolved: true

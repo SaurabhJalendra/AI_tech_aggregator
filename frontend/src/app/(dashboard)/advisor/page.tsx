@@ -4,13 +4,29 @@ import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ChatPanel from '@/components/advisor/ChatPanel';
 import MainPanel from '@/components/advisor/MainPanel';
+import { fetchConsultingProfile } from '@/lib/consultingProfile';
+import { useBlueprintWorkspaceStore } from '@/stores/blueprintWorkspaceStore';
 import { useChatStore } from '@/stores/chatStore';
+import { usePanelStore } from '@/stores/panelStore';
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 function AdvisorContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session');
+  const focusMode = useBlueprintWorkspaceStore((s) => s.focusMode);
+  const currentPanel = usePanelStore((s) => s.currentPanel);
+  const isBlueprint =
+    currentPanel === 'interactive_architecture' || currentPanel === 'architecture_diagram';
+  const blueprintFocus = focusMode && isBlueprint;
+
+  useEffect(() => {
+    fetchConsultingProfile().then((profile) => {
+      if (profile) {
+        useChatStore.setState({ consultingProfile: profile });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -45,17 +61,38 @@ function AdvisorContent() {
   }, [sessionId]);
 
   return (
-    <>
-      <ChatPanel />
-      <MainPanel />
-    </>
+    <div className="flex h-full min-h-0 w-full flex-1">
+      <div
+        className={`flex h-full min-h-0 shrink-0 flex-col overflow-hidden transition-[width] duration-300 ease-out ${
+          blueprintFocus ? 'w-0 max-w-0 opacity-0' : 'w-[30%] min-w-[280px] max-w-[420px] opacity-100'
+        }`}
+        aria-hidden={blueprintFocus}
+      >
+        <ChatPanel />
+      </div>
+      <div
+        className={`flex h-full min-h-0 min-w-0 flex-1 flex-col transition-[width] duration-300 ease-out ${
+          blueprintFocus ? 'w-full' : ''
+        }`}
+      >
+        <MainPanel />
+      </div>
+    </div>
   );
 }
 
 export default function AdvisorPage() {
   return (
-    <Suspense fallback={<div className="flex h-full items-center justify-center text-gray-400">Loading...</div>}>
-      <AdvisorContent />
+    <Suspense
+      fallback={
+        <div className="flex h-full min-h-0 flex-1 items-center justify-center text-gray-400">
+          Loading...
+        </div>
+      }
+    >
+      <div className="flex h-full min-h-0 flex-1">
+        <AdvisorContent />
+      </div>
     </Suspense>
   );
 }

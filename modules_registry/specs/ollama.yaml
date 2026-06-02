@@ -116,7 +116,7 @@ comparison_dimensions:
     justification: "Exceptionally easy to get started: 'ollama run llama3.3' downloads and runs a model. OpenAI-compatible API enables drop-in replacement in existing code."
   cost_efficiency:
     score: 10
-    justification: "Zero ongoing cost beyond hardware and electricity. No per-token charges. A $1000 GPU can serve thousands of requests per day indefinitely."
+    justification: "Zero per-token cloud cost beyond existing hardware and electricity. Small Llama models can run on CPU or consumer hardware; large models require more VRAM."
   community:
     score: 9
     justification: "Massive open-source community with 100K+ GitHub stars. Extensive model library, active development, and broad ecosystem integration."
@@ -220,6 +220,17 @@ knowledge:
       content: |
         Inference speed in Ollama is primarily determined by available VRAM (GPU memory) and
         the model size. Key guidelines:
+
+        Lowest-cost guidance:
+        - Llama 3.2 1B/3B: runs on CPU with 4GB+ system RAM.
+        - Llama 3.1/3.2 8B-class models: run on CPU at lower speed or on a consumer GPU
+          with roughly 6GB+ VRAM for better interactive latency.
+        - Apple Silicon M1/M2/M3 works well via Metal acceleration; unified memory size
+          determines the practical model size.
+        - RTX 4090-class hardware is overkill for 8B-class models and is mainly useful
+          for larger 34B/70B quantized models or high-throughput serving.
+        - Ongoing cloud inference cost is zero when running locally; recurring cost is
+          electricity and whatever machine or VM you already operate.
 
         GPU inference (recommended):
         - NVIDIA GPUs with CUDA: Best performance. RTX 3090/4090 (24GB) handles up to 13B

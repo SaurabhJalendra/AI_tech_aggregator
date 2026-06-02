@@ -39,8 +39,8 @@ class ModuleService:
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self.db.execute(count_query)).scalar() or 0
 
-        # Paginate
-        query = query.offset((page - 1) * per_page).limit(per_page)
+        # Deterministic ordering before pagination
+        query = query.order_by(Module.slug.asc()).offset((page - 1) * per_page).limit(per_page)
         result = await self.db.execute(query)
         modules = list(result.scalars().all())
 
@@ -111,7 +111,7 @@ class ModuleService:
     ) -> list[dict]:
         """Search knowledge entries — uses vector search if embeddings available, falls back to ILIKE."""
         # Try vector search first
-        query_embedding = await generate_embedding(query)
+        query_embedding = await generate_embedding(query, for_query=True)
         if query_embedding is not None:
             return await self._vector_search_knowledge(
                 query_embedding, module_slugs, tags, limit
@@ -146,7 +146,7 @@ class ModuleService:
         if tags:
             stmt = stmt.where(ModuleKnowledge.tags.overlap(tags))
 
-        stmt = stmt.order_by("distance").limit(limit)
+        stmt = stmt.order_by("distance", Module.slug.asc()).limit(limit)
 
         result = await self.db.execute(stmt)
         entries = []

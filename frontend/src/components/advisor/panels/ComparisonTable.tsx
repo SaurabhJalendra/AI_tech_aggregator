@@ -1,5 +1,8 @@
 'use client';
 
+import EntityChip from '@/components/advisor/EntityChip';
+import { getEntityColor, orderEntitiesForDisplay } from '@/lib/entityColors';
+
 interface ComparisonTableProps {
   data: Record<string, unknown>;
 }
@@ -57,6 +60,8 @@ export default function ComparisonTable({ data }: ComparisonTableProps) {
   }
 
   const modules = (comparison.modules as string[]) || [];
+  const overallRanking = (comparison.overall_ranking as string[]) || [];
+  const displayOrder = orderEntitiesForDisplay(modules, overallRanking);
   const dimensions = (comparison.dimensions as string[]) || [];
   const matrix = (comparison.matrix as Record<string, Record<string, { value: number }>>) || {};
   const highlights = (comparison.highlights as Record<string, string[]>) || {};
@@ -64,21 +69,39 @@ export default function ComparisonTable({ data }: ComparisonTableProps) {
 
   return (
     <div className="p-6">
+      {overallRanking.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-gray-500">Ranking:</span>
+          {overallRanking.map((slug, i) => (
+            <EntityChip key={slug} slug={slug} rank={i + 1} />
+          ))}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b-2 border-gray-200 dark:border-gray-700">
               <th className="p-3 text-left font-semibold text-gray-500">Dimension</th>
-              {modules.map((mod) => (
+              {displayOrder.map((mod) => (
                 <th key={mod} className="p-3 text-center font-semibold">
-                  {mod.replace(/_/g, ' ')}
+                  <span
+                    className="inline-flex items-center gap-1.5"
+                    style={{ color: getEntityColor(mod) }}
+                  >
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-sm"
+                      style={{ backgroundColor: getEntityColor(mod) }}
+                      aria-hidden
+                    />
+                    {mod.replace(/_/g, ' ')}
+                  </span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {dimensions.map((dim) => {
-              const scores = modules.map((mod) => {
+              const scores = displayOrder.map((mod) => {
                 const score = matrix[mod]?.[dim];
                 return typeof score === 'object' && score?.value != null
                   ? score.value
@@ -96,7 +119,7 @@ export default function ComparisonTable({ data }: ComparisonTableProps) {
                   <td className="p-3 font-medium text-gray-600 dark:text-gray-400">
                     {DIMENSION_LABELS[dim] || dim.replace(/_/g, ' ')}
                   </td>
-                  {modules.map((mod, i) => (
+                  {displayOrder.map((mod, i) => (
                     <ScoreCell
                       key={`${mod}-${dim}`}
                       value={scores[i]}
@@ -113,7 +136,7 @@ export default function ComparisonTable({ data }: ComparisonTableProps) {
       {/* Highlights */}
       {Object.keys(highlights).length > 0 && (
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {modules.map((mod) => {
+          {displayOrder.map((mod) => {
             const modHighlights = highlights[mod] || [];
             if (modHighlights.length === 0) return null;
             return (

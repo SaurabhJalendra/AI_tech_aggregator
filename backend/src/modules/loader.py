@@ -12,6 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.module import Module, ModuleCategory, ModuleIntegration, ModuleKnowledge
 from src.models.benchmark import Benchmark
+from src.services.decision_metadata import (
+    apply_decision_metadata_to_module,
+    merge_overlay_into_technical_specs,
+)
 
 
 SPECS_DIR = Path(__file__).parent.parent.parent.parent / "modules_registry" / "specs"
@@ -51,7 +55,7 @@ async def load_spec_file(db: AsyncSession, spec_path: Path) -> Module:
     meta = spec["meta"]
     identity = spec.get("identity", {})
     capabilities = spec.get("capabilities", {})
-    technical_specs = spec.get("technical_specs", {})
+    technical_specs = merge_overlay_into_technical_specs(spec)
     comparison_dims = spec.get("comparison_dimensions", {})
     knowledge = spec.get("knowledge", {})
     code_examples = spec.get("code_examples", [])
@@ -70,8 +74,10 @@ async def load_spec_file(db: AsyncSession, spec_path: Path) -> Module:
     module = result.scalar_one_or_none()
 
     if module:
-        # Skip if spec hasn't changed
+        # Spec unchanged: still sync decision metadata (overlays evolve independently of spec_hash).
         if module.spec_hash == spec_hash:
+            if apply_decision_metadata_to_module(module, spec):
+                await db.flush()
             return module
         # Update existing module
         _update_module_fields(module, meta, identity, capabilities, technical_specs,

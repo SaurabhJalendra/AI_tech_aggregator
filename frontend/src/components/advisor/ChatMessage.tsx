@@ -34,7 +34,7 @@ const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-400 underline hover:text-blue-300"
+      className="text-[var(--text-secondary)] underline decoration-[var(--border-strong)] hover:text-[var(--foreground)]"
     >
       {children}
     </a>
@@ -98,8 +98,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         className={clsx(
           'max-w-[85%] rounded-lg px-4 py-2 text-sm',
           isUser
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
+            ? 'bg-[var(--accent)] text-[var(--accent-foreground)]'
+            : 'bg-[var(--surface-secondary)] text-[var(--foreground)]'
         )}
       >
         {isUser ? (

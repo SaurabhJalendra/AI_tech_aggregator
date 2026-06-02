@@ -4,6 +4,8 @@ import { useRef, useEffect } from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
+import IntentClarification from './IntentClarification';
+import ConstraintChipBar from './ConstraintChipBar';
 
 /**
  * ChatPanel is the left sidebar (30% width) showing the conversation thread
@@ -21,15 +23,15 @@ export default function ChatPanel() {
   }, [messages]);
 
   return (
-    <div className="flex w-[35%] min-w-[320px] flex-col border-r border-gray-200 dark:border-gray-800">
+    <div className="flex h-full min-h-0 w-full flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-panel)]">
       {/* Messages area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="scrollbar-hidden flex-1 overflow-y-auto p-4 space-y-4"
       >
         {messages.length === 0 && (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[var(--text-muted)]">
               Start a conversation with your AI advisor
             </p>
           </div>
@@ -46,8 +48,15 @@ export default function ChatPanel() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
-      <ChatInput />
+      <ConstraintChipBar />
+      <div className="border-t border-[var(--border-subtle)] px-4 pt-3">
+        <IntentClarification />
+      </div>
+
+      {/* Input area — pinned to bottom of full-height panel */}
+      <div className="mt-auto shrink-0">
+        <ChatInput />
+      </div>
     </div>
   );
 }

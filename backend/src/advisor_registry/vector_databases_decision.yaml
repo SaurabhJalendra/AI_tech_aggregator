@@ -1,0 +1,103 @@
+# Phase-2 decision metadata for vector database modules (deterministic filter/score).
+# Scores are 1-10 unless noted. pricing_tier: low | medium | high
+version: "1"
+
+modules:
+  qdrant:
+    deployment: [cloud, on_prem]
+    pricing_tier: low
+    scalability_score: 8
+    latency_score: 9
+    ease_of_use_score: 8
+    persistence: true
+    operational_complexity: medium
+
+  chromadb:
+    deployment: [on_prem, cloud]
+    pricing_tier: low
+    scalability_score: 6
+    latency_score: 7
+    ease_of_use_score: 9
+    persistence: true
+    operational_complexity: low
+
+  weaviate:
+    deployment: [cloud, on_prem, hybrid]
+    pricing_tier: medium
+    scalability_score: 8
+    latency_score: 8
+    ease_of_use_score: 7
+    persistence: true
+    operational_complexity: medium
+
+  milvus:
+    deployment: [cloud, on_prem]
+    pricing_tier: medium
+    scalability_score: 9
+    latency_score: 8
+    ease_of_use_score: 6
+    persistence: true
+    operational_complexity: high
+
+  pinecone:
+    deployment: [cloud]
+    pricing_tier: high
+    scalability_score: 9
+    latency_score: 9
+    ease_of_use_score: 9
+    persistence: true
+    operational_complexity: low
+
+  pgvector_module:
+    deployment: [on_prem]
+    pricing_tier: low
+    scalability_score: 7
+    latency_score: 7
+    ease_of_use_score: 7
+    persistence: true
+    operational_complexity: medium
+
+  elasticsearch_vector:
+    deployment: [cloud, on_prem, hybrid]
+    pricing_tier: medium
+    scalability_score: 9
+    latency_score: 7
+    ease_of_use_score: 6
+    persistence: true
+    operational_complexity: high
+
+  redis_vector:
+    deployment: [cloud, on_prem]
+    pricing_tier: medium
+    scalability_score: 8
+    latency_score: 9
+    ease_of_use_score: 6
+    persistence: true
+    operational_complexity: medium
+
+  lancedb:
+    deployment: [on_prem, cloud]
+    pricing_tier: low
+    scalability_score: 7
+    latency_score: 8
+    ease_of_use_score: 8
+    persistence: true
+    operational_complexity: low
+
+  turbopuffer:
+    deployment: [cloud]
+    pricing_tier: medium
+    scalability_score: 8
+    latency_score: 9
+    ease_of_use_score: 7
+    persistence: false
+    operational_complexity: low
+
+  marqo:
+    deployment: [cloud, on_prem]
+    pricing_tier: low
+    scalability_score: 7
+    latency_score: 8
+    ease_of_use_score: 8
+    persistence: true
+    operational_complexity: medium
